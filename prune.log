@@ -58,3 +58,7 @@
 [2026-04-01T21:00:00.787Z] Nothing to prune.
 [2026-04-02T21:00:00.002Z] === Daily auto-prune triggered ===
 [2026-04-02T21:00:00.967Z] Nothing to prune.
+[2026-04-03T08:41:39.773Z] === Prune started ===
+[2026-04-03T08:41:39.773Z] SYSTEM PRUNE:
+[2026-04-03T08:41:39.773Z] VOLUME PRUNE:
+[2026-04-03T08:41:39.773Z] === Done. 0 errors. ===

@@ -14,10 +14,51 @@ const crypto = require('crypto');
 const execAsync = promisify(exec);
 const PORT = process.env.PORT || 3232;
 
-// Form-based auth credentials (set via env vars)
-const AUTH_USER = process.env.AUTH_USER || process.env.NAS_MONITOR_USER || '';
-const AUTH_PASS = process.env.AUTH_PASS || process.env.NAS_MONITOR_PASS || '';
-const AUTH_ENABLED = Boolean(AUTH_USER && AUTH_PASS);
+// ─── Credentials file (PBKDF2-hashed) ────────────────────────────────────────
+const CREDENTIALS_FILE = path.join(__dirname, 'credentials.json');
+const PBKDF2_ITER  = 100_000;
+const PBKDF2_LEN   = 64;
+const PBKDF2_ALGO  = 'sha512';
+
+function hashPassword(password, salt) {
+  return crypto.pbkdf2Sync(password, salt, PBKDF2_ITER, PBKDF2_LEN, PBKDF2_ALGO).toString('hex');
+}
+
+function loadCredentials() {
+  try {
+    const data = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf8'));
+    if (data.username && data.passwordHash && data.salt) return data;
+  } catch {}
+  // Fall back to env vars — migrate them into the file on first use
+  const user = process.env.AUTH_USER || process.env.NAS_MONITOR_USER || '';
+  const pass = process.env.AUTH_PASS || process.env.NAS_MONITOR_PASS || '';
+  if (user && pass) {
+    const salt = crypto.randomBytes(32).toString('hex');
+    const creds = { username: user, passwordHash: hashPassword(pass, salt), salt };
+    try { fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), 'utf8'); } catch {}
+    return creds;
+  }
+  return null; // no credentials configured → auth disabled
+}
+
+function saveCredentials(username, password) {
+  const salt = crypto.randomBytes(32).toString('hex');
+  const creds = { username, passwordHash: hashPassword(password, salt), salt };
+  fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), 'utf8');
+  return creds;
+}
+
+function checkCredentials(username, password) {
+  const creds = loadCredentials();
+  if (!creds) return true; // no creds configured → open access
+  if (username !== creds.username) return false;
+  return crypto.timingSafeEqual(
+    Buffer.from(hashPassword(password, creds.salt), 'hex'),
+    Buffer.from(creds.passwordHash, 'hex')
+  );
+}
+
+const AUTH_ENABLED = Boolean(loadCredentials());
 const SESSION_COOKIE = 'nas-monitor-session';
 const SESSION_TTL = 1000 * 60 * 60 * 4; // 4h
 const sessions = new Map();
@@ -1096,7 +1137,7 @@ const server = http.createServer(async (req, res) => {
         const params = Object.fromEntries(new URLSearchParams(body));
         const user = params.user || '';
         const pass = params.pass || '';
-        if (user === AUTH_USER && pass === AUTH_PASS) {
+        if (checkCredentials(user, pass)) {
           const token = createSession();
           setAuthCookie(res, token);
           res.writeHead(302, { Location: '/' });
@@ -1407,6 +1448,38 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       res.end(JSON.stringify({ log: '' }));
     }
+    return;
+  }
+
+  // POST /api/change-credentials  — body: { currentPassword, newUsername, newPassword }
+  if (url.pathname === '/api/change-credentials' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { currentPassword, newUsername, newPassword } = JSON.parse(body);
+        const creds = loadCredentials();
+        // Verify current password first
+        const currentUser = creds ? creds.username : '';
+        if (creds && !checkCredentials(currentUser, currentPassword || '')) {
+          res.end(JSON.stringify({ ok: false, error: 'Current password is incorrect.' }));
+          return;
+        }
+        if (!newUsername || newUsername.trim().length < 1) {
+          res.end(JSON.stringify({ ok: false, error: 'Username cannot be empty.' }));
+          return;
+        }
+        if (!newPassword || newPassword.length < 8) {
+          res.end(JSON.stringify({ ok: false, error: 'New password must be at least 8 characters.' }));
+          return;
+        }
+        saveCredentials(newUsername.trim(), newPassword);
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
     return;
   }
 

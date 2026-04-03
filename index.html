@@ -764,6 +764,8 @@
     padding: 4px 12px; border-radius: 20px;
     font-size: 12px; font-weight: 700; font-family: var(--mono);
     border: 1px solid; flex-shrink: 0;
+    width: 160px; justify-content: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
   .cat-summary-card {
@@ -1251,6 +1253,8 @@
     <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
   </div>
   <div class="tab-bar-sep"></div>
+  <button onclick="openCredentialsModal()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">🔑 Credentials</button>
+  <div class="tab-bar-sep"></div>
   <button id="logout-btn" onclick="logout()" style="background:#ef4444;border:1px solid #dc2626;border-radius:var(--radius);color:white;font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;transition:opacity .15s;white-space:nowrap;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log out</button>
 </div>
 
@@ -1431,6 +1435,47 @@
     </div>
   </div>
 </main>
+
+<!-- CREDENTIALS MODAL -->
+<div class="catmgr-backdrop" id="creds-backdrop" onclick="closeCredentialsModal(event)">
+  <div class="catmgr-modal" onclick="event.stopPropagation()" style="max-width:420px;">
+    <div class="catmgr-header">
+      <div class="catmgr-title">🔑 Change Credentials</div>
+      <button class="modal-close" onclick="closeCredentialsModal()">✕</button>
+    </div>
+    <div class="catmgr-body" style="padding:20px 24px;gap:14px;">
+      <div class="catedit-row">
+        <div class="catedit-label">Current Password</div>
+        <input class="catedit-input" type="password" id="creds-current" placeholder="Enter current password" autocomplete="current-password"/>
+      </div>
+      <div style="height:1px;background:var(--border);margin:2px 0;"></div>
+      <div class="catedit-row">
+        <div class="catedit-label">New Username</div>
+        <input class="catedit-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">New Password</div>
+        <div style="position:relative;">
+          <input class="catedit-input" type="password" id="creds-pass" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkCredsStrength(this.value)"/>
+        </div>
+        <div id="creds-strength-bar" style="height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden;">
+          <div id="creds-strength-fill" style="height:100%;width:0;border-radius:2px;transition:width .3s,background .3s;"></div>
+        </div>
+        <div id="creds-strength-label" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px;"></div>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Confirm New Password</div>
+        <input class="catedit-input" type="password" id="creds-confirm" placeholder="Repeat new password" autocomplete="new-password"/>
+      </div>
+      <div id="creds-error" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:#fca5a5;"></div>
+      <div id="creds-success" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--green);">✓ Credentials updated successfully.</div>
+    </div>
+    <div class="catmgr-footer" style="justify-content:flex-end;">
+      <button class="catedit-cancel" onclick="closeCredentialsModal()">Cancel</button>
+      <button class="catedit-save" onclick="submitCredentials()">Save Credentials</button>
+    </div>
+  </div>
+</div>
 
 <!-- CATEGORY MANAGER MODAL -->
 <div class="catmgr-backdrop" id="catmgr-backdrop" onclick="closeCatMgr(event)">
@@ -3550,7 +3595,98 @@ window.addEventListener('resize', () => {
 
 el('console-modal').addEventListener('click', e => { if (e.target === el('console-modal')) closeConsoleModal(); });
 
-// ─── Categories ───────────────────────────────────────────────────────────────
+// ─── Credentials modal ───────────────────────────────────────────────────────
+function openCredentialsModal() {
+  ['creds-current','creds-user','creds-pass','creds-confirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('creds-error').style.display   = 'none';
+  document.getElementById('creds-success').style.display = 'none';
+  document.getElementById('creds-strength-fill').style.width = '0';
+  document.getElementById('creds-strength-label').textContent = '';
+  document.getElementById('creds-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('creds-current').focus(), 80);
+}
+
+function closeCredentialsModal(e) {
+  if (e && e.target !== document.getElementById('creds-backdrop')) return;
+  document.getElementById('creds-backdrop').classList.remove('open');
+}
+
+function checkCredsStrength(pw) {
+  const fill  = document.getElementById('creds-strength-fill');
+  const label = document.getElementById('creds-strength-label');
+  if (!pw) { fill.style.width = '0'; label.textContent = ''; return; }
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    { w:'20%', color:'var(--red)',    text:'Very weak'  },
+    { w:'40%', color:'var(--orange)', text:'Weak'       },
+    { w:'60%', color:'var(--yellow)', text:'Fair'       },
+    { w:'80%', color:'var(--accent)', text:'Strong'     },
+    { w:'100%',color:'var(--green)',  text:'Very strong'},
+  ];
+  const lvl = levels[Math.min(score, 4)];
+  fill.style.width      = lvl.w;
+  fill.style.background = lvl.color;
+  label.style.color     = lvl.color;
+  label.textContent     = lvl.text;
+}
+
+async function submitCredentials() {
+  const current = document.getElementById('creds-current').value;
+  const user    = document.getElementById('creds-user').value.trim();
+  const pass    = document.getElementById('creds-pass').value;
+  const confirm = document.getElementById('creds-confirm').value;
+  const errEl   = document.getElementById('creds-error');
+  const okEl    = document.getElementById('creds-success');
+
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  if (!user)          { showCredsError('Username cannot be empty.'); return; }
+  if (pass.length < 8){ showCredsError('Password must be at least 8 characters.'); return; }
+  if (pass !== confirm){ showCredsError('Passwords do not match.'); return; }
+
+  const btn = document.querySelector('#creds-backdrop .catedit-save');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/api/change-credentials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current, newUsername: user, newPassword: pass }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      okEl.style.display = 'block';
+      ['creds-current','creds-pass','creds-confirm'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('creds-strength-fill').style.width = '0';
+      document.getElementById('creds-strength-label').textContent = '';
+    } else {
+      showCredsError(data.error || 'Failed to update credentials.');
+    }
+  } catch (e) {
+    showCredsError('Network error — could not save credentials.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Credentials';
+  }
+}
+
+function showCredsError(msg) {
+  const el = document.getElementById('creds-error');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+
 
 const DEFAULT_CATEGORIES = [
   { id: 'media',       label: 'Media',       icon: '🎬', color: '#a78bfa', dot: '#8b5cf6' },
