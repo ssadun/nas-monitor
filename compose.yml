@@ -1,0 +1,24 @@
+services:
+  nas-monitor:
+    image: ssadun/nas-monitor:latest
+    container_name: nas-monitor
+    restart: unless-stopped
+    # Note: no 'ports' needed — network_mode: host exposes port 3232 directly on the host
+    environment:
+      # Set credentials on first run — saved to credentials.json automatically.
+      # Once credentials.json exists, these env vars are ignored.
+      - AUTH_USER=${AUTH_USER:-admin}
+      - AUTH_PASS=${AUTH_PASS:-changeme}
+      # - PORT=3232  # uncomment to change the port
+    volumes:
+      # Mount individual data files for persistence across container rebuilds.
+      # Run `./init-data.sh` once before first `docker compose up` to create these.
+      - ./data/credentials.json:/app/credentials.json
+      - ./data/category-defs.json:/app/category-defs.json
+      # Access Docker socket so the app can manage/monitor containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Share the host PID namespace — required so /proc/<pid> reads host processes
+    pid: host
+    # Use host network — required for /proc/net/dev to show host interfaces
+    # and for container network namespace inspection to work correctly
+    network_mode: host

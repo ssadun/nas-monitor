@@ -1,0 +1,37 @@
+[
+  {
+    "id": "media",
+    "label": "Media",
+    "icon": "🎬",
+    "color": "#a78bfa",
+    "dot": "#8b5cf6"
+  },
+  {
+    "id": "performance",
+    "label": "Performance",
+    "icon": "⚡",
+    "color": "#f97316",
+    "dot": "#f97316"
+  },
+  {
+    "id": "utilities",
+    "label": "Utilities",
+    "icon": "🔧",
+    "color": "#eab308",
+    "dot": "#eab308"
+  },
+  {
+    "id": "system",
+    "label": "System",
+    "icon": "🖥",
+    "color": "#FFFFFF",
+    "dot": "#FFFFFF"
+  },
+  {
+    "id": "networking_mni16j1o",
+    "label": "Networking",
+    "icon": "📡",
+    "color": "#22c55e",
+    "dot": "#22c55e"
+  }
+]

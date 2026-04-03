@@ -1,0 +1,8 @@
+.git
+.gitignore
+*.log
+*.pid
+README.md
+start.sh
+stop.sh
+node_modules
