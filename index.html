@@ -1,0 +1,4056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NAS Monitor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐋</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/addon-fit.min.js"></script>
+<style>
+  :root {
+    --bg:        #0d0f14;
+    --bg2:       #141720;
+    --bg3:       #1c2030;
+    --bg4:       #242840;
+    --border:    #2a2f4a;
+    --border2:   #353b5e;
+    --text:      #e2e8ff;
+    --text2:     #8891b8;
+    --text3:     #545b7a;
+    --accent:    #4f8ef7;
+    --accent2:   #7c3aed;
+    --green:     #22c55e;
+    --yellow:    #eab308;
+    --red:       #ef4444;
+    --orange:    #f97316;
+    --cyan:      #06b6d4;
+    --pink:      #ec4899;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Space Grotesk', sans-serif;
+    --radius:    8px;
+    --radius2:   12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Scrollbar ─────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ─── Header ────────────────────────────────────────────── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 100;
+    gap: 24px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .logo .icon { font-size: 32px; }
+  .logo h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo h1 span { color: var(--accent); }
+  .logo .sub { font-size: 11px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--mono); }
+
+  /* ─── Metrics strip (top-right) ─────────────────────────── */
+  .metrics-strip {
+    display: flex; align-items: stretch; gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+    flex: 1;
+  }
+  .metric-card {
+    background: var(--bg3);
+    padding: 10px 16px;
+    display: flex; flex-direction: column; justify-content: center;
+    flex: 1;
+    min-width: 0;
+    transition: background .15s;
+  }
+  .metric-card:hover { background: var(--bg4); }
+  .metric-label { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 3px; }
+  .metric-value { font-size: 16px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; }
+  .metric-value.green { color: var(--green); }
+  .metric-value.yellow { color: var(--yellow); }
+  .metric-value.red { color: var(--red); }
+  .metric-value.cyan { color: var(--cyan); }
+  .metric-value.accent { color: var(--accent); }
+  .metric-value.orange { color: var(--orange); }
+  .metric-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 3px; }
+  .mini-bar { height: 2px; background: var(--bg); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 2px; transition: width .5s; }
+
+  /* ─── Tabs ──────────────────────────────────────────────── */
+  .tab-bar {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 16px;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 20px;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3);
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+    white-space: nowrap;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+  .last-update { font-family: var(--mono); font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .tab-bar-sep { width: 1px; height: 18px; background: var(--border2); margin: 0 2px; flex-shrink: 0; }
+  .tab-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--text2);
+    transition: all .15s;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--bg4); border-color: var(--text3); }
+  .tab-btn.active {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 2px 10px rgba(79,142,247,.35);
+  }
+  .tab-badge {
+    background: rgba(0,0,0,.2); border-radius: 10px;
+    padding: 1px 6px; font-size: 11px; font-family: var(--mono);
+    font-weight: 700;
+  }
+  .tab-btn.active .tab-badge { background: rgba(0,0,0,.25); color: white; }
+  .tab-btn:not(.active) .tab-badge { background: var(--bg4); color: var(--text3); }
+
+  .tab-spacer { flex: 1; }
+  .filter-box {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .filter-input {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 5px 10px;
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    outline: none; width: 180px; transition: border-color .15s;
+  }
+  .filter-input:focus { border-color: var(--accent); }
+  .filter-input::placeholder { color: var(--text3); }
+
+  /* ─── Main content ──────────────────────────────────────── */
+  main {
+    padding: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .tab-panel { display: none; flex: 1; min-height: 0; flex-direction: column; }
+  .tab-panel.active { display: flex; }
+
+  /* ─── Tables ────────────────────────────────────────────── */
+  .table-wrap {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--mono); font-size: 13px;
+  }
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+    position: sticky; top: 0; z-index: 10;
+  }
+  th {
+    padding: 9px 12px; text-align: left;
+    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text3);
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--text); }
+  th.sorted {
+    color: var(--accent);
+    background: rgba(79,142,247,.08);
+    border-bottom: 2px solid var(--accent);
+  }
+  th .sort-arrow { margin-left: 5px; opacity: .3; font-size: 11px; }
+  th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(42,47,74,.5);
+    transition: background .1s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: var(--bg3); }
+  tbody tr.expanded-row { background: var(--bg3); }
+
+  td {
+    padding: 7px 12px; vertical-align: middle;
+    color: var(--text); white-space: nowrap;
+  }
+
+  /* ─── Process tree indentation ──────────────────────────── */
+  .proc-name {
+    display: flex; align-items: center; gap: 0;
+    font-size: 13px;
+  }
+  .tree-indent { display: inline-flex; align-items: center; }
+  .tree-line { color: var(--text3); font-size: 13px; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); padding: 0 4px 0 0;
+    font-size: 13px; transition: color .1s; line-height: 1;
+  }
+  .toggle-btn:hover { color: var(--accent); }
+  .container-tag {
+    display: inline-block;
+    font-size: 10px; font-family: var(--mono);
+    padding: 1px 6px; border-radius: 4px;
+    background: rgba(79,142,247,.12);
+    border: 1px solid rgba(79,142,247,.25);
+    color: var(--accent);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 110px; vertical-align: middle;
+  }
+  .self-tag {
+    display: inline-block;
+    font-size: 10px; font-family: var(--mono);
+    padding: 1px 6px; border-radius: 4px;
+    background: rgba(249,115,22,.12);
+    border: 1px solid rgba(249,115,22,.35);
+    color: var(--orange);
+    white-space: nowrap; vertical-align: middle;
+  }
+  .proc-name-text:hover { color: var(--accent); }
+  
+  /* ─── Sub-process table (container children) ────────────── */
+  .sub-proc-wrap {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 0 0 0 0;
+  }
+  .sub-proc-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .sub-proc-header span { color: var(--cyan); }
+  .sub-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  .sub-table th {
+    padding: 6px 14px; background: #141720;
+    font-size: 11px; position: static;
+    border-bottom: 1px solid var(--border);
+    color: var(--text3);
+  }
+  .sub-table td { padding: 5px 14px; border-bottom: 1px solid rgba(42,47,74,.3); }
+  .sub-table tr:hover td { background: rgba(79,142,247,.05); }
+  .sub-table tr:last-child td { border-bottom: none; }
+  .sub-table .proc-name-text:hover { color: var(--accent); }
+
+  /* ─── Badges & pills ────────────────────────────────────── */
+  .status-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; margin-right: 6px;
+    flex-shrink: 0;
+  }
+  .status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.stopped,.status-dot.exited { background: var(--red); }
+  .status-dot.paused { background: var(--yellow); }
+  .status-dot.S { background: var(--green); }
+  .status-dot.R { background: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
+  .status-dot.D { background: var(--orange); }
+  .status-dot.Z { background: var(--red); }
+  .status-dot.T { background: var(--yellow); }
+  .status-dot.I { background: var(--text3); }
+
+  .state-text { font-size: 12px; }
+  .state-S { color: var(--green); }
+  .state-R { color: var(--cyan); }
+  .state-D { color: var(--orange); }
+  .state-Z { color: var(--red); }
+  .state-T { color: var(--yellow); }
+  .state-I { color: var(--text3); }
+
+  .cpu-bar, .mem-bar {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-width: 80px;
+  }
+  .bar-track { width: 48px; height: 5px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+  .bar-fill.cpu { background: var(--accent); }
+  .bar-fill.mem { background: var(--pink); }
+  .bar-fill.high { background: var(--orange); }
+  .bar-fill.critical { background: var(--red); }
+
+  .num-cell { text-align: right; }
+  .muted { color: var(--text3); }
+  .green-text { color: var(--green); }
+  .yellow-text { color: var(--yellow); }
+  .red-text { color: var(--red); }
+  .cyan-text { color: var(--cyan); }
+  .accent-text { color: var(--accent); }
+
+  /* ─── Container name ────────────────────────────────────── */
+  .container-name {
+    display: flex; align-items: center; gap: 8px; font-size: 12px;
+  }
+  .port-link {
+    display: inline-block;
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 1px 6px;
+    border: 1px solid rgba(6,182,212,.3);
+    border-radius: 4px;
+    margin: 1px 2px 1px 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .1s, border-color .1s;
+  }
+  .port-link:hover {
+    background: rgba(6,182,212,.12);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .container-expand-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 6px; cursor: pointer;
+    color: var(--text3); font-size: 11px; transition: all .15s;
+    white-space: nowrap;
+  }
+  .container-expand-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .container-expand-btn.open { color: var(--cyan); border-color: var(--cyan); }
+
+  /* ─── Container action buttons ──────────────────────────── */
+  .container-actions { display: inline-flex; gap: 3px; align-items: center; }
+  .action-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 4px; padding: 0; cursor: pointer;
+    font-size: 11px; font-family: var(--mono); transition: all .15s;
+    white-space: nowrap; width: 26px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .action-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .action-btn.start  { color: var(--green); }
+  .action-btn.start:hover:not(:disabled)  { background: rgba(34,197,94,.12);  border-color: var(--green); }
+  .action-btn.stop   { color: var(--red); }
+  .action-btn.stop:hover:not(:disabled)   { background: rgba(239,68,68,.12);   border-color: var(--red); }
+  .action-btn.restart{ color: var(--yellow); }
+  .action-btn.restart:hover:not(:disabled){ background: rgba(234,179,8,.12);   border-color: var(--yellow); }
+  .action-btn.logs    { color: var(--cyan); }
+  .action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);   border-color: var(--cyan); }
+  .action-btn.console { color: var(--green); }
+  .action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12);  border-color: var(--green); }
+  .action-btn.delete  { color: var(--red); opacity: .6; }
+  .action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.15);   border-color: var(--red); opacity:1; }
+  .action-btn:disabled { opacity: .25 !important; cursor: not-allowed; pointer-events: none; }
+
+  /* ─── Console Modal ──────────────────────────────────────── */
+  .console-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.88); z-index: 1004;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .console-backdrop.open { display: flex; }
+  .console-modal {
+    background: #0d1117; border: 1px solid var(--border2);
+    border-radius: 18px; width: 900px; max-width: 98vw;
+    height: 76vh; display: flex; flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,.8);
+    animation: modalIn .15s ease; overflow: hidden;
+  }
+  .console-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: #161b22; flex-shrink: 0;
+  }
+  #console-terminal { flex: 1; padding: 4px; overflow: hidden; }
+
+  /* ─── Container Action Modal ─────────────────────────────── */
+  .action-modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.8); z-index: 1005;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .action-modal-backdrop.open { display: flex; }
+  .action-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 18px; width: 480px; max-width: 96vw;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+    animation: modalIn .15s ease;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .action-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .action-modal-body { padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+  .action-modal-footer {
+    display: flex; gap: 8px; justify-content: flex-end;
+    padding: 14px 18px; border-top: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .action-progress { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+  .action-progress-step {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 12px; color: var(--text3);
+    transition: color .2s;
+  }
+  .action-progress-step.active { color: var(--text); }
+  .action-progress-step.done   { color: var(--green); }
+  .action-progress-step.error  { color: var(--red); }
+  .step-icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .spin { display: inline-block; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Log modal ─────────────────────────────────────────── */
+  .log-modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.8); z-index: 1006;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .log-modal-backdrop.open { display: flex; }
+  .log-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 18px; width: 900px; max-width: 96vw;
+    height: 70vh; display: flex; flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+    animation: modalIn .15s ease; overflow: hidden;
+  }
+  .log-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0; gap: 10px;
+  }
+  .log-modal-title { font-size: 14px; font-weight: 600; font-family: var(--mono); display: flex; align-items: center; gap: 8px; }
+  .log-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
+  .log-body {
+    flex: 1; overflow-y: auto; padding: 10px 0;
+    background: #080a0f; font-family: var(--mono); font-size: 12px;
+    line-height: 1.6;
+  }
+  .log-line { padding: 1px 16px; white-space: pre-wrap; word-break: break-all; }
+  .log-line:hover { background: rgba(255,255,255,.03); }
+  .log-ts { color: var(--text3); margin-right: 8px; user-select: none; }
+  .log-err { color: #f87171; }
+  .log-warn { color: var(--yellow); }
+  .log-info { color: var(--text); }
+  .log-footer {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px; border-top: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0; font-family: var(--mono); font-size: 11px;
+  }
+  .log-count { color: var(--text3); }
+  .log-autoscroll-btn {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px; cursor: pointer; font-family: var(--mono); font-size: 11px;
+    color: var(--text3); transition: all .15s;
+  }
+  .log-autoscroll-btn.on { color: var(--green); border-color: var(--green); background: rgba(34,197,94,.08); }
+  .log-clear-btn {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px; cursor: pointer; font-family: var(--mono); font-size: 11px;
+    color: var(--text3); transition: all .15s;
+  }
+  .log-clear-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* ─── Modal / Process Detail ─────────────────────────────── */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); z-index: 1000;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 18px; padding: 0;
+    width: 640px; max-width: 95vw; max-height: 80vh;
+    overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,.5);
+    animation: modalIn .15s ease; overflow: hidden;
+  }
+
+  /* ─── Container Detail Modal ─────────────────────────────── */
+  .cdetail-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.82); z-index: 1003;
+    align-items: flex-start; justify-content: center;
+    backdrop-filter: blur(4px); padding: 20px 0; overflow-y: auto;
+  }
+  .cdetail-backdrop.open { display: flex; }
+  .cdetail-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 18px; width: 860px; max-width: 98vw;
+    box-shadow: 0 32px 80px rgba(0,0,0,.7);
+    animation: modalIn .15s ease; overflow: hidden;
+    display: flex; flex-direction: column; margin: auto;
+  }
+  .cdetail-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0;
+  }
+  .cdetail-action-btn {
+    background: none; border: 1px solid var(--border2);
+    border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    font-size: 16px; line-height: 1; transition: all .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .cdetail-action-btn span { font-family: var(--sans); font-size: 12px; font-weight: 600; }
+  .cdetail-action-btn:disabled { opacity: .25; cursor: not-allowed; pointer-events: none; }
+  .cdetail-action-btn.start   { color: var(--green); }
+  .cdetail-action-btn.start:hover:not(:disabled)   { background: rgba(34,197,94,.12);  border-color: var(--green); }
+  .cdetail-action-btn.restart { color: var(--yellow); }
+  .cdetail-action-btn.restart:hover:not(:disabled) { background: rgba(234,179,8,.12);  border-color: var(--yellow); }
+  .cdetail-action-btn.stop    { color: var(--orange); }
+  .cdetail-action-btn.stop:hover:not(:disabled)    { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .cdetail-action-btn.logs    { color: var(--cyan); }
+  .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);  border-color: var(--cyan); }
+  .cdetail-action-btn.console { color: var(--green); }
+  .cdetail-action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .cdetail-action-btn.delete  { color: var(--red); opacity: .7; }
+  .cdetail-action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.12);  border-color: var(--red); opacity:1; }
+  .cdetail-body { padding: 0; overflow-y: auto; }
+  .cdetail-section {
+    border-bottom: 1px solid var(--border); padding: 16px 20px;
+  }
+  .cdetail-section:last-child { border-bottom: none; }
+  .cdetail-section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--text3);
+    font-family: var(--mono); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cdetail-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .cdetail-grid-3 {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+  }
+  .cdetail-kv { display: flex; flex-direction: column; gap: 3px; }
+  .cdetail-key {
+    font-size: 10px; color: var(--text3); text-transform: uppercase;
+    letter-spacing: .8px; font-family: var(--mono); font-weight: 600;
+  }
+  .cdetail-val {
+    font-family: var(--mono); font-size: 12px; color: var(--text);
+    background: var(--bg3); padding: 5px 8px; border-radius: 6px;
+    word-break: break-all; line-height: 1.5;
+  }
+  .cdetail-val.full { grid-column: 1/-1; }
+  .cdetail-status-card {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg3); border-radius: 10px; padding: 14px 16px;
+    border: 1px solid var(--border); margin-bottom: 14px;
+  }
+  .cdetail-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .cdetail-table th {
+    padding: 6px 10px; text-align: left; font-size: 10px;
+    font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text3); background: var(--bg3);
+    border-bottom: 1px solid var(--border2);
+  }
+  .cdetail-table td {
+    padding: 6px 10px; border-bottom: 1px solid rgba(42,47,74,.3);
+    color: var(--text); vertical-align: top; word-break: break-all;
+  }
+  .cdetail-table tr:last-child td { border-bottom: none; }
+  .cdetail-table tr:hover td { background: rgba(79,142,247,.04); }
+  @keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 20px; padding: 4px; line-height: 1;
+    transition: color .1s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail-item.full { grid-column: 1/-1; }
+  .detail-key { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: var(--mono); }
+  .detail-val {
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+    background: var(--bg3); padding: 6px 10px; border-radius: 6px;
+    word-break: break-all; line-height: 1.6;
+  }
+  .detail-val.cmd { font-size: 12px; white-space: pre-wrap; }
+
+  /* ─── Empty state ───────────────────────────────────────── */
+  .empty-state {
+    padding: 60px 0; text-align: center; color: var(--text3);
+  }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+
+  /* ─── Loading overlay ───────────────────────────────────── */
+  #loading {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; gap: 16px; transition: opacity .3s;
+  }
+  #loading.done { opacity: 0; pointer-events: none; }
+  #loading .icon { font-size: 56px; animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  #loading p { color: var(--text3); font-family: var(--mono); font-size: 13px; }
+
+  /* ─── Toolbar row above table ───────────────────────────── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .view-toggle {
+    display: flex; gap: 2px; background: var(--bg3);
+    border-radius: 6px; padding: 2px; border: 1px solid var(--border);
+  }
+  .view-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 4px 10px; border-radius: 4px;
+    font-family: var(--sans); font-size: 12px; color: var(--text2);
+    transition: all .15s;
+  }
+  .view-btn.active { background: var(--accent); color: white; }
+  .toolbar-spacer { flex: 1; }
+  .toolbar-info { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .high-cpu-btn, .high-mem-btn {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: none;
+    font-size: 12px; cursor: pointer; transition: all .15s;
+  }
+  .high-cpu-btn { color: var(--orange); }
+  .high-cpu-btn:hover, .high-cpu-btn.active { background: rgba(249,115,22,.15); border-color: var(--orange); }
+  .high-mem-btn { color: var(--pink); }
+  .high-mem-btn:hover, .high-mem-btn.active { background: rgba(236,72,153,.15); border-color: var(--pink); }
+  .container-filter-btn {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: none;
+    font-size: 12px; cursor: pointer; transition: all .15s;
+    color: var(--accent);
+  }
+  .container-filter-btn:hover, .container-filter-btn.active { background: rgba(79,142,247,.15); border-color: var(--accent); }
+  
+  /* ─── Expand all button ─────────────────────────────────── */
+  .expand-all-btn {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: none;
+    font-size: 12px; cursor: pointer; transition: all .15s;
+    color: var(--cyan);
+  }
+  .expand-all-btn:hover { background: rgba(6,182,212,.15); border-color: var(--cyan); }
+
+  /* ─── Sort indicator ────────────────────────────────────── */
+  .pid-col { width: 70px; }
+  .name-col { min-width: 200px; }
+  .owner-col { width: 90px; }
+  .cpu-col { width: 110px; }
+  .mem-col { width: 110px; }
+  .status-col { width: 80px; }
+  .start-col { width: 120px; }
+  .cmd-col { max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ─── Category badge (container row) ───────────────────── */
+  .cat-badge-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-family: var(--mono);
+    padding: 2px 8px; border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s;
+    user-select: none;
+  }
+  .cat-badge-btn:hover { border-color: var(--accent); color: var(--text); }
+  .cat-badge-btn.cat-media    { background: rgba(139,92,246,.12); border-color: rgba(139,92,246,.4); color: #a78bfa; }
+  .cat-badge-btn.cat-performance { background: rgba(249,115,22,.12); border-color: rgba(249,115,22,.4); color: var(--orange); }
+  .cat-badge-btn.cat-utilities { background: rgba(6,182,212,.12); border-color: rgba(6,182,212,.4); color: var(--cyan); }
+  .cat-badge-btn.cat-system   { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.4); color: var(--green); }
+
+  /* ─── Category dropdown ─────────────────────────────────── */
+  .cat-dropdown {
+    position: fixed; z-index: 2000;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 4px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.6);
+    min-width: 160px;
+    animation: modalIn .12s ease;
+  }
+  .cat-dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 7px;
+    cursor: pointer; font-size: 12px; font-family: var(--mono);
+    color: var(--text2); transition: all .1s;
+    white-space: nowrap;
+  }
+  .cat-dropdown-item:hover { background: var(--bg4); color: var(--text); }
+  .cat-dropdown-item .cat-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .cat-dropdown-item.active { color: var(--text); font-weight: 600; }
+  .cat-dropdown-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+  /* ─── Categories view ───────────────────────────────────── */
+  .cat-section {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; overflow: visible;
+    transition: border-color .15s;
+  }
+  .cat-section:hover { border-color: var(--border2); }
+
+  .cat-header-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+    border-radius: 12px 12px 0 0;
+  }
+  .cat-section:not(.open) .cat-header-row { border-radius: 12px; }
+  .cat-header-row:hover { background: var(--bg3); }
+
+  .cat-chevron {
+    font-size: 11px; color: var(--text3); flex-shrink: 0;
+    transition: transform .2s; width: 14px; text-align: center;
+  }
+  .cat-section.open .cat-chevron { transform: rotate(90deg); }
+
+  .cat-title-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; font-family: var(--mono);
+    border: 1px solid; flex-shrink: 0;
+  }
+
+  .cat-summary-card {
+    display: flex; align-items: center;
+    flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden;
+  }
+  .cat-summary-cell {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 6px 14px; min-width: 0; flex-shrink: 0; gap: 1px;
+    border-left: 1px solid var(--border);
+  }
+  .cat-summary-cell:first-child { border-left: none; }
+  /* mirror table column widths */
+  .cat-sc-containers { width: 160px; }
+  .cat-sc-cpu        { width: 80px; }
+  .cat-sc-mem        { width: 90px; }
+  .cat-sc-memused    { width: 90px; }
+  .cat-sc-netin      { width: 110px; }
+  .cat-sc-netout     { width: 110px; }
+  .cat-sc-img        { width: 90px; }
+  .cat-summary-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text3); font-family: var(--mono);
+  }
+  .cat-summary-value {
+    font-size: 13px; font-weight: 700; font-family: var(--mono); line-height: 1.2;
+  }
+  .cat-summary-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+  .cat-mini-bar { height: 2px; background: var(--bg4); border-radius: 2px; margin-top: 3px; overflow: hidden; }
+  .cat-mini-bar-fill { height: 100%; border-radius: 2px; transition: width .5s; }
+
+  /* collapsible body */
+  .cat-body {
+    display: none; border-top: 1px solid var(--border);
+    overflow-x: auto; overflow-y: visible;
+    border-radius: 0 0 12px 12px;
+  }
+  .cat-section.open .cat-body { display: block; }
+
+  /* container table inside category */
+  .cat-table { width: 100%; min-width: 900px; border-collapse: collapse; font-family: var(--mono); font-size: 12px; table-layout: fixed; }
+  .cat-table th {
+    padding: 7px 14px; text-align: left;
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text3);
+    background: var(--bg3); border-bottom: 1px solid var(--border);
+    white-space: nowrap; overflow: hidden;
+  }
+  .cat-table td {
+    padding: 8px 14px; border-bottom: 1px solid rgba(42,47,74,.4);
+    color: var(--text); white-space: nowrap; vertical-align: middle;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .cat-table tr:last-child td { border-bottom: none; }
+  .cat-table tbody tr { cursor: pointer; transition: background .1s; }
+  .cat-table tbody tr:hover td { background: var(--bg3); }
+  /* fixed column widths */
+  .cat-table .col-dot    { width: 32px; }
+  .cat-table .col-name   { width: 180px; }
+  .cat-table .col-cpu    { width: 80px; }
+  .cat-table .col-mem    { width: 90px; }
+  .cat-table .col-memused{ width: 90px; }
+  .cat-table .col-netin  { width: 110px; }
+  .cat-table .col-netout { width: 110px; }
+  .cat-table .col-img    { width: 90px; }
+  .cat-table .col-status { width: 80px; }
+  .cat-table .col-cat    { width: 120px; }
+
+  .cat-empty-drop {
+    padding: 18px; text-align: center;
+    color: var(--text3); font-size: 12px; font-family: var(--mono);
+    border-top: 2px dashed var(--border); margin: 0;
+  }
+  .cat-container-metrics { display: flex; gap: 10px; align-items: center; }
+  .cat-metric-pill { display: flex; flex-direction: column; gap: 1px; background: var(--bg3); border-radius: 6px; padding: 5px 10px; flex: 1; min-width: 0; }
+  .cat-metric-pill-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); }
+  .cat-metric-pill-val { font-size: 13px; font-weight: 700; font-family: var(--mono); }
+  /* keep old card classes harmless */
+  .cat-container-list, .cat-container-card, .cat-container-card-top,
+  .cat-container-card-name, .cat-container-card-image { display: none; }
+
+  /* ─── Category manager modal ────────────────────────────── */
+  .catmgr-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  .catmgr-backdrop.open { opacity: 1; pointer-events: all; }
+  .catmgr-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 14px; width: 520px; max-width: 95vw;
+    max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    animation: modalIn .15s ease;
+  }
+  .catmgr-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); border-radius: 14px 14px 0 0;
+  }
+  .catmgr-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .catmgr-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .catmgr-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; transition: border-color .15s;
+  }
+  .catmgr-row:hover { border-color: var(--border2); }
+  .catmgr-row-icon { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; cursor: pointer; }
+  .catmgr-row-label { flex: 1; font-size: 14px; font-weight: 600; }
+  .catmgr-row-color { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; cursor: pointer; border: 2px solid rgba(255,255,255,.2); }
+  .catmgr-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .catmgr-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 10px; cursor: pointer;
+    font-size: 12px; font-family: var(--mono); color: var(--text3);
+    transition: all .15s;
+  }
+  .catmgr-btn:hover { color: var(--text); border-color: var(--text3); }
+  .catmgr-btn.edit { color: var(--accent); }
+  .catmgr-btn.edit:hover { border-color: var(--accent); background: rgba(79,142,247,.1); }
+  .catmgr-btn.del { color: var(--red); }
+  .catmgr-btn.del:hover { border-color: var(--red); background: rgba(239,68,68,.1); }
+  .catmgr-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-top: 1px solid var(--border); gap: 10px;
+  }
+  .catmgr-add-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(79,142,247,.12); border: 1px dashed rgba(79,142,247,.4);
+    border-radius: 10px; padding: 10px 14px; cursor: pointer;
+    font-size: 13px; color: var(--accent); font-family: var(--mono);
+    transition: all .15s; width: 100%;
+  }
+  .catmgr-add-btn:hover { background: rgba(79,142,247,.2); border-color: var(--accent); }
+  /* ─── Category edit form ────────────────────────────────── */
+  .catedit-form {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 4px 0;
+  }
+  .catedit-row { display: flex; flex-direction: column; gap: 5px; }
+  .catedit-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); }
+  .catedit-input {
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 7px; padding: 8px 12px; color: var(--text);
+    font-family: var(--sans); font-size: 14px; outline: none;
+    transition: border-color .15s; width: 100%;
+  }
+  .catedit-input:focus { border-color: var(--accent); }
+  .catedit-icon-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
+  }
+  .catedit-icon-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px; cursor: pointer; font-size: 18px;
+    text-align: center; transition: all .15s; line-height: 1;
+  }
+  .catedit-icon-btn:hover { border-color: var(--accent); background: rgba(79,142,247,.1); }
+  .catedit-icon-btn.selected { border-color: var(--accent); background: rgba(79,142,247,.2); }
+  .catedit-color-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .catedit-color-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; transition: transform .1s, border-color .1s;
+  }
+  .catedit-color-btn:hover { transform: scale(1.15); }
+  .catedit-color-btn.selected { border-color: white; transform: scale(1.15); }
+  .catedit-hex-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px;
+  }
+  .catedit-hex-swatch {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    border: 1px solid var(--border2); transition: background .15s;
+  }
+  .catedit-hex-input {
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 7px; padding: 6px 10px; color: var(--text);
+    font-family: var(--mono); font-size: 13px; outline: none;
+    width: 110px; letter-spacing: 1px; text-transform: uppercase;
+    transition: border-color .15s;
+  }
+  .catedit-hex-input:focus { border-color: var(--accent); }
+  .catedit-hex-input.invalid { border-color: var(--red); }
+  .catedit-hex-hint {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+  }
+  .catedit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+  .catedit-save {
+    background: var(--accent); border: none; border-radius: 7px;
+    color: white; font-family: var(--sans); font-size: 13px;
+    font-weight: 600; padding: 7px 20px; cursor: pointer; transition: opacity .15s;
+  }
+  .catedit-save:hover { opacity: .85; }
+  .catedit-cancel {
+    background: none; border: 1px solid var(--border2); border-radius: 7px;
+    color: var(--text2); font-family: var(--sans); font-size: 13px;
+    padding: 7px 16px; cursor: pointer; transition: all .15s;
+  }
+  .catedit-cancel:hover { border-color: var(--text3); color: var(--text); }
+
+  .restart-policy-widget {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .restart-policy-select {
+    background: var(--bg4); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+    padding: 4px 8px; outline: none; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .restart-policy-select:focus { border-color: var(--accent); }
+  .restart-policy-retries {
+    background: var(--bg4); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+    padding: 4px 8px; outline: none; width: 70px;
+    transition: border-color .15s;
+  }
+  .restart-policy-retries:focus { border-color: var(--accent); }
+  .restart-policy-save {
+    background: var(--accent); border: none; border-radius: 6px;
+    color: white; font-family: var(--sans); font-size: 12px;
+    font-weight: 600; padding: 4px 14px; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .restart-policy-save:hover { opacity: .85; }
+  .restart-policy-save:disabled { opacity: .4; cursor: not-allowed; }
+  .restart-policy-status {
+    font-family: var(--mono); font-size: 11px;
+    transition: color .2s;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="icon">🐋</div>
+  <p>Connecting to NAS Monitor…</p>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Process Details</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid" id="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div class="log-modal-backdrop" id="log-modal">
+  <div class="log-modal">
+    <div class="log-modal-header">
+      <div class="log-modal-title">
+        <span class="log-live-dot"></span>
+        <span id="log-modal-title">Container Logs</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="log-autoscroll-btn on" id="log-autoscroll-btn" onclick="toggleLogAutoscroll()">⬇ Auto-scroll</button>
+        <button class="log-clear-btn" onclick="clearLogs()">✕ Clear</button>
+        <button class="modal-close" onclick="closeLogModal()">✕</button>
+      </div>
+    </div>
+    <div class="log-body" id="log-body"></div>
+    <div class="log-footer">
+      <span class="log-live-dot" style="width:6px;height:6px"></span>
+      <span class="log-count" id="log-count">0 lines</span>
+      <div style="flex:1"></div>
+      <span style="color:var(--text3)" id="log-container-id"></span>
+    </div>
+  </div>
+</div>
+
+<!-- PRUNE MODAL -->
+<div class="log-modal-backdrop" id="prune-modal">
+  <div class="log-modal" style="width:720px;max-width:96vw;">
+    <div class="log-modal-header">
+      <div class="log-modal-title">
+        <span style="font-size:18px;">🧹</span>
+        <span id="prune-modal-title">Docker Cleanup — Unused Resources</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="log-autoscroll-btn" id="prune-log-btn" onclick="openPruneLogModal()" style="color:var(--text3);">📋 View Log</button>
+        <button class="modal-close" onclick="closePruneModal()">✕</button>
+      </div>
+    </div>
+    <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
+      <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
+      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="log-autoscroll-btn">☑ Select All</button>
+      <button id="prune-confirm-btn" onclick="confirmPrune()"
+        style="background:var(--red);border:none;border-radius:var(--radius);padding:7px 20px;
+               color:white;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">
+        🗑 System Prune
+      </button>
+      <button id="prune-cancel-btn" onclick="closePruneModal()"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 16px;
+               color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PRUNE LOG MODAL -->
+<div class="log-modal-backdrop" id="prune-log-modal">
+  <div class="log-modal" style="width:800px;max-width:96vw;">
+    <div class="log-modal-header">
+      <div class="log-modal-title">
+        <span>📋 Prune Log</span>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
+      </div>
+      <button class="modal-close" onclick="closePruneLogModal()">✕</button>
+    </div>
+    <div class="log-body" id="prune-log-body" style="font-family:var(--mono);font-size:12px;padding:12px 16px;"></div>
+  </div>
+</div>
+
+<!-- CONTAINER ACTION MODAL -->
+<div class="action-modal-backdrop" id="action-modal">
+  <div class="action-modal">
+    <div class="action-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="action-modal-icon" style="font-size:20px;">▶</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;" id="action-modal-title">–</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="action-modal-container">–</div>
+        </div>
+      </div>
+      <button class="modal-close" id="action-modal-close" onclick="closeActionModal()">✕</button>
+    </div>
+    <div class="action-modal-body">
+      <div id="action-modal-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div class="action-progress" id="action-progress"></div>
+    </div>
+    <div class="action-modal-footer">
+      <button id="action-modal-confirm" onclick="executeAction()"
+        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">
+        Confirm
+      </button>
+      <button id="action-modal-cancel" onclick="closeActionModal()"
+        style="padding:8px 16px;border:1px solid var(--red);border-radius:var(--radius);
+               background:none;color:var(--red);font-family:var(--sans);font-size:13px;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONSOLE MODAL -->
+<div class="console-backdrop" id="console-modal">
+  <div class="console-modal">
+    <div class="console-header">
+      <span style="font-size:16px;">🖥</span>
+      <span id="console-title" style="font-family:var(--mono);font-size:13px;font-weight:600;flex:1;">Console</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">Shell:</span>
+        <button id="console-bash-btn" onclick="switchShell('bash')"
+          style="padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--accent);color:white;font-family:var(--mono);font-size:11px;cursor:pointer;">bash</button>
+        <button id="console-sh-btn" onclick="switchShell('sh')"
+          style="padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:none;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;">sh</button>
+      </div>
+      <button class="modal-close" onclick="closeConsoleModal()" style="margin-left:8px;">✕</button>
+    </div>
+    <div id="console-terminal"></div>
+  </div>
+</div>
+
+<!-- CONTAINER DETAIL MODAL -->
+<div class="cdetail-backdrop" id="cdetail-modal">
+  <div class="cdetail-modal">
+    <div class="cdetail-header">
+      <span id="cdetail-status-dot" class="status-dot" style="width:10px;height:10px;flex-shrink:0;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:16px;font-weight:700;" id="cdetail-name">–</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="cdetail-id">–</div>
+      </div>
+      <div id="cdetail-actions" style="display:flex;gap:6px;align-items:center;margin-right:12px;"></div>
+      <button class="modal-close" onclick="closeCDetailModal()">✕</button>
+    </div>
+    <div class="cdetail-body" id="cdetail-body">
+      <div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="icon">🐋</div>
+    <div>
+      <h1>NAS <span>Monitor</span></h1>
+      <div class="sub">Real-Time System Monitor</div>
+    </div>
+  </div>
+
+  <div class="metrics-strip">
+    <div class="metric-card">
+      <div class="metric-label">Containers</div>
+      <div class="metric-value cyan" id="s-containers">–</div>
+      <div class="metric-sub" id="s-containers-sub">–</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Processes</div>
+      <div class="metric-value accent" id="s-procs">–</div>
+      <div class="metric-sub" id="s-procs-sub">–</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg CPU</div>
+      <div class="metric-value" id="s-cpu">–</div>
+      <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
+      <div class="metric-sub" id="s-cpu-sub">–</div>
+    </div>
+    <div class="metric-card" style="min-width:140px;">
+      <div class="metric-label">System Mem</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+        <canvas id="s-sysmem-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <div class="metric-value green" id="s-sysmem" style="font-size:14px;">–</div>
+          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">available</div>
+        </div>
+      </div>
+    </div>
+    <div class="metric-card" style="min-width:140px;">
+      <div class="metric-label">Disk Usage</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+        <canvas id="s-disk-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <div class="metric-value" id="s-disk" style="font-size:14px;">–</div>
+          <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
+        </div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Uptime</div>
+      <div class="metric-value green" id="s-uptime">–</div>
+      <div class="metric-sub" id="s-load">load –</div>
+    </div>
+    <div class="metric-card" style="min-width:160px;">
+      <div class="metric-label">Network</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+        <canvas id="s-nw-canvas" width="90" height="28" style="flex-shrink:0;"></canvas>
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);white-space:nowrap;" id="s-nw-in">– KB/s</div>
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);white-space:nowrap;"  id="s-nw-out">– KB/s</div>
+        </div>
+      </div>
+      <div class="metric-sub" id="s-nw-sub">↓ in · ↑ out</div>
+    </div>
+  </div>
+
+</header>
+
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('containers')">
+    🐋 Container Monitoring
+    <span class="tab-badge" id="tb-containers">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('categories')">
+    🗃️ Categories
+  </button>
+  <button class="tab-btn" onclick="switchTab('processes')">
+    ⚙️ System Processes
+    <span class="tab-badge" id="tb-processes">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('disk')">
+    💾 Disk Usage
+  </button>
+  <button class="tab-btn" onclick="switchTab('network')">
+    🌐 Network Utilization
+  </button>
+  <div class="tab-spacer"></div>
+  <div class="last-update" id="last-update">–</div>
+  <div class="tab-bar-sep"></div>
+  <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+  <div class="tab-bar-sep"></div>
+  <div class="filter-box">
+    <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
+  </div>
+  <div class="tab-bar-sep"></div>
+  <button id="logout-btn" onclick="logout()" style="background:#ef4444;border:1px solid #dc2626;border-radius:var(--radius);color:white;font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;transition:opacity .15s;white-space:nowrap;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log out</button>
+</div>
+
+<main>
+  <!-- ═══ CONTAINERS TAB ═══════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-containers">
+    <div class="toolbar">
+      <button class="expand-all-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
+      <button class="expand-all-btn" onclick="openPruneModal()" style="color:var(--orange);border-color:rgba(249,115,22,.4);">🧹 Prune</button>
+      <div class="toolbar-spacer"></div>
+      <div class="toolbar-info" id="container-count-info">–</div>
+    </div>
+    <div class="table-wrap">
+      <table id="container-table">
+        <thead>
+          <tr>
+            <th style="width:30px"></th>
+            <th class="name-col" onclick="sortTable('containers','name')">NAME <span class="sort-arrow">↕</span></th>
+            <th class="cpu-col" onclick="sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span></th>
+            <th class="mem-col" onclick="sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span></th>
+            <th style="width:100px" onclick="sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span></th>
+            <th style="width:110px" onclick="sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span></th>
+            <th style="width:110px" onclick="sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span></th>
+            <th style="width:90px">DISK R/W</th>
+            <th style="width:90px" onclick="sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span></th>
+            <th style="width:160px">NETWORKS</th>
+            <th style="width:130px">PORTS</th>
+            <th style="width:130px">ACTIONS</th>
+            <th style="width:110px">SUB-PROCESS</th>
+            <th style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
+          </tr>
+        </thead>
+        <tbody id="container-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ PROCESSES TAB ════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-processes">
+    <div class="toolbar">
+      <div class="view-toggle">
+        <button class="view-btn active" id="view-flat" onclick="setView('flat')">Flat</button>
+        <button class="view-btn" id="view-tree" onclick="setView('tree')">Tree</button>
+      </div>
+      <button class="high-cpu-btn" id="high-cpu-btn" onclick="toggleFilter('cpu')">⚡ High CPU</button>
+      <button class="high-mem-btn" id="high-mem-btn" onclick="toggleFilter('mem')">💾 High Mem</button>
+      <button class="container-filter-btn" id="container-filter-btn" onclick="toggleFilter('container')">🐋 Container</button>
+      <div class="toolbar-spacer"></div>
+      <div class="toolbar-info" id="proc-count-info">–</div>
+    </div>
+    <div class="table-wrap">
+      <table id="proc-table">
+        <thead>
+          <tr>
+            <th style="width:24px"></th>
+            <th class="pid-col" onclick="sortTable('procs','pid')">PID <span class="sort-arrow">↕</span></th>
+            <th class="name-col" onclick="sortTable('procs','name')">NAME <span class="sort-arrow">↕</span></th>
+            <th class="owner-col" onclick="sortTable('procs','owner')">OWNER <span class="sort-arrow">↕</span></th>
+            <th style="width:120px" onclick="sortTable('procs','containerName')">CONTAINER <span class="sort-arrow">↕</span></th>
+            <th class="cpu-col" onclick="sortTable('procs','cpu')">%CPU <span class="sort-arrow">↕</span></th>
+            <th class="mem-col" onclick="sortTable('procs','mem')">%MEM <span class="sort-arrow">↕</span></th>
+            <th style="width:100px" onclick="sortTable('procs','diskReadKBs')">DISK READ <span class="sort-arrow">↕</span></th>
+            <th style="width:100px" onclick="sortTable('procs','diskWriteKBs')">DISK WRITE <span class="sort-arrow">↕</span></th>
+            <th class="status-col" onclick="sortTable('procs','status')">STATUS <span class="sort-arrow">↕</span></th>
+            <th class="start-col" onclick="sortTable('procs','start')">START <span class="sort-arrow">↕</span></th>
+            <th class="cmd-col">COMMAND LINE</th>
+          </tr>
+        </thead>
+        <tbody id="proc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ DISK USAGE TAB ══════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-disk">
+    <div class="toolbar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Path:</span>
+        <input class="filter-input" type="text" id="disk-path-input" value="/volume1"
+          style="width:200px" placeholder="/volume1"
+          onkeydown="if(event.key==='Enter')scanDisk()"/>
+        <span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Depth:</span>
+        <select id="disk-depth" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:5px 8px;font-family:var(--mono);font-size:12px;outline:none;">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+        <button class="expand-all-btn" id="disk-scan-btn" onclick="scanDisk()">⟳ Scan</button>
+      </div>
+      <div class="toolbar-spacer"></div>
+      <div class="toolbar-info" id="disk-scan-info">–</div>
+    </div>
+    <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- History sidebar -->
+      <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg2);">
+        <div style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">
+          🕒 Scan History
+        </div>
+        <div id="disk-history-list" style="flex:1;overflow-y:auto;padding:4px 0;">
+          <div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>
+        </div>
+      </div>
+
+      <!-- Tree panel -->
+      <div style="flex:1.2;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);">
+        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+          📁 Directory Tree
+          <span id="disk-tree-root" style="color:var(--cyan);font-size:11px"></span>
+          <div style="flex:1;"></div>
+          <button class="expand-all-btn" id="disk-expand-all-btn" onclick="toggleAllDiskNodes()" style="font-size:11px;padding:3px 10px;display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All
+          </button>
+        </div>
+        <div style="flex:1;overflow:auto;min-height:0;" id="disk-tree-wrap">
+          <div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>
+        </div>
+      </div>
+
+      <!-- Top files panel -->
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);flex-shrink:0;">
+          📄 Largest Files <span id="disk-file-count" style="color:var(--cyan)"></span>
+        </div>
+        <div class="table-wrap" style="flex:1;min-height:0;">
+          <table id="disk-file-table" style="table-layout:fixed">
+            <thead>
+              <tr>
+                <th onclick="sortDisk('sizeBytes')" style="width:100px">SIZE <span class="sort-arrow">↓</span></th>
+                <th onclick="sortDisk('name')" style="width:160px">NAME <span class="sort-arrow">↕</span></th>
+                <th onclick="sortDisk('mtime')" style="width:130px">MODIFIED <span class="sort-arrow">↕</span></th>
+                <th onclick="sortDisk('path')">PATH <span class="sort-arrow">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="disk-file-tbody">
+              <tr><td colspan="4"><div class="empty-state"><div class="emoji">📄</div>Click Scan to start</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ NETWORK UTILIZATION TAB ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-network">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <div style="padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">🌐 Network Utilization</span>
+        <div style="display:flex;gap:4px;">
+          <button id="net-sort-iface"    onclick="setNetSort('iface')"    class="view-btn active" style="font-size:11px;padding:3px 10px;">NAME</button>
+          <button id="net-sort-rxKBs"    onclick="setNetSort('rxKBs')"    class="view-btn"        style="font-size:11px;padding:3px 10px;">IN ↕</button>
+          <button id="net-sort-txKBs"    onclick="setNetSort('txKBs')"    class="view-btn"        style="font-size:11px;padding:3px 10px;">OUT ↕</button>
+          <button id="net-sort-totalKBs" onclick="setNetSort('totalKBs')" class="view-btn"        style="font-size:11px;padding:3px 10px;">TOTAL ↕</button>
+        </div>
+        <div style="flex:1;"></div>
+        <span id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
+      </div>
+      <div id="net-ifaces" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start;"></div>
+    </div>
+  </div>
+
+  <!-- ═══ CATEGORIES TAB ════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-categories">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <!-- Toolbar -->
+      <div class="toolbar" style="gap:12px;align-items:center;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">🗂 Container Categories</span>
+        <div style="flex:1;"></div>
+        <span id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Click a category badge on a container to assign it</span>
+        <button class="expand-all-btn" onclick="openCatMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">⚙ Manage Categories</button>
+      </div>
+      <!-- Categories grid + unassigned -->
+      <div id="cat-root" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+</main>
+
+<!-- CATEGORY MANAGER MODAL -->
+<div class="catmgr-backdrop" id="catmgr-backdrop" onclick="closeCatMgr(event)">
+  <div class="catmgr-modal" onclick="event.stopPropagation()">
+    <div class="catmgr-header">
+      <div class="catmgr-title">🗂 Manage Categories</div>
+      <button class="modal-close" onclick="closeCatMgr()">✕</button>
+    </div>
+    <div class="catmgr-body" id="catmgr-body"></div>
+    <div class="catmgr-footer">
+      <button class="catmgr-add-btn" onclick="openCatEditForm(null)">＋ Add new category</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let allData = { processes: [], containers: [], summary: {} };
+let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
+// Apply restored tab to DOM before first render
+(function initTab() {
+  const tabNames = ['containers', 'categories', 'processes', 'disk', 'network'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', tabNames[i] === currentTab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + currentTab));
+})();
+let procView = 'flat';
+let procSort = { key: 'cpu', dir: -1 };
+let containerSort = { key: 'name', dir: 1 };
+let filterText = '';
+let filterMode = null;
+let expandedContainers = new Set();
+let collapsedProcs = new Set();
+let allContainersExpanded = false;
+let procByPid = {};
+let pidContainerMap = {};
+
+// ─── SSE / Polling ────────────────────────────────────────────────────────────
+function startStream() {
+  const es = new EventSource('/api/stream');
+  es.onmessage = e => {
+    allData = JSON.parse(e.data);
+    procByPid = {};
+    allData.processes.forEach(p => procByPid[p.pid] = p);
+    // Build PID → container name map
+    pidContainerMap = {};
+    allData.containers.forEach(c => {
+      (c.pids || []).forEach(pid => { pidContainerMap[pid] = c.name; });
+    });
+    render();
+    updateSortHeaders();
+    document.getElementById('loading').classList.add('done');
+    const t = new Date(allData.lastUpdate);
+    document.getElementById('last-update').textContent = 'Updated ' + t.toLocaleTimeString();
+  };
+  es.onerror = () => {
+    setTimeout(() => { es.close(); startStream(); }, 3000);
+  };
+}
+startStream();
+
+// ─── Load persisted disk history on startup ───────────────────────────────────
+(async () => {
+  try {
+    const res = await fetch('/api/disk/history');
+    const hist = await res.json();
+    if (hist.length) {
+      diskHistory = hist.map(h => ({
+        id: h.id, path: h.path, scannedAt: h.scannedAt,
+        data: null, summary: true, totalBytes: h.totalBytes
+      }));
+      renderDiskHistory();
+    }
+  } catch {}
+})();
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function logout() {
+  fetch('/logout', { method: 'GET', credentials: 'same-origin' })
+    .finally(() => { window.location.href = '/login'; });
+}
+
+function switchTab(name) {
+  currentTab = name;
+  sessionStorage.setItem('nas-monitor-tab', name);
+  const tabNames = ['containers', 'categories', 'processes', 'disk', 'network'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', tabNames[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+  document.getElementById('filter-input').value = '';
+  filterText = '';
+  render();
+}
+
+// ─── Sorting ──────────────────────────────────────────────────────────────────
+function sortTable(table, key) {
+  if (table === 'procs') {
+    if (procSort.key === key) procSort.dir *= -1;
+    else { procSort.key = key; procSort.dir = -1; }
+  } else {
+    if (containerSort.key === key) containerSort.dir *= -1;
+    else { containerSort.key = key; containerSort.dir = -1; }
+  }
+  updateSortHeaders();
+  render();
+}
+
+function updateSortHeaders() {
+  // Container table
+  document.querySelectorAll('#container-table th[onclick]').forEach(th => {
+    const m = th.getAttribute('onclick').match(/sortTable\('containers','(.+?)'\)/);
+    if (!m) return;
+    const arrow = th.querySelector('.sort-arrow');
+    if (containerSort.key === m[1]) {
+      th.classList.add('sorted');
+      if (arrow) arrow.textContent = containerSort.dir === -1 ? '↓' : '↑';
+    } else {
+      th.classList.remove('sorted');
+      if (arrow) arrow.textContent = '↕';
+    }
+  });
+  // Process table
+  document.querySelectorAll('#proc-table th[onclick]').forEach(th => {
+    const m = th.getAttribute('onclick').match(/sortTable\('procs','(.+?)'\)/);
+    if (!m) return;
+    const arrow = th.querySelector('.sort-arrow');
+    if (procSort.key === m[1]) {
+      th.classList.add('sorted');
+      if (arrow) arrow.textContent = procSort.dir === -1 ? '↓' : '↑';
+    } else {
+      th.classList.remove('sorted');
+      if (arrow) arrow.textContent = '↕';
+    }
+  });
+}
+
+function getSorted(arr, sort) {
+  return [...arr].sort((a, b) => {
+    let av = a[sort.key], bv = b[sort.key];
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return -sort.dir;
+    if (av > bv) return sort.dir;
+    return 0;
+  });
+}
+
+// ─── Filter ───────────────────────────────────────────────────────────────────
+function applyFilter() {
+  filterText = document.getElementById('filter-input').value.toLowerCase();
+  render();
+}
+
+function toggleFilter(mode) {
+  filterMode = filterMode === mode ? null : mode;
+  document.getElementById('high-cpu-btn').classList.toggle('active', filterMode === 'cpu');
+  document.getElementById('high-mem-btn').classList.toggle('active', filterMode === 'mem');
+  document.getElementById('container-filter-btn').classList.toggle('active', filterMode === 'container');
+  render();
+}
+
+function matchesFilter(p) {
+  if (filterMode === 'cpu' && p.cpu < 1) return false;
+  if (filterMode === 'mem' && p.mem < 1) return false;
+  if (filterMode === 'container' && !pidContainerMap[p.pid]) return false;
+  if (filterText) {
+    return String(p.pid).includes(filterText) ||
+      (p.name||'').toLowerCase().includes(filterText) ||
+      (p.owner||'').toLowerCase().includes(filterText) ||
+      (p.cmdline||'').toLowerCase().includes(filterText);
+  }
+  return true;
+}
+
+// ─── Summary NW sparkline ring buffer ────────────────────────────────────────
+const SUMMARY_NW_LEN = 30;
+const summaryNwRx = [];
+const summaryNwTx = [];
+
+// ─── Summary bar ─────────────────────────────────────────────────────────────
+function renderSummary() {
+  const s = allData.summary;
+  const containers = allData.containers;
+  const processes = allData.processes;
+
+  // Containers
+  const running = containers.filter(c => (c.state||'').toLowerCase() === 'running').length;
+  el('s-containers').textContent = containers.length;
+  el('s-containers-sub').textContent = running + ' running';
+
+  // Processes
+  el('s-procs').textContent = processes.length;
+  const running_procs = processes.filter(p => p.status === 'R').length;
+  el('s-procs-sub').textContent = running_procs + ' active';
+
+  // CPU – compute avg from container cpu percents
+  const cpus = containers.map(c => parseFloat(c.cpu)||0).filter(x=>!isNaN(x));
+  const avgCpu = cpus.length ? (cpus.reduce((a,b)=>a+b,0)/cpus.length).toFixed(1) : '–';
+  const totalCpu = cpus.reduce((a,b)=>a+b,0);
+  const cpuPct = Math.min(totalCpu, 100);
+  el('s-cpu').textContent = avgCpu + '%';
+  el('s-cpu').className = 'metric-value ' + cpuColor(parseFloat(avgCpu));
+  el('s-cpu-bar').style.width = cpuPct + '%';
+  el('s-cpu-sub').textContent = `Load: ${(s.load1||0).toFixed(2)} ${(s.load5||0).toFixed(2)} ${(s.load15||0).toFixed(2)}`;
+
+  // Mem (System Mem pie)
+  if (s.memTotal) {
+    const usedPct = (s.memUsed / s.memTotal * 100);
+    const avPct   = (s.memAvail / s.memTotal * 100);
+    const memColor = usedPct >= 90 ? 'red' : usedPct >= 70 ? 'orange' : 'green';
+    el('s-sysmem').textContent = fmtBytes(s.memAvail);
+    el('s-sysmem').className = 'metric-value ' + memColor;
+    el('s-sysmem-sub').textContent = avPct.toFixed(1) + '% free';
+    drawMemPie(usedPct / 100, memColor);
+  }
+
+  // Uptime
+  if (s.uptimeSeconds) {
+    el('s-uptime').textContent = fmtUptime(s.uptimeSeconds);
+  }
+  el('s-load').textContent = 'load ' + (s.load1||0).toFixed(2);
+
+  // Disk
+  if (s.diskTotal > 0) {
+    const diskPct = (s.diskUsed / s.diskTotal * 100);
+    const diskColor = diskPct >= 90 ? 'red' : diskPct >= 70 ? 'orange' : 'yellow';
+    el('s-disk').textContent = fmtBytes(s.diskUsed);
+    el('s-disk').className = 'metric-value ' + diskColor;
+    el('s-disk-sub').textContent = fmtBytes(s.diskTotal) + ' · ' + diskPct.toFixed(1) + '%';
+    drawDiskPie(diskPct / 100, diskColor);
+  } else {
+    el('s-disk').textContent = '–';
+    el('s-disk-sub').textContent = 'no volumes';
+    drawDiskPie(0, 'text3');
+  }
+
+  // Network summary sparkline
+  const rxKBs = s.netInKBs  || 0;
+  const txKBs = s.netOutKBs || 0;
+  summaryNwRx.push(rxKBs); if (summaryNwRx.length > SUMMARY_NW_LEN) summaryNwRx.shift();
+  summaryNwTx.push(txKBs); if (summaryNwTx.length > SUMMARY_NW_LEN) summaryNwTx.shift();
+  el('s-nw-in').textContent  = rxKBs.toFixed(2) + ' KB/s';
+  el('s-nw-out').textContent = txKBs.toFixed(2) + ' KB/s';
+  drawSummaryNwSparkline();
+
+  // Badges
+  el('tb-containers').textContent = containers.length;
+  el('tb-processes').textContent = processes.length;
+  el('container-count-info').textContent = containers.length + ' containers';
+}
+
+function drawSummaryNwSparkline() {
+  const canvas = el('s-nw-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const maxVal = Math.max(1, ...summaryNwRx, ...summaryNwTx);
+  const len = SUMMARY_NW_LEN;
+
+  function drawLine(data, color) {
+    if (data.length < 2) return;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    data.forEach((v, i) => {
+      const x = (i / (len - 1)) * W;
+      const y = H - (v / maxVal) * (H - 2) - 1;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // Fill area
+    ctx.lineTo((data.length - 1) / (len - 1) * W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = color.replace(')', ', 0.12)').replace('rgb', 'rgba');
+    ctx.fill();
+  }
+
+  // Grid midline
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(42,47,74,0.8)';
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([2, 3]);
+  ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  drawLine(summaryNwRx, 'rgb(34,197,94)');   // --green
+  drawLine(summaryNwTx, 'rgb(6,182,212)');    // --cyan
+}
+
+function drawDiskPie(fraction, colorName) {
+  const canvas = el('s-disk-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, r = (Math.min(W, H) / 2) - 2;
+
+  const colorMap = {
+    red:    'rgb(239,68,68)',
+    orange: 'rgb(249,115,22)',
+    yellow: 'rgb(234,179,8)',
+    text3:  'rgb(84,91,122)',
+  };
+  const usedColor = colorMap[colorName] || colorMap.yellow;
+  const freeColor = 'rgba(42,47,74,0.8)';
+
+  ctx.clearRect(0, 0, W, H);
+
+  const startAngle = -Math.PI / 2; // start from top
+  const usedAngle  = fraction * 2 * Math.PI;
+
+  // Free slice
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startAngle + usedAngle, startAngle + 2 * Math.PI);
+  ctx.closePath();
+  ctx.fillStyle = freeColor;
+  ctx.fill();
+
+  // Used slice
+  if (fraction > 0) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + usedAngle);
+    ctx.closePath();
+    ctx.fillStyle = usedColor;
+    ctx.fill();
+  }
+
+  // Thin border ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(42,47,74,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawMemPie(fraction, colorName) {
+  const canvas = el('s-sysmem-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, r = (Math.min(W, H) / 2) - 2;
+
+  const colorMap = {
+    green:  'rgb(34,197,94)',
+    orange: 'rgb(249,115,22)',
+    red:    'rgb(239,68,68)',
+  };
+  const usedColor = colorMap[colorName] || colorMap.green;
+  const freeColor = 'rgba(42,47,74,0.8)';
+
+  ctx.clearRect(0, 0, W, H);
+
+  const startAngle = -Math.PI / 2;
+  const usedAngle  = fraction * 2 * Math.PI;
+
+  // Free slice
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startAngle + usedAngle, startAngle + 2 * Math.PI);
+  ctx.closePath();
+  ctx.fillStyle = freeColor;
+  ctx.fill();
+
+  // Used slice
+  if (fraction > 0) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + usedAngle);
+    ctx.closePath();
+    ctx.fillStyle = usedColor;
+    ctx.fill();
+  }
+
+  // Thin border ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(42,47,74,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Container table ──────────────────────────────────────────────────────────
+function renderContainers() {
+  const tbody = el('container-tbody');
+
+  let list = allData.containers.map(c => ({
+    ...c,
+    cpuNum: parseFloat(c.cpu)||0,
+    memNum: parseFloat(c.memPercent)||0,
+    vethRxKBs: c.vethRxKBs || 0,
+    vethTxKBs: c.vethTxKBs || 0,
+  }));
+
+  if (filterText) {
+    list = list.filter(c =>
+      c.name.toLowerCase().includes(filterText) ||
+      c.id.toLowerCase().includes(filterText) ||
+      c.image.toLowerCase().includes(filterText) ||
+      (c.ports || []).some(p =>
+        String(p.host).includes(filterText) ||
+        String(p.container).includes(filterText) ||
+        (p.proto || '').includes(filterText)
+      )
+    );
+  }
+
+  list = getSorted(list, containerSort);
+
+  let html = '';
+  for (const c of list) {
+    const rowId = 'cr-' + c.id;
+    const isExpanded = expandedContainers.has(c.id);
+    const stateClass = (c.state||'').toLowerCase();
+
+    html += `<tr id="${rowId}" onclick="openCDetailModal('${c.id}','${esc(c.name)}','${(c.state||'').toLowerCase()}')">
+      <td style="width:30px">
+        <span class="status-dot ${stateClass}"></span>
+      </td>
+      <td>
+        <div class="container-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:500">${esc(c.name)}</span>
+        </div>
+      </td>
+      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:13px;">${c.cpu}</td>
+      <td class="accent-text" style="font-family:var(--mono);font-size:13px;">${c.memPercent}</td>
+      <td>${esc(c.memUsage)}</td>
+      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="muted">${esc(c.blockIO)}</td>
+      <td class="muted">${esc(c.imageSize||'–')}</td>
+      <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
+      <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="container-actions">
+          <button class="action-btn start"   title="Start"
+            ${stateClass === 'running' ? 'disabled' : ''}
+            onclick="openActionModal('start','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
+          <button class="action-btn restart" title="Restart"
+            ${stateClass !== 'running' ? 'disabled' : ''}
+            onclick="openActionModal('restart','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+          <button class="action-btn stop"    title="Stop"
+            ${stateClass !== 'running' ? 'disabled' : ''}
+            onclick="openActionModal('stop','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
+          <button class="action-btn logs"    title="Logs"    onclick="openLogs('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg></button>
+          <button class="action-btn console" title="Console" style="display:none;"
+            ${stateClass !== 'running' ? 'disabled' : ''}
+            onclick="openConsoleModal('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></button>
+          <button class="action-btn delete"  title="Delete container" onclick="openActionModal('delete','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+        </div>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <button class="container-expand-btn ${isExpanded?'open':''}" onclick="toggleContainerRow('${c.id}', event)">
+          ${isExpanded ? `▼ ${c.pids.length || c.processCount} SUB-PROCESSES` : `▶ ${c.pids.length || c.processCount} SUB-PROCESSES`}
+        </button>
+      </td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+        ${renderCategoryBadge(c.id, c.name)}
+      </td>
+    </tr>`;
+
+    if (isExpanded) {
+      html += `<tr class="expanded-row">
+        <td colspan="13" style="padding:0">
+          <div class="sub-proc-wrap">
+            ${renderSubProcTable(c.pids)}
+          </div>
+        </td>
+      </tr>`;
+    }
+  }
+
+  if (!html) html = `<tr><td colspan="14"><div class="empty-state"><div class="emoji">🐋</div>No containers found</div></td></tr>`;
+  tbody.innerHTML = html;
+}
+
+function renderPorts(ports) {
+  if (!ports || !ports.length) return '<span class="muted">–</span>';
+  return ports.map(p => {
+    const url = `http://${window.location.hostname}:${p.host}`;
+    return `<a class="port-link" href="${url}" target="_blank" rel="noopener"
+      onclick="event.stopPropagation()" title="Open ${url}">${p.host}</a>`;
+  }).join('');
+}
+
+function renderNetworks(networks) {
+  if (!networks || !networks.length) return '<span class="muted">–</span>';
+  return networks.map(n => {
+    const tip = [
+      n.driver ? 'driver: ' + n.driver : '',
+      n.ip     ? 'ip: '     + n.ip     : '',
+      n.gateway? 'gw: '     + n.gateway: '',
+      n.macAddr? 'mac: '    + n.macAddr: '',
+    ].filter(Boolean).join('\n');
+    // colour-code by driver
+    const color = n.driver === 'host'    ? 'var(--orange)'
+                : n.driver === 'none'    ? 'var(--text3)'
+                : n.driver === 'overlay' ? 'var(--pink)'
+                : 'var(--cyan)';
+    return `<span onclick="event.stopPropagation()" title="${esc(tip)}"
+      style="display:inline-block;font-size:10px;font-family:var(--mono);
+             padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
+             border:1px solid ${color}33;color:${color};
+             background:${color}11;white-space:nowrap;cursor:default;"
+    >${esc(n.name)}${n.driver ? '<span style="opacity:.55;margin-left:3px;">'+esc(n.driver)+'</span>' : ''}</span>`;
+  }).join('');
+}
+
+function toggleContainerRow(id, evt) {
+  if (evt) evt.stopPropagation();
+  if (expandedContainers.has(id)) {
+    expandedContainers.delete(id);
+  } else {
+    expandedContainers.add(id);
+  }
+  renderContainers();
+}
+
+function toggleAllContainers() {
+  allContainersExpanded = !allContainersExpanded;
+  if (allContainersExpanded) {
+    allData.containers.forEach(c => expandedContainers.add(c.id));
+  } else {
+    expandedContainers.clear();
+  }
+  const btn = el('expand-all-btn');
+  if (btn) {
+    const iconExpand   = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>`;
+    const iconCollapse = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h10"/><path d="M11 16h7"/><path d="M11 20h4"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="M13 8h-2"/><path d="M13 4h-5"/><path d="M13 8h-2"/></svg>`;
+    btn.innerHTML = allContainersExpanded
+      ? iconCollapse + 'Collapse All'
+      : iconExpand   + 'Expand All';
+  }
+  renderContainers();
+}
+
+function renderSubProcTable(pids) {
+  if (!pids || !pids.length) return '<p style="padding:12px 16px;color:var(--text3);font-size:13px">No process info available.</p>';
+
+  // Build tree structure for these pids
+  const procs = pids.map(pid => procByPid[pid]).filter(Boolean);
+  if (!procs.length) return '<p style="padding:12px 16px;color:var(--text3);font-size:13px">Process data not available (may need root access).</p>';
+
+  // Group into tree
+  const pidSet = new Set(pids);
+  const roots = [];
+  const childMap = {};
+  for (const p of procs) {
+    if (!pidSet.has(p.ppid)) {
+      roots.push(p);
+    } else {
+      if (!childMap[p.ppid]) childMap[p.ppid] = [];
+      childMap[p.ppid].push(p);
+    }
+  }
+
+  let rows = '';
+  function walk(p, depth) {
+    const indent = depth * 16;
+    const cpuPct = Math.min(p.cpu, 100);
+    const memPct = Math.min(p.mem, 100);
+    const pj = JSON.stringify(p).replace(/"/g,'&quot;');
+
+    let expandBtn = '';
+    if (depth > 0) {
+      expandBtn = `<span style="color:var(--text3);font-size:13px">└  </span>`;
+    }
+
+    rows += `<tr>
+      <td style="width:24px"><span class="status-dot ${p.status}"></span></td>
+      <td class="pid-col muted">${p.pid}</td>
+      <td class="name-col">
+        <div class="proc-name" style="padding-left:${indent}px">
+          ${expandBtn}
+          <span class="proc-name-text" onclick="showProcDetailFromAttr(this)" data-proc="${pj}">${esc(p.name)}</span>
+        </div>
+      </td>
+      <td class="owner-col muted">${esc(p.owner)}</td>
+      <td class="cpu-col">
+        <div class="cpu-bar">
+          <div class="bar-track"><div class="bar-fill cpu ${cpuColorClass(p.cpu)}" style="width:${cpuPct}%"></div></div>
+          <span class="${cpuColor(p.cpu)}-text">${p.cpu.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td class="mem-col">
+        <div class="mem-bar">
+          <div class="bar-track"><div class="bar-fill mem" style="width:${memPct}%"></div></div>
+          <span class="accent-text">${p.mem.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td class="status-col"><span class="state-${p.status}">${stateLabel(p.status)}</span></td>
+      <td class="start-col muted" style="font-size:13px">${fmtDate(p.start)}</td>
+      <td class="cmd-col muted" style="font-size:13px;overflow:hidden;text-overflow:ellipsis"
+        title="${esc(p.cmdline)}">${esc((p.cmdline||p.name).slice(0,80))}</td>
+    </tr>`;
+    (childMap[p.pid]||[]).forEach(ch => walk(ch, depth+1));
+  }
+  roots.forEach(p => walk(p, 0));
+
+  return `<table class="sub-table">
+    <thead>
+      <tr>
+        <th style="width:24px"></th>
+        <th class="pid-col">PID</th>
+        <th class="name-col">NAME</th>
+        <th class="owner-col">OWNER</th>
+        <th class="cpu-col">%CPU</th>
+        <th class="mem-col">%MEM</th>
+        <th class="status-col">STATUS</th>
+        <th class="start-col">START</th>
+        <th class="cmd-col">COMMAND LINE</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ─── Process table ────────────────────────────────────────────────────────────
+function setView(v) {
+  procView = v;
+  el('view-flat').classList.toggle('active', v === 'flat');
+  el('view-tree').classList.toggle('active', v === 'tree');
+  collapsedProcs.clear();
+  renderProcesses();
+}
+
+function renderProcesses() {
+  const tbody = el('proc-tbody');
+  // Inject containerName for sorting
+  let procs = allData.processes.map(p => ({
+    ...p, containerName: pidContainerMap[p.pid] || ''
+  })).filter(matchesFilter);
+  el('proc-count-info').textContent = procs.length + ' processes';
+
+  let html = '';
+
+  if (procView === 'flat') {
+    procs = getSorted(procs, procSort);
+    for (const p of procs) {
+      html += procRow(p, 0, false, false);
+    }
+  } else {
+    // Tree view
+    const all = allData.processes;
+    const pidSet = new Set(all.map(p => p.pid));
+    const childMap = {};
+    const roots = [];
+    for (const p of all) {
+      if (!pidSet.has(p.ppid) || p.ppid === p.pid) {
+        roots.push(p);
+      } else {
+        if (!childMap[p.ppid]) childMap[p.ppid] = [];
+        childMap[p.ppid].push(p);
+      }
+    }
+
+    function filterMatch(p) {
+      if (matchesFilter(p)) return true;
+      return (childMap[p.pid]||[]).some(filterMatch);
+    }
+
+    function walkTree(p, depth) {
+      if (!filterMatch(p)) return;
+      const hasChildren = (childMap[p.pid]||[]).length > 0;
+      const isCollapsed = collapsedProcs.has(p.pid);
+      html += procRow(p, depth, hasChildren, isCollapsed);
+      if (hasChildren && !isCollapsed) {
+        const sorted = getSorted(childMap[p.pid], procSort);
+        sorted.forEach(ch => walkTree(ch, depth + 1));
+      }
+    }
+    getSorted(roots, procSort).forEach(p => walkTree(p, 0));
+  }
+
+  if (!html) html = `<tr><td colspan="12"><div class="empty-state"><div class="emoji">⚙️</div>No processes match the filter</div></td></tr>`;
+  tbody.innerHTML = html;
+}
+
+function procRow(p, depth, hasChildren, isCollapsed) {
+  const indent = depth * 16;
+  const cpuPct = Math.min(p.cpu, 100);
+  const memPct = Math.min(p.mem, 100);
+
+  let expandBtn = '';
+  if (procView === 'tree' && hasChildren) {
+    expandBtn = `<button class="toggle-btn" onclick="toggleProcCollapse(${p.pid},event)">${isCollapsed ? '▶' : '▼'}</button>`;
+  } else if (procView === 'tree' && depth > 0) {
+    expandBtn = `<span style="color:var(--text3);font-size:13px">└ </span>`;
+  }
+
+  const pj = JSON.stringify(p).replace(/"/g,'&quot;');
+
+  return `<tr style="${p.isSelf ? 'border-left:2px solid var(--orange);background:rgba(249,115,22,.04);' : ''}">
+    <td style="width:24px">
+      <span class="status-dot ${p.status}"></span>
+    </td>
+    <td class="pid-col muted">${p.pid}</td>
+    <td class="name-col">
+      <div class="proc-name" style="padding-left:${indent}px">
+        ${expandBtn}
+        <span class="proc-name-text" onclick="showProcDetailFromAttr(this)"
+          data-proc="${pj}">${esc(p.name)}</span>
+      </div>
+    </td>
+    <td class="owner-col muted">${esc(p.owner)}</td>
+    <td style="width:120px">${
+      p.isSelf
+        ? `<span class="self-tag" title="This is the nas-monitor process">nas-monitor</span>`
+        : pidContainerMap[p.pid]
+          ? `<span class="container-tag" title="${esc(pidContainerMap[p.pid])}">${esc(pidContainerMap[p.pid])}</span>`
+          : ''
+    }</td>
+    <td class="cpu-col">
+      <div class="cpu-bar">
+        <div class="bar-track"><div class="bar-fill cpu ${cpuColorClass(p.cpu)}" style="width:${cpuPct}%"></div></div>
+        <span class="${cpuColor(p.cpu)}-text">${p.cpu.toFixed(2)}%</span>
+      </div>
+    </td>
+    <td class="mem-col">
+      <div class="mem-bar">
+        <div class="bar-track"><div class="bar-fill mem" style="width:${memPct}%"></div></div>
+        <span class="accent-text">${p.mem.toFixed(2)}%</span>
+      </div>
+    </td>
+    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;">
+      ${(p.diskReadKBs > 0)
+        ? `<span style="color:var(--green);">↓ ${p.diskReadKBs >= 1024 ? (p.diskReadKBs/1024).toFixed(1)+' MB/s' : p.diskReadKBs.toFixed(1)+' KB/s'}</span>`
+        : `<span class="muted">–</span>`}
+    </td>
+    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;">
+      ${(p.diskWriteKBs > 0)
+        ? `<span style="color:var(--orange);">↑ ${p.diskWriteKBs >= 1024 ? (p.diskWriteKBs/1024).toFixed(1)+' MB/s' : p.diskWriteKBs.toFixed(1)+' KB/s'}</span>`
+        : `<span class="muted">–</span>`}
+    </td>
+    <td class="status-col">
+      <span class="state-${p.status}">${stateLabel(p.status)}</span>
+    </td>
+    <td class="start-col muted" style="font-size:13px">${fmtDate(p.start)}</td>
+    <td class="cmd-col muted" style="font-size:13px;max-width:300px;overflow:hidden;text-overflow:ellipsis"
+      title="${esc(p.cmdline)}">${esc((p.cmdline||p.name).slice(0,80))}</td>
+  </tr>`;
+}
+
+function toggleProcCollapse(pid, evt) {
+  if (evt) evt.stopPropagation();
+  if (collapsedProcs.has(pid)) collapsedProcs.delete(pid);
+  else collapsedProcs.add(pid);
+  renderProcesses();
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function showProcDetailFromAttr(el_) {
+  try {
+    const p = JSON.parse(el_.getAttribute('data-proc').replace(/&quot;/g, '"'));
+    showProcDetail(p);
+  } catch(e) { console.error(e); }
+}
+
+function showProcDetail(p) {
+  el('modal-title').innerHTML = `<span class="status-dot ${p.status}" style="width:10px;height:10px"></span> ${esc(p.name)} <span class="muted" style="font-size:14px">PID ${p.pid}</span>`;
+  el('modal-body').innerHTML = `
+    <div class="detail-item"><div class="detail-key">PID</div><div class="detail-val">${p.pid}</div></div>
+    <div class="detail-item"><div class="detail-key">Parent PID</div><div class="detail-val">${p.ppid}</div></div>
+    <div class="detail-item"><div class="detail-key">Name</div><div class="detail-val">${esc(p.name)}</div></div>
+    <div class="detail-item"><div class="detail-key">Owner</div><div class="detail-val">${esc(p.owner)}</div></div>
+    <div class="detail-item"><div class="detail-key">CPU %</div><div class="detail-val ${cpuColor(p.cpu)}-text">${p.cpu.toFixed(2)}%</div></div>
+    <div class="detail-item"><div class="detail-key">Memory %</div><div class="detail-val">${p.mem.toFixed(2)}%</div></div>
+    <div class="detail-item"><div class="detail-key">Memory (RSS)</div><div class="detail-val">${fmtBytes(p.memKB * 1024)}</div></div>
+    <div class="detail-item"><div class="detail-key">Threads</div><div class="detail-val">${p.threads||1}</div></div>
+    <div class="detail-item"><div class="detail-key">Status</div><div class="detail-val state-${p.status}">${stateLabel(p.status)} (${p.status})</div></div>
+    <div class="detail-item"><div class="detail-key">Start Time</div><div class="detail-val">${p.start ? new Date(p.start).toLocaleString() : '–'}</div></div>
+    <div class="detail-item full"><div class="detail-key">Command Line</div><div class="detail-val cmd">${esc(p.cmdline||p.name)}</div></div>
+  `;
+  el('modal').classList.add('open');
+}
+
+function closeModal() {
+  el('modal').classList.remove('open');
+}
+el('modal').addEventListener('click', e => { if (e.target === el('modal')) closeModal(); });
+// ─── Container Actions ────────────────────────────────────────────────────────
+// ─── Container Action Modal ───────────────────────────────────────────────────
+let _actionPending = null; // { action, id, name }
+
+const ACTION_META = {
+  start:   { icon: '▶', label: 'Start Container',   color: 'var(--green)',  btnBg: '#16a34a',
+              desc: c => `Start container <strong>${esc(c)}</strong>?`,
+              steps: ['Sending start command…', 'Waiting for container to start…', 'Done'] },
+  restart: { icon: '↺', label: 'Restart Container', color: 'var(--yellow)', btnBg: '#ca8a04',
+              desc: c => `Restart container <strong>${esc(c)}</strong>? It will briefly go offline.`,
+              steps: ['Sending restart command…', 'Waiting for container to come back up…', 'Done'] },
+  stop:    { icon: '■', label: 'Stop Container',    color: 'var(--orange)', btnBg: '#ea580c',
+              desc: c => `Stop container <strong>${esc(c)}</strong>? Running processes inside will be terminated.`,
+              steps: ['Sending stop command…', 'Waiting for container to stop…', 'Done'] },
+  delete:  { icon: '🗑', label: 'Delete Container',  color: 'var(--red)',    btnBg: '#dc2626',
+              desc: c => `Permanently delete container <strong>${esc(c)}</strong>?<br><span style="color:var(--red);font-size:12px;">⚠ This cannot be undone. The container will be stopped and removed.</span>`,
+              steps: ['Stopping container…', 'Removing container…', 'Done'] },
+};
+
+function openActionModal(action, id, name) {
+  _actionPending = { action, id, name };
+  const meta = ACTION_META[action];
+  el('action-modal-icon').textContent    = meta.icon;
+  el('action-modal-title').textContent   = meta.label;
+  el('action-modal-container').textContent = name + '  ·  ' + id;
+  el('action-modal-desc').innerHTML      = meta.desc(name);
+  el('action-modal-confirm').textContent = meta.label;
+  el('action-modal-confirm').style.background = meta.btnBg;
+  el('action-modal-confirm').style.color = 'white';
+  el('action-modal-confirm').disabled    = false;
+  el('action-modal-cancel').style.display = '';
+  el('action-modal-close').style.display  = '';
+  el('action-progress').innerHTML = '';
+  el('action-modal').classList.add('open');
+}
+
+function addProgressStep(text, state = 'active') {
+  const icons = { active: '<span class="spin">⟳</span>', done: '✓', error: '✕', pending: '○' };
+  const div = document.createElement('div');
+  div.className = `action-progress-step ${state}`;
+  div.innerHTML = `<span class="step-icon">${icons[state]}</span><span>${esc(text)}</span>`;
+  el('action-progress').appendChild(div);
+  return div;
+}
+
+function updateStep(stepEl, state, text) {
+  const icons = { active: '<span class="spin">⟳</span>', done: '✓', error: '✕' };
+  stepEl.className = `action-progress-step ${state}`;
+  stepEl.innerHTML = `<span class="step-icon">${icons[state]}</span><span>${esc(text)}</span>`;
+}
+
+async function executeAction() {
+  if (!_actionPending) return;
+  const { action, id, name } = _actionPending;
+  const meta = ACTION_META[action];
+
+  // Lock UI during execution — remove onclick so button is fully inert
+  el('action-modal-confirm').disabled = true;
+  el('action-modal-confirm').onclick = null;
+  el('action-modal-confirm').textContent = 'Running…';
+  el('action-modal-cancel').style.display = 'none';
+  el('action-modal-close').style.display  = 'none';
+  el('action-progress').innerHTML = '';
+
+  try {
+    if (action === 'delete') {
+      // Step 1: Stop
+      const s1 = addProgressStep('Stopping container…', 'active');
+      try {
+        await fetch(`/api/container/stop?id=${encodeURIComponent(id)}`);
+        updateStep(s1, 'done', 'Container stopped.');
+      } catch {
+        updateStep(s1, 'done', 'Already stopped (or stop skipped).');
+      }
+      // Step 2: Remove
+      const s2 = addProgressStep('Removing container…', 'active');
+      const res = await fetch(`/api/container/delete?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.ok) {
+        updateStep(s2, 'done', 'Container removed.');
+        addProgressStep('Done — container deleted.', 'done');
+        el('action-modal-confirm').textContent = '✓ Deleted';
+        el('action-modal-confirm').style.background = 'var(--green)';
+      } else {
+        updateStep(s2, 'error', 'Remove failed: ' + (data.error || 'unknown error'));
+        el('action-modal-confirm').textContent = '✕ Failed';
+        el('action-modal-confirm').style.background = 'var(--red)';
+      }
+    } else {
+      // start / stop / restart
+      const s1 = addProgressStep(meta.steps[0], 'active');
+      const res = await fetch(`/api/container/${action}?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.ok) {
+        updateStep(s1, 'done', meta.steps[1]);
+        addProgressStep(meta.steps[2], 'done');
+        el('action-modal-confirm').textContent = '✓ Done';
+        el('action-modal-confirm').style.background = '#16a34a';
+      } else {
+        updateStep(s1, 'error', 'Failed: ' + (data.error || 'unknown error'));
+        el('action-modal-confirm').textContent = '✕ Failed';
+        el('action-modal-confirm').style.background = 'var(--red)';
+      }
+    }
+  } catch (e) {
+    addProgressStep('Error: ' + e.message, 'error');
+    el('action-modal-confirm').textContent = '✕ Error';
+    el('action-modal-confirm').style.background = 'var(--red)';
+  }
+
+  // After completion: hide confirm, show only Close (styled red)
+  el('action-modal-confirm').style.display = 'none';
+  el('action-modal-close').style.display = '';
+  el('action-modal-cancel').style.display = '';
+  el('action-modal-cancel').textContent = 'Close';
+  el('action-modal-cancel').style.borderColor = 'var(--red)';
+  el('action-modal-cancel').style.color = 'var(--red)';
+  el('action-modal-cancel').onclick = closeActionModal;
+  _actionPending = null;
+}
+
+function closeActionModal() {
+  el('action-modal').classList.remove('open');
+  _actionPending = null;
+  // Reset for next open
+  el('action-modal-confirm').style.display = '';
+  el('action-modal-confirm').disabled = false;
+  el('action-modal-confirm').onclick = executeAction;
+  el('action-modal-cancel').textContent = 'Cancel';
+  el('action-modal-cancel').style.borderColor = 'var(--red)';
+  el('action-modal-cancel').style.color = 'var(--red)';
+  el('action-modal-cancel').onclick = closeActionModal;
+}
+
+el('action-modal').addEventListener('click', e => { if (e.target === el('action-modal') && !_actionPending) closeActionModal(); });
+let logEventSource = null;
+let logLineCount = 0;
+let logAutoScroll = true;
+
+function openLogs(id, name) {
+  closeLogModal(); // close any existing
+
+  el('log-modal-title').textContent = `Logs — ${name}`;
+  el('log-container-id').textContent = id;
+  el('log-body').innerHTML = '';
+  logLineCount = 0;
+  logAutoScroll = true;
+  el('log-autoscroll-btn').classList.add('on');
+  el('log-count').textContent = '0 lines';
+  el('log-modal').classList.add('open');
+
+  logEventSource = new EventSource(`/api/logs/${encodeURIComponent(id)}`);
+  logEventSource.onmessage = (e) => {
+    const line = JSON.parse(e.data);
+    appendLogLine(line);
+  };
+  logEventSource.onerror = () => {
+    appendLogLine('[Connection lost — retrying…]');
+  };
+}
+
+function appendLogLine(raw) {
+  const body = el('log-body');
+  logLineCount++;
+  el('log-count').textContent = logLineCount + ' lines';
+
+  // Split timestamp from message (docker --timestamps format: 2024-01-01T00:00:00Z message)
+  const tsMatch = raw.match(/^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\s(.*)$/s);
+  let ts = '', msg = raw;
+  if (tsMatch) { ts = tsMatch[1]; msg = tsMatch[2]; }
+
+  const msgLower = msg.toLowerCase();
+  const cls = msgLower.includes('error') || msgLower.includes('fatal') || msgLower.includes('exception') ? 'log-err'
+    : msgLower.includes('warn') ? 'log-warn' : 'log-info';
+
+  const div = document.createElement('div');
+  div.className = 'log-line ' + cls;
+  div.innerHTML = (ts ? `<span class="log-ts">${esc(ts)}</span>` : '') + esc(msg);
+  body.appendChild(div);
+
+  // Cap at 2000 lines to avoid memory growth
+  while (body.children.length > 2000) body.removeChild(body.firstChild);
+
+  if (logAutoScroll) body.scrollTop = body.scrollHeight;
+}
+
+function toggleLogAutoscroll() {
+  logAutoScroll = !logAutoScroll;
+  el('log-autoscroll-btn').classList.toggle('on', logAutoScroll);
+  if (logAutoScroll) el('log-body').scrollTop = el('log-body').scrollHeight;
+}
+
+function clearLogs() {
+  el('log-body').innerHTML = '';
+  logLineCount = 0;
+  el('log-count').textContent = '0 lines';
+}
+
+function closeLogModal() {
+  el('log-modal').classList.remove('open');
+  if (logEventSource) { logEventSource.close(); logEventSource = null; }
+}
+
+el('log-modal').addEventListener('click', e => { if (e.target === el('log-modal')) closeLogModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); } });
+
+
+// ─── Main render ──────────────────────────────────────────────────────────────
+function render() {
+  renderSummary();
+  if (currentTab === 'containers') renderContainers();
+  else if (currentTab === 'network') renderNetwork();
+  else if (currentTab === 'categories') renderCategories();
+  else renderProcesses();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function el(id) { return document.getElementById(id); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function fmtBytes(b) {
+  if (!b) return '0B';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (b >= 1024 && i < u.length-1) { b/=1024; i++; }
+  return b.toFixed(1)+u[i];
+}
+
+function fmtUptime(s) {
+  const d = Math.floor(s/86400);
+  const h = Math.floor((s%86400)/3600);
+  const m = Math.floor((s%3600)/60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '–';
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    if (now - d < 86400000) return d.toLocaleTimeString();
+    return d.toLocaleDateString();
+  } catch { return iso; }
+}
+
+function fmtFileDate(ms) {
+  if (!ms) return '–';
+  const d = new Date(ms);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 86400000) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function fileDateAge(ms) {
+  if (!ms) return '';
+  const diff = Date.now() - ms;
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'today';
+  if (days === 1) return '1d ago';
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
+}
+
+function stateLabel(s) {
+  const m = { S:'Sleep', R:'Run', D:'Disk', Z:'Zombie', T:'Stop', I:'Idle' };
+  return m[s] || s || '–';
+}
+
+function cpuColor(v) {
+  if (v >= 80) return 'red';
+  if (v >= 50) return 'orange';
+  if (v >= 20) return 'yellow';
+  return 'green';
+}
+function cpuColorClass(v) {
+  if (v >= 80) return 'critical';
+  if (v >= 50) return 'high';
+  return '';
+}
+function memColor(v) {
+  if (v >= 90) return 'red';
+  if (v >= 70) return 'orange';
+  if (v >= 50) return 'yellow';
+  return 'cyan';
+}
+function memColorClass(v) {
+  if (v >= 80) return 'critical';
+  if (v >= 60) return 'high';
+  return '';
+}
+
+// ─── Disk Usage ───────────────────────────────────────────────────────────────
+let diskCurrentData = null;
+let diskFileSort = { key: 'sizeBytes', dir: -1 };
+let diskCollapsed = new Set();
+let diskScanning = false;
+let diskAllExpanded = false;
+let diskHistory = []; // stored locally too
+
+async function scanDisk() {
+  if (diskScanning) return;
+  diskScanning = true;
+  const path = document.getElementById('disk-path-input').value.trim() || '/volume1';
+  const depth = document.getElementById('disk-depth').value;
+  const btn = el('disk-scan-btn');
+  btn.textContent = '⟳ Scanning…';
+  btn.disabled = true;
+  el('disk-scan-info').textContent = '⟳ Scanning ' + path + '…';
+  el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Scanning ${esc(path)}…<br><span style="font-size:11px;opacity:.6">This may take a moment for large volumes</span></div>`;
+  try {
+    const res = await fetch(`/api/disk?path=${encodeURIComponent(path)}&depth=${depth}`);
+    const data = await res.json();
+    if (data.error) {
+      el('disk-scan-info').textContent = '⚠ ' + data.error;
+    } else {
+      diskCurrentData = data;
+      diskCollapsed.clear();
+      diskAllExpanded = false;
+      // Collapse all children by default — only root is visible
+      if (data.tree && data.tree.children) {
+        data.tree.children.forEach(child => collapseAllNodes(child));
+      }
+      const total = data.tree ? fmtBytes(data.tree.sizeBytes) : '–';
+      el('disk-scan-info').textContent = `${esc(path)} — ${total} total`;
+      el('disk-tree-root').textContent = path;
+      const expandBtn = el('disk-expand-all-btn');
+      if (expandBtn) { expandBtn.style.display = ''; expandBtn.textContent = ''; expandBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All'; }
+      // Add to local history
+      diskHistory.unshift({ id: data.scannedAt || Date.now(), path, scannedAt: data.scannedAt, data });
+      if (diskHistory.length > 20) diskHistory.pop();
+      renderDiskHistory();
+      renderDiskTree();
+      renderDiskFiles();
+    }
+  } catch (e) {
+    el('disk-scan-info').textContent = '⚠ ' + e.message;
+    el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);font-size:12px">${esc(e.message)}</div>`;
+  } finally {
+    diskScanning = false;
+    btn.textContent = '⟳ Scan';
+    btn.disabled = false;
+  }
+}
+
+async function loadHistoryScan(idx) {
+  const entry = diskHistory[idx];
+  if (!entry) return;
+
+  // If we only have summary, fetch full data from server
+  if (!entry.data) {
+    el('disk-scan-info').textContent = '⟳ Loading…';
+    try {
+      const res = await fetch(`/api/disk/history/${entry.id}`);
+      const data = await res.json();
+      if (data.error) {
+        el('disk-scan-info').textContent = '⚠ ' + data.error;
+        return;
+      }
+      entry.data = data;
+    } catch (e) {
+      el('disk-scan-info').textContent = '⚠ ' + e.message;
+      return;
+    }
+  }
+
+  diskCurrentData = entry.data;
+  diskCollapsed.clear();
+  diskAllExpanded = false;
+  // Collapse all children by default
+  if (entry.data.tree && entry.data.tree.children) {
+    entry.data.tree.children.forEach(child => collapseAllNodes(child));
+  }
+  el('disk-path-input').value = entry.path;
+  el('disk-tree-root').textContent = entry.path;
+  const expandBtn = el('disk-expand-all-btn');
+  if (expandBtn) { expandBtn.style.display = ''; expandBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All'; }
+  const total = entry.data.tree ? fmtBytes(entry.data.tree.sizeBytes) : fmtBytes(entry.totalBytes || 0);
+  el('disk-scan-info').textContent = `${esc(entry.path)} — ${total} · ${new Date(entry.scannedAt).toLocaleString()}`;
+  renderDiskHistory(idx);
+  renderDiskTree();
+  renderDiskFiles();
+}
+
+function renderDiskHistory(activeIdx = 0) {
+  const list = el('disk-history-list');
+  if (!diskHistory.length) {
+    list.innerHTML = `<div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
+    return;
+  }
+  list.innerHTML = diskHistory.map((h, i) => {
+    const active = i === activeIdx;
+    const dt = new Date(h.scannedAt);
+    const now = new Date();
+    const isToday = dt.toDateString() === now.toDateString();
+    const dateStr = isToday
+      ? 'Today, ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : dt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const size = h.data?.tree ? fmtBytes(h.data.tree.sizeBytes) : h.totalBytes ? fmtBytes(h.totalBytes) : '–';
+    return `<div onclick="loadHistoryScan(${i})" style="
+      padding:8px 14px; cursor:pointer; border-left:3px solid ${active ? 'var(--accent)' : 'transparent'};
+      background:${active ? 'rgba(79,142,247,.08)' : 'transparent'};
+      transition:background .1s; border-bottom:1px solid rgba(42,47,74,.3);
+    ">
+      <div style="font-size:12px;font-family:var(--mono);color:${active ? 'var(--accent)' : 'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(h.path)}">${esc(h.path)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)">${esc(dateStr)}</div>
+      <div style="font-size:11px;color:var(--cyan);margin-top:1px;font-family:var(--mono)">${size}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDiskNode(nodePath) {
+  if (diskCollapsed.has(nodePath)) diskCollapsed.delete(nodePath);
+  else diskCollapsed.add(nodePath);
+  renderDiskTree();
+}
+
+// Recursively add all node paths to diskCollapsed
+function collapseAllNodes(node) {
+  if (!node) return;
+  diskCollapsed.add(node.path);
+  if (node.children) node.children.forEach(collapseAllNodes);
+}
+
+// Recursively remove all node paths from diskCollapsed
+function expandAllNodes(node) {
+  if (!node) return;
+  diskCollapsed.delete(node.path);
+  if (node.children) node.children.forEach(expandAllNodes);
+}
+
+function toggleAllDiskNodes() {
+  if (!diskCurrentData || !diskCurrentData.tree) return;
+  diskAllExpanded = !diskAllExpanded;
+  if (diskAllExpanded) {
+    expandAllNodes(diskCurrentData.tree);
+  } else {
+    diskCollapsed.clear();
+    if (diskCurrentData.tree.children) {
+      diskCurrentData.tree.children.forEach(child => collapseAllNodes(child));
+    }
+  }
+  const btn = el('disk-expand-all-btn');
+  if (btn) {
+    const icon = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>';
+    btn.innerHTML = icon + (diskAllExpanded ? 'Collapse All' : 'Expand All');
+  }
+  renderDiskTree();
+}
+
+function renderDiskTree() {
+  if (!diskCurrentData || !diskCurrentData.tree) return;
+  const root = diskCurrentData.tree;
+  const maxSize = root.sizeBytes || 1;
+  let html = '<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">';
+  html += `<thead><tr style="background:var(--bg3);position:sticky;top:0;z-index:5">
+    <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">NAME</th>
+    <th style="padding:7px 12px;width:110px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">SIZE</th>
+    <th style="padding:7px 12px;width:180px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">BAR</th>
+  </tr></thead><tbody>`;
+
+  function renderNode(node, depth) {
+    if (!node) return;
+    const isCollapsed = diskCollapsed.has(node.path);
+    const hasChildren = node.children && node.children.length > 0;
+    const pct = Math.min((node.sizeBytes / maxSize) * 100, 100);
+    const barColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : pct > 10 ? 'var(--accent)' : 'var(--text3)';
+    const indent = depth * 18;
+    const isRoot = depth === 0;
+
+    html += `<tr style="border-bottom:1px solid rgba(42,47,74,.4);${isRoot ? 'background:rgba(79,142,247,.05)' : ''}">
+      <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">
+        <div style="display:flex;align-items:center;padding-left:${indent}px;gap:4px">
+          ${hasChildren
+            ? `<button onclick="toggleDiskNode(${JSON.stringify(node.path).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0 4px 0 0;flex-shrink:0">${isCollapsed ? '▶' : '▼'}</button>`
+            : `<span style="display:inline-block;width:16px;flex-shrink:0"></span>`
+          }
+          <span style="color:${isRoot ? 'var(--accent)' : depth===0 ? 'var(--cyan)' : 'var(--text)'}">${esc(node.name)}</span>
+        </div>
+      </td>
+      <td style="padding:5px 12px;color:var(--cyan);white-space:nowrap">${fmtBytes(node.sizeBytes)}</td>
+      <td style="padding:5px 12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
+            <div style="width:${pct.toFixed(1)}%;height:100%;background:${barColor};border-radius:3px"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text3);width:32px">${pct.toFixed(0)}%</span>
+        </div>
+      </td>
+    </tr>`;
+
+    if (hasChildren && !isCollapsed) {
+      node.children.forEach(child => renderNode(child, depth + 1));
+    }
+  }
+
+  renderNode(root, 0);
+  html += '</tbody></table>';
+  el('disk-tree-wrap').innerHTML = html;
+}
+
+function sortDisk(key) {
+  if (diskFileSort.key === key) diskFileSort.dir *= -1;
+  else { diskFileSort.key = key; diskFileSort.dir = -1; }
+  renderDiskFiles();
+}
+
+function renderDiskFiles() {
+  if (!diskCurrentData) return;
+  const files = [...(diskCurrentData.topFiles || [])].sort((a, b) => {
+    const av = a[diskFileSort.key], bv = b[diskFileSort.key];
+    return (av > bv ? 1 : av < bv ? -1 : 0) * diskFileSort.dir;
+  });
+
+  el('disk-file-count').textContent = files.length ? `(${files.length})` : '';
+  const maxSize = files[0]?.sizeBytes || 1;
+
+  if (!files.length) {
+    el('disk-file-tbody').innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="emoji">📄</div>No files found</div></td></tr>`;
+    return;
+  }
+
+  // Update sort arrows
+  document.querySelectorAll('#disk-file-table th .sort-arrow').forEach(a => a.textContent = '↕');
+  document.querySelectorAll('#disk-file-table th').forEach(th => {
+    const m = th.getAttribute('onclick')?.match(/sortDisk\('([^']+)'\)/);
+    if (m && m[1] === diskFileSort.key) {
+      th.querySelector('.sort-arrow').textContent = diskFileSort.dir === -1 ? '↓' : '↑';
+    }
+  });
+
+  el('disk-file-tbody').innerHTML = files.map(f => {
+    const dir = f.path.slice(0, f.path.lastIndexOf('/')) || '/';
+    const pct = Math.min((f.sizeBytes / maxSize) * 100, 100);
+    const barColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : 'var(--pink)';
+    const mtimeStr = f.mtime ? fmtFileDate(f.mtime) : '–';
+    const mtimeAge = f.mtime ? fileDateAge(f.mtime) : '';
+    return `<tr style="border-bottom:1px solid rgba(42,47,74,.4)">
+      <td style="padding:5px 12px;font-family:var(--mono);color:var(--cyan);white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${fmtBytes(f.sizeBytes)}
+          <div style="width:40px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;flex-shrink:0">
+            <div style="width:${pct.toFixed(1)}%;height:100%;background:${barColor};border-radius:2px"></div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(f.path)}">${esc(f.name)}</td>
+      <td style="padding:5px 12px;white-space:nowrap;font-family:var(--mono);font-size:11px;" title="${esc(new Date(f.mtime).toLocaleString())}">
+        <span style="color:var(--text2);">${esc(mtimeStr)}</span>
+        ${mtimeAge ? `<span style="color:var(--text3);margin-left:4px;">${esc(mtimeAge)}</span>` : ''}
+      </td>
+      <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3);font-size:11px" title="${esc(f.path)}">${esc(dir)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Network Utilization ─────────────────────────────────────────────────────
+
+// Ring-buffer history: iface → { rx: [], tx: [] }  (last 20 samples = ~60s)
+const NET_HISTORY_LEN = 20;
+const netHistory = {};          // { ifaceName: { rx: number[], tx: number[] } }
+const expandedNetIfaces = new Set(); // ifaces with containers expanded (default: none = collapsed)
+let netSort = { key: 'iface', dir: 1 };
+
+function toggleNetContainers(iface) {
+  if (expandedNetIfaces.has(iface)) expandedNetIfaces.delete(iface);
+  else expandedNetIfaces.add(iface);
+  renderNetworkLeft();
+}
+
+function setNetSort(key) {
+  if (netSort.key === key) netSort.dir *= -1;
+  else { netSort.key = key; netSort.dir = key === 'iface' ? 1 : -1; }
+  const labels = { iface: 'NAME', rxKBs: 'IN', txKBs: 'OUT', totalKBs: 'TOTAL' };
+  ['iface','rxKBs','txKBs','totalKBs'].forEach(k => {
+    const btn = el('net-sort-' + k);
+    if (!btn) return;
+    const isActive = netSort.key === k;
+    btn.classList.toggle('active', isActive);
+    const arrow = isActive ? (netSort.dir === 1 ? ' ↑' : ' ↓') : ' ↕';
+    btn.textContent = labels[k] + arrow;
+  });
+  renderNetworkLeft();
+}
+
+function renderNetwork() {
+  renderNetworkLeft();
+}
+
+// ── Sparklines ────────────────────────────────────────────────────────────────
+function renderNetworkLeft() {
+  const s = allData.summary;
+  let nets = [...(s.nets || [])];
+
+  // Update ring buffers
+  nets.forEach(n => {
+    if (!netHistory[n.iface]) netHistory[n.iface] = { rx: [], tx: [] };
+    const h = netHistory[n.iface];
+    h.rx.push(n.rxKBs || 0);
+    h.tx.push(n.txKBs || 0);
+    if (h.rx.length > NET_HISTORY_LEN) h.rx.shift();
+    if (h.tx.length > NET_HISTORY_LEN) h.tx.shift();
+  });
+
+  // Apply sort
+  nets.sort((a, b) => {
+    let av, bv;
+    if (netSort.key === 'iface') {
+      av = a.iface; bv = b.iface;
+    } else if (netSort.key === 'totalKBs') {
+      av = (a.rxKBs || 0) + (a.txKBs || 0);
+      bv = (b.rxKBs || 0) + (b.txKBs || 0);
+    } else {
+      av = a[netSort.key] || 0;
+      bv = b[netSort.key] || 0;
+    }
+    if (av < bv) return -netSort.dir;
+    if (av > bv) return  netSort.dir;
+    return 0;
+  });
+
+  el('net-total-info').textContent =
+    '↓ ' + (s.netInKBs || 0).toFixed(2) + ' KB/s  ↑ ' + (s.netOutKBs || 0).toFixed(2) + ' KB/s';
+
+  if (!nets.length) {
+    el('net-ifaces').innerHTML = `<div class="empty-state" style="width:100%"><div class="emoji">🌐</div>No interfaces</div>`;
+    return;
+  }
+
+  el('net-ifaces').innerHTML = nets.map(n => {
+    const h = netHistory[n.iface] || { rx: [], tx: [] };
+    const maxVal = Math.max(1, ...h.rx, ...h.tx);
+    const rxKBs = (n.rxKBs || 0).toFixed(2);
+    const txKBs = (n.txKBs || 0).toFixed(2);
+
+    // ── Find containers attached to this host interface ──────────────────────
+    // Match: container.networks[].hostIface === n.iface
+    // Also catch docker0 / br-xxxx by checking if any network's hostIface matches
+    const attachedContainers = (allData.containers || []).filter(c =>
+      (c.state || '').toLowerCase() === 'running' &&
+      (c.networks || []).some(net => net.hostIface === n.iface)
+    );
+    // For each attached container, find the specific network entry that matched
+    const attachedRows = attachedContainers.map(c => {
+      const matchedNet = (c.networks || []).find(net => net.hostIface === n.iface);
+      return { container: c, net: matchedNet };
+    });
+
+    function sparkPoints(vals, W, H) {
+      if (!vals.length) return '';
+      const pts = vals.map((v, i) => {
+        const x = (i / (NET_HISTORY_LEN - 1)) * W;
+        const y = H - (v / maxVal) * (H - 2) - 1;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+      return pts.join(' ');
+    }
+    function sparkArea(vals, W, H, color) {
+      if (vals.length < 2) return '';
+      const pts = sparkPoints(vals, W, H);
+      const lastX = ((vals.length - 1) / (NET_HISTORY_LEN - 1) * W).toFixed(1);
+      return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+              <polygon points="0,${H} ${pts} ${lastX},${H}" fill="${color}" fill-opacity="0.15"/>`;
+    }
+
+    // Container rows HTML — collapsible, default collapsed
+    const isExpanded = expandedNetIfaces.has(n.iface);
+    const containerSection = attachedRows.length ? `
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:8px;">
+        <div onclick="toggleNetContainers('${esc(n.iface)}')"
+          style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;padding:2px 0 6px 0;">
+          <span style="font-size:10px;color:var(--text3);">${isExpanded ? '▼' : '▶'}</span>
+          <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">
+            🐋 Containers (${attachedRows.length})
+          </span>
+        </div>
+        ${isExpanded ? attachedRows.map(({ container: c, net }) => {
+          const stateClass = (c.state||'').toLowerCase();
+          const rxStr = c.netMode === 'host' ? '–' : (c.vethRxKBs||0).toFixed(2)+' KB/s';
+          const txStr = c.netMode === 'host' ? '–' : (c.vethTxKBs||0).toFixed(2)+' KB/s';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(42,47,74,.3);">
+            <span class="status-dot ${stateClass}" style="flex-shrink:0;"></span>
+            <span style="font-family:var(--mono);font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              title="${esc(c.name)}">${esc(c.name)}</span>
+            ${net && net.ip ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent);">${esc(net.ip)}</span>` : ''}
+            ${net && net.name ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:1px 5px;border:1px solid var(--border);border-radius:3px;">${esc(net.name)}</span>` : ''}
+            <span class="green-text"  style="font-family:var(--mono);font-size:11px;">↓ ${esc(rxStr)}</span>
+            <span class="cyan-text"   style="font-family:var(--mono);font-size:11px;">↑ ${esc(txStr)}</span>
+          </div>`;
+        }).join('') : ''}
+      </div>` : `
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;font-size:11px;color:var(--text3);font-family:var(--mono);">
+        No containers attached
+      </div>`;
+
+    const W = 260, H = 44;
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:12px 14px;min-width:380px;flex:1;max-width:560px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${esc(n.iface)}</span>
+          ${n.dockerNetName ? `<span style="font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:var(--cyan);">${esc(n.dockerNetName)}</span>` : ''}
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtBytes(n.rxBytes)} rx · ${fmtBytes(n.txBytes)} tx</span>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <!-- Sparkline -->
+        <svg width="${W}" height="${H}" style="flex-shrink:0;overflow:visible;">
+          <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="0" y1="0" x2="${W}" y2="0" stroke="var(--border)" stroke-width="0.5"/>
+          ${sparkArea(h.rx, W, H, 'var(--green)')}
+          ${sparkArea(h.tx, W, H, 'var(--cyan)')}
+        </svg>
+        <!-- Current values -->
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:90px;">
+          <div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↓ IN</div>
+            <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green);">${rxKBs}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">KB/s</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↑ OUT</div>
+            <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--cyan);">${txKBs}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">KB/s</div>
+          </div>
+        </div>
+      </div>
+      <!-- Legend -->
+      <div style="margin-top:6px;display:flex;gap:14px;">
+        <span style="font-size:10px;color:var(--green);font-family:var(--mono);">── IN</span>
+        <span style="font-size:10px;color:var(--cyan);font-family:var(--mono);">── OUT</span>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">60s window</span>
+      </div>
+      ${containerSection}
+    </div>`;
+  }).join('');
+}
+
+// ─── Prune ────────────────────────────────────────────────────────────────────
+let pruneData = { images: [], networks: [], volumes: [] };
+
+async function openPruneModal() {
+  el('prune-modal').classList.add('open');
+  el('prune-body').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Scanning for unused resources…</div>`;
+  el('prune-summary').textContent = 'Scanning…';
+  el('prune-confirm-btn').disabled = true;
+
+  try {
+    const res = await fetch('/api/prune/scan');
+    pruneData = await res.json();
+    renderPruneBody();
+  } catch (e) {
+    el('prune-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);font-size:12px;">⚠ Scan failed: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderPruneBody() {
+  const { images, networks, volumes, buildCache, buildCacheTotal, buildCacheReclaimable } = pruneData;
+  const total = images.length + networks.length + volumes.length + buildCache.length;
+
+  el('prune-confirm-btn').disabled = total === 0;
+  el('prune-select-all-btn').style.display = 'none';
+
+  if (total === 0) {
+    el('prune-body').innerHTML = `<div style="padding:40px;text-align:center;font-size:28px;">✅<br><span style="font-size:14px;color:var(--green);font-family:var(--mono);">Nothing to clean up!</span></div>`;
+    el('prune-summary').textContent = 'Everything is tidy.';
+    return;
+  }
+
+  el('prune-summary').textContent = `Found: ${images.length} image${images.length!==1?'s':''}, ${networks.length} network${networks.length!==1?'s':''}, ${volumes.length} volume${volumes.length!==1?'s':''}, ${buildCache.length} build cache entr${buildCache.length!==1?'ies':'y'}`;
+
+  function previewList(items, nameKey) {
+    if (!items.length) return '';
+    const shown = items.slice(0, 10);
+    const more  = items.length - shown.length;
+    return shown.map(i => `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);padding:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(i[nameKey] || i.name)}</div>`).join('')
+      + (more > 0 ? `<div style="font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '');
+  }
+
+  function imageRows(items) {
+    if (!items.length) return '';
+    const shown = items.slice(0, 15);
+    const more  = items.length - shown.length;
+    const header = `
+      <div style="display:flex;align-items:center;gap:10px;padding:5px 16px;background:var(--bg3);border-bottom:1px solid var(--border2);">
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);flex:1.2;">REPOSITORY</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:60px;">TAG</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:70px;text-align:right;">SIZE</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:100px;text-align:right;">CREATED</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:60px;text-align:right;">STATUS</span>
+      </div>`;
+    const rows = shown.map(i => `
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid rgba(42,47,74,.25);">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          title="${esc(i.repository || i.name)}">${esc(i.repository || i.name)}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text2);width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(i.tag || '–')}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:70px;text-align:right;white-space:nowrap;">${esc(i.size || '–')}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:100px;text-align:right;white-space:nowrap;">${esc(i.created || '–')}</span>
+        <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);color:var(--orange);font-family:var(--mono);width:60px;text-align:center;">${esc(i.reason)}</span>
+      </div>`).join('');
+    const moreRow = more > 0 ? `<div style="padding:5px 16px;font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '';
+    return header + rows + moreRow;
+  }
+
+  el('prune-body').innerHTML = `
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:rgba(249,115,22,.06);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:18px;">⚠️</span>
+        <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--orange);">docker system prune -a --volumes</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.6;">
+        This will remove all stopped containers, unused networks, unused images, dangling volumes, and build cache.
+        <span style="color:var(--red);">Running containers will not be affected.</span>
+      </div>
+    </div>
+    ${images.length ? `
+    <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🖼 Images (${images.length})</span>
+    </div>
+    ${imageRows(images)}` : ''}
+    ${networks.length ? `
+    <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🌐 Networks (${networks.length})</span>
+    </div>
+    ${networkRows(networks)}` : ''}
+    ${volumes.length ? `
+    <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">💾 Volumes (${volumes.length})</span>
+    </div>
+    ${volumeRows(volumes)}` : ''}
+    ${buildCache.length ? `
+    <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🔨 Build Cache (${buildCache.length})</span>
+      ${buildCacheTotal ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Total: <span style="color:var(--cyan);">${esc(buildCacheTotal)}</span>${buildCacheReclaimable ? `  ·  Reclaimable: <span style="color:var(--green);">${esc(buildCacheReclaimable)}</span>` : ''}</span>` : ''}
+    </div>
+    ${buildCacheRows(buildCache)}` : ''}`;
+}
+
+function networkRows(items) {
+  if (!items.length) return '';
+  const shown = items.slice(0, 15);
+  const more  = items.length - shown.length;
+  const header = `
+    <div style="display:flex;align-items:center;gap:10px;padding:5px 16px;background:var(--bg3);border-bottom:1px solid var(--border2);">
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);flex:1;">NAME</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:80px;">DRIVER</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:60px;">SCOPE</span>
+    </div>`;
+  const rows = shown.map(n => `
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid rgba(42,47,74,.25);">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        title="${esc(n.name)}">${esc(n.name)}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text2);width:80px;white-space:nowrap;">${esc(n.driver || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:60px;white-space:nowrap;">${esc(n.scope || '–')}</span>
+    </div>`).join('');
+  const moreRow = more > 0 ? `<div style="padding:5px 16px;font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '';
+  return header + rows + moreRow;
+}
+
+function volumeRows(items) {
+  if (!items.length) return '';
+  const shown = items.slice(0, 15);
+  const more  = items.length - shown.length;
+  const header = `
+    <div style="display:flex;align-items:center;gap:10px;padding:5px 16px;background:var(--bg3);border-bottom:1px solid var(--border2);">
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);flex:1;">NAME</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:60px;">DRIVER</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:90px;text-align:right;">CREATED</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);flex:1.5;padding-left:10px;">MOUNT PATH</span>
+    </div>`;
+  const rows = shown.map(v => `
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid rgba(42,47,74,.25);">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        title="${esc(v.name)}">${esc(v.name)}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text2);width:60px;white-space:nowrap;">${esc(v.driver || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:90px;text-align:right;white-space:nowrap;">${esc(v.created || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:10px;"
+        title="${esc(v.mountpoint)}">${esc(v.mountpoint || '–')}</span>
+    </div>`).join('');
+  const moreRow = more > 0 ? `<div style="padding:5px 16px;font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '';
+  return header + rows + moreRow;
+}
+
+function buildCacheRows(items) {
+  if (!items.length) return '';
+  const shown = items.slice(0, 20);
+  const more  = items.length - shown.length;
+  const header = `
+    <div style="display:flex;align-items:center;gap:10px;padding:5px 16px;background:var(--bg3);border-bottom:1px solid var(--border2);">
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);flex:1;">ID</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:90px;text-align:right;">RECLAIMABLE</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:70px;text-align:right;">SIZE</span>
+      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);width:130px;text-align:right;">LAST ACCESSED</span>
+    </div>`;
+  const rows = shown.map(c => `
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid rgba(42,47,74,.25);">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        title="${esc(c.id)}">${esc(c.id)}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--green);width:90px;text-align:right;white-space:nowrap;">${esc(c.reclaimable || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:70px;text-align:right;white-space:nowrap;">${esc(c.size || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:130px;text-align:right;white-space:nowrap;">${esc(c.lastAccessed || '–')}</span>
+    </div>`).join('');
+  const moreRow = more > 0 ? `<div style="padding:5px 16px;font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '';
+  return header + rows + moreRow;
+}
+
+function pruneSelectAll() {} // no-op for system prune
+
+async function confirmPrune() {
+  el('prune-confirm-btn').disabled = true;
+  el('prune-confirm-btn').textContent = '⟳ Running system prune…';
+  el('prune-cancel-btn').disabled = true;
+  el('prune-cancel-btn').style.opacity = '0.4';
+  el('prune-cancel-btn').style.cursor = 'not-allowed';
+
+  try {
+    const res = await fetch('/api/prune/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pruneSystem: true }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const out = data.summary.pruneOutput || '';
+      const reclaimedLine = out.split('\n').find(l => l.toLowerCase().includes('reclaimed')) || '';
+      el('prune-body').innerHTML = `<div style="padding:30px 20px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:10px;">✅</div>
+        <div style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:${reclaimedLine?'8px':'0'};">System prune complete.</div>
+        ${reclaimedLine ? `<div style="font-size:12px;color:var(--cyan);font-family:var(--mono);">${esc(reclaimedLine.trim())}</div>` : ''}
+        ${data.summary.errors && data.summary.errors.length ? `<div style="color:var(--red);font-size:12px;margin-top:8px;">${data.summary.errors.length} error(s) — see log.</div>` : ''}
+      </div>`;
+      el('prune-summary').textContent = 'Prune complete.';
+      el('prune-confirm-btn').textContent = '✓ Done';
+      el('prune-confirm-btn').disabled = false;
+      el('prune-confirm-btn').onclick = closePruneModal;
+    } else {
+      el('prune-confirm-btn').textContent = '✕ Failed';
+      el('prune-confirm-btn').style.background = 'var(--red)';
+    }
+  } catch (e) {
+    el('prune-confirm-btn').textContent = '✕ Error';
+  } finally {
+    el('prune-cancel-btn').disabled = false;
+    el('prune-cancel-btn').style.opacity = '';
+    el('prune-cancel-btn').style.cursor = '';
+  }
+}
+
+function closePruneModal() {
+  el('prune-modal').classList.remove('open');
+  el('prune-confirm-btn').textContent = '🗑 System Prune';
+  el('prune-confirm-btn').disabled = false;
+  el('prune-confirm-btn').onclick = confirmPrune;
+  el('prune-cancel-btn').disabled = false;
+  el('prune-cancel-btn').style.opacity = '';
+  el('prune-cancel-btn').style.cursor = '';
+  el('prune-select-all-btn').textContent = '☑ Select All';
+}
+
+async function openPruneLogModal() {
+  el('prune-log-modal').classList.add('open');
+  el('prune-log-body').textContent = 'Loading…';
+  try {
+    const res = await fetch('/api/prune/log');
+    const data = await res.json();
+    const lines = (data.log || '').trim().split('\n').filter(Boolean).reverse(); // newest first
+    if (!lines.length) {
+      el('prune-log-body').innerHTML = `<span style="color:var(--text3);">No prune activity yet.</span>`;
+      return;
+    }
+    el('prune-log-body').innerHTML = lines.map(line => {
+      const isSep    = line.includes('===');
+      const isErr    = line.toLowerCase().includes('fail') || line.toLowerCase().includes('error');
+      const color    = isSep ? 'var(--accent)' : isErr ? 'var(--red)' : 'var(--text)';
+      return `<div style="color:${color};padding:1px 0;border-bottom:1px solid rgba(42,47,74,.2);">${esc(line)}</div>`;
+    }).join('');
+  } catch (e) {
+    el('prune-log-body').textContent = 'Failed to load log.';
+  }
+}
+
+function closePruneLogModal() {
+  el('prune-log-modal').classList.remove('open');
+}
+
+el('prune-modal').addEventListener('click', e => { if (e.target === el('prune-modal')) closePruneModal(); });
+el('prune-log-modal').addEventListener('click', e => { if (e.target === el('prune-log-modal')) closePruneLogModal(); });
+el('cdetail-modal').addEventListener('click', e => { if (e.target === el('cdetail-modal')) closeCDetailModal(); });
+
+// ─── Container Detail Modal ───────────────────────────────────────────────────
+async function openCDetailModal(id, name, stateClass) {
+  const modal = el('cdetail-modal');
+  modal.classList.add('open');
+  el('cdetail-name').textContent = name;
+  el('cdetail-id').textContent   = id;
+  el('cdetail-status-dot').className = `status-dot ${stateClass}`;
+  el('cdetail-body').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading container details…</div>`;
+
+  try {
+    const res  = await fetch(`/api/container/detail/${encodeURIComponent(id)}`);
+    const d    = await res.json();
+    if (d.error) { el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(d.error)}</div>`; return; }
+
+    // Update header with full name/id
+    el('cdetail-name').textContent = d.name || name;
+    el('cdetail-id').textContent   = d.id + (d.fullId ? '  ·  sha256:' + d.fullId.slice(0,12) : '');
+    el('cdetail-status-dot').className = `status-dot ${(d.status||'').toLowerCase()}`;
+
+    // Populate action buttons
+    const isRunning = d.running;
+    const cid = d.id, cname = esc(d.name || name);
+    el('cdetail-actions').innerHTML = `
+      <button class="cdetail-action-btn start"   title="Start"   ${isRunning ? 'disabled' : ''}
+        onclick="openActionModal('start','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Start</span></button>
+      <button class="cdetail-action-btn restart" title="Restart" ${!isRunning ? 'disabled' : ''}
+        onclick="openActionModal('restart','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Restart</span></button>
+      <button class="cdetail-action-btn stop"    title="Stop"    ${!isRunning ? 'disabled' : ''}
+        onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Stop</span></button>
+      <button class="cdetail-action-btn logs"    title="Logs"
+        onclick="openLogs('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>Logs</span></button>
+      <button class="cdetail-action-btn console" title="Console" style="display:none;" ${!isRunning ? 'disabled' : ''}
+        onclick="openConsoleModal('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>Console</span></button>
+      <button class="cdetail-action-btn delete"  title="Delete"
+        onclick="openActionModal('delete','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span>Delete</span></button>`;
+
+    function kv(key, val, cls='') {
+      return `<div class="cdetail-kv ${cls}"><div class="cdetail-key">${esc(key)}</div><div class="cdetail-val">${esc(String(val||'–'))}</div></div>`;
+    }
+    function kvHtml(key, html, cls='') {
+      return `<div class="cdetail-kv ${cls}"><div class="cdetail-key">${esc(key)}</div><div class="cdetail-val">${html}</div></div>`;
+    }
+    function section(emoji, title, content) {
+      return `<div class="cdetail-section"><div class="cdetail-section-title">${emoji} ${esc(title)}</div>${content}</div>`;
+    }
+    function table(headers, rows, emptyMsg='No entries') {
+      if (!rows.length) return `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">${esc(emptyMsg)}</div>`;
+      return `<table class="cdetail-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    }
+
+    // ── Status card ──
+    const stateColor = d.running ? 'var(--green)' : 'var(--red)';
+    const uptimeStr  = d.startedAt && d.running
+      ? (() => { const s = Math.floor((Date.now() - new Date(d.startedAt)) / 1000); const d2 = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60); return d2>0?`${d2}d ${h}h`:h>0?`${h}h ${m}m`:`${m}m`; })()
+      : '–';
+
+    const statusCard = `
+      <div class="cdetail-status-card">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-right:14px;border-right:1px solid var(--border);">
+          <span class="status-dot ${(d.status||'').toLowerCase()}" style="width:14px;height:14px;"></span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${stateColor};">${esc(d.status||'–')}</span>
+        </div>
+        <div class="cdetail-grid-3" style="flex:1;">
+          ${kv('Uptime',   uptimeStr)}
+          ${kv('CPU',      d.cpu||'–')}
+          ${kv('Memory',   d.memUsage ? d.memUsage + (d.memPercent?' ('+d.memPercent+')':'') : '–')}
+          ${kv('Created',  d.created  ? new Date(d.created).toLocaleString()  : '–')}
+          ${kv('Started',  d.startedAt? new Date(d.startedAt).toLocaleString(): '–')}
+          ${kv('Disk I/O', d.blockIO  || '–')}
+        </div>
+      </div>`;
+
+    // ── Container Status section ──
+    // Sum volume sizes — parse values like "420M", "1.2G", "512K", "63B"
+    function parseSize(s) {
+      if (!s || s === '–') return 0;
+      const m = s.match(/^([\d.]+)\s*([KMGTB]?)i?B?$/i);
+      if (!m) return 0;
+      const n = parseFloat(m[1]);
+      const u = (m[2]||'').toUpperCase();
+      const mult = { '': 1, 'B': 1, 'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4 };
+      return n * (mult[u] || 1);
+    }
+    function fmtSizeBytes(bytes) {
+      if (!bytes) return '0 B';
+      const units = ['B','KB','MB','GB','TB'];
+      let i = 0; let v = bytes;
+      while (v >= 1024 && i < units.length-1) { v /= 1024; i++; }
+      return v.toFixed(1) + ' ' + units[i];
+    }
+    const totalVolBytes = (d.volumes||[]).reduce((sum, v) => sum + parseSize(v.sizeOnDisk), 0);
+    const totalVolStr = totalVolBytes > 0 ? fmtSizeBytes(totalVolBytes) : '–';
+
+    const statusSection = section('📊', 'Container Status', statusCard + `
+      <div class="cdetail-grid">
+        ${kv('ID',            d.id)}
+        ${kv('Name',          d.name)}
+        ${kv('Restart Count', d.restartCount)}
+        ${kv('Finished At',   d.finishedAt && d.finishedAt !== '0001-01-01T00:00:00Z' ? new Date(d.finishedAt).toLocaleString() : '–')}
+        ${kv('Total Volume Size', totalVolStr)}
+        ${kvHtml('Restart Policy', `
+          <div class="restart-policy-widget">
+            <select class="restart-policy-select" id="rp-select-${d.id}" onchange="rpToggleRetries('${d.id}')">
+              <option value="no"             ${(d.restartPolicy&&d.restartPolicy.name)==='no'             ? 'selected':''}>no (never restart)</option>
+              <option value="always"         ${(d.restartPolicy&&d.restartPolicy.name)==='always'         ? 'selected':''}>always</option>
+              <option value="unless-stopped" ${(d.restartPolicy&&d.restartPolicy.name)==='unless-stopped' ? 'selected':''}>unless-stopped</option>
+              <option value="on-failure"     ${(d.restartPolicy&&d.restartPolicy.name)==='on-failure'     ? 'selected':''}>on-failure</option>
+            </select>
+            <input class="restart-policy-retries" id="rp-retries-${d.id}" type="number" min="0" max="99"
+              placeholder="max retries"
+              value="${(d.restartPolicy&&d.restartPolicy.name)==='on-failure' ? (d.restartPolicy.maximumRetryCount||0) : ''}"
+              style="display:${(d.restartPolicy&&d.restartPolicy.name)==='on-failure'?'block':'none'}"/>
+            <button class="restart-policy-save" id="rp-save-${d.id}"
+              onclick="saveRestartPolicy('${d.id}')">Apply</button>
+            <span class="restart-policy-status" id="rp-status-${d.id}"></span>
+          </div>`, 'full')}
+      </div>`);
+
+    // ── Container Details section ──
+    const detailSection = section('📋', 'Container Details', `
+      <div class="cdetail-grid" style="margin-bottom:12px;">
+        ${kv('Image',      d.image)}
+        ${kv('Image Hash', d.imageHash || '–')}
+        ${kv('Image Size', d.imageSize || '–')}
+      </div>
+      ${kvHtml('CMD', `<span style="word-break:break-all;">${esc(d.cmd||'–')}</span>`, 'cdetail-val-full')}
+      <div style="margin-top:10px;"></div>
+      ${kvHtml('ENTRYPOINT', `<span style="word-break:break-all;">${esc(d.entrypoint||'–')}</span>`, 'cdetail-val-full')}
+      <div style="margin-top:14px;">
+        <div class="cdetail-key" style="margin-bottom:6px;">PORT CONFIGURATION</div>
+        ${table(['Container Port','Host IP','Host Port'],
+          (d.portConfig||[]).map(p=>`<tr><td>${esc(p.containerPort)}</td><td>${esc(p.hostIp)}</td><td>${esc(p.hostPort)}</td></tr>`),
+          'No port mappings')}
+      </div>
+      <div style="margin-top:14px;">
+        <div class="cdetail-key" style="margin-bottom:6px;">ENVIRONMENT VARIABLES</div>
+        ${table(['Variable','Value'],
+          (d.env||[]).map(e=>`<tr><td style="color:var(--accent);white-space:nowrap;">${esc(e.key)}</td><td style="color:var(--text2);">${esc(e.value)}</td></tr>`),
+          'No environment variables')}
+      </div>
+      <div style="margin-top:14px;">
+        <div class="cdetail-key" style="margin-bottom:6px;">LABELS</div>
+        ${table(['Label','Value'],
+          (d.labels||[]).map(l=>`<tr><td style="color:var(--accent);white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="${esc(l.key)}">${esc(l.key)}</td><td style="color:var(--text2);">${esc(l.value)}</td></tr>`),
+          'No labels')}
+      </div>`);
+
+    // ── Volumes section ──
+    const volumesSection = section('💾', 'Volumes', table(
+      ['Type','Source','Container Path','Mode','RW','SIZE'],
+      (d.volumes||[]).map(v=>`<tr>
+        <td style="color:var(--text3);">${esc(v.type)}</td>
+        <td style="color:var(--cyan);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.source)}">${esc(v.source)}</td>
+        <td style="color:var(--text);">${esc(v.destination)}</td>
+        <td style="color:var(--text3);">${esc(v.mode)}</td>
+        <td style="${v.rw?'color:var(--green)':'color:var(--red)'};">${v.rw?'RW':'RO'}</td>
+        <td style="color:var(--cyan);white-space:nowrap;">${esc(v.sizeOnDisk||'–')}</td>
+      </tr>`),
+      'No volumes mounted'));
+
+    // ── Networks section ──
+    const networksSection = section('🌐', 'Connected Networks', table(
+      ['Network Name','IP Address','Gateway','MAC Address'],
+      (d.networks||[]).map(n=>`<tr>
+        <td style="color:var(--cyan);font-weight:600;">${esc(n.name)}</td>
+        <td style="color:var(--accent);">${esc(n.ip||'–')}</td>
+        <td style="color:var(--text3);">${esc(n.gateway||'–')}</td>
+        <td style="color:var(--text3);">${esc(n.mac||'–')}</td>
+      </tr>`),
+      'No networks'));
+
+    el('cdetail-body').innerHTML = statusSection + detailSection + volumesSection + networksSection;
+
+  } catch (e) {
+    el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+// ─── Restart Policy ───────────────────────────────────────────────────────────
+function rpToggleRetries(containerId) {
+  const sel     = el(`rp-select-${containerId}`);
+  const retries = el(`rp-retries-${containerId}`);
+  if (!sel || !retries) return;
+  retries.style.display = sel.value === 'on-failure' ? 'block' : 'none';
+  el(`rp-status-${containerId}`).textContent = '';
+}
+
+async function saveRestartPolicy(containerId) {
+  const sel     = el(`rp-select-${containerId}`);
+  const retries = el(`rp-retries-${containerId}`);
+  const saveBtn = el(`rp-save-${containerId}`);
+  const status  = el(`rp-status-${containerId}`);
+  if (!sel || !saveBtn || !status) return;
+
+  const policy     = sel.value;
+  const maxRetries = policy === 'on-failure' ? (parseInt(retries && retries.value) || 0) : 0;
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = '…';
+  status.style.color = 'var(--text3)';
+  status.textContent = 'Applying…';
+
+  try {
+    const res  = await fetch(`/api/container/restart-policy/${encodeURIComponent(containerId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ policy, maxRetries }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Saved';
+      setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '✗ ' + (data.error || 'Failed');
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ ' + e.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Apply';
+  }
+}
+
+function closeCDetailModal() {
+  el('cdetail-modal').classList.remove('open');
+  el('cdetail-actions').innerHTML = '';
+}
+// ─── Console Modal ────────────────────────────────────────────────────────────
+let _consoleTerm   = null;
+let _consoleFit    = null;
+let _consoleWs     = null;
+let _consoleId     = '';
+let _consoleName   = '';
+let _consoleShell  = 'bash';
+
+function openConsoleModal(id, name) {
+  _consoleId   = id;
+  _consoleName = name;
+  _consoleShell = 'bash';
+  el('console-modal').classList.add('open');
+  el('console-title').textContent = `Console — ${name}`;
+  _updateShellBtns();
+  _startConsole();
+}
+
+function switchShell(shell) {
+  if (_consoleShell === shell) return;
+  _consoleShell = shell;
+  _updateShellBtns();
+  _startConsole(); // reconnect with new shell
+}
+
+function _updateShellBtns() {
+  const active   = 'background:var(--accent);color:white;border-color:var(--accent);';
+  const inactive = 'background:none;color:var(--text3);border-color:var(--border2);';
+  el('console-bash-btn').style.cssText += _consoleShell === 'bash' ? active : inactive;
+  el('console-sh-btn'  ).style.cssText += _consoleShell === 'sh'   ? active : inactive;
+}
+
+function _startConsole() {
+  // Tear down any existing session
+  if (_consoleWs)   { try { _consoleWs.close(); } catch {} _consoleWs = null; }
+  if (_consoleTerm) { _consoleTerm.dispose(); _consoleTerm = null; }
+
+  const termDiv = el('console-terminal');
+  termDiv.innerHTML = '';
+
+  // Init xterm
+  _consoleTerm = new Terminal({
+    theme: { background: '#0d1117', foreground: '#e2e8ff', cursor: '#4f8ef7',
+             black: '#0d1117', brightBlack: '#545b7a',
+             blue: '#4f8ef7',  brightBlue: '#7c3aed',
+             cyan: '#06b6d4',  green: '#22c55e',
+             red:  '#ef4444',  yellow: '#eab308',
+             white: '#e2e8ff', magenta: '#ec4899' },
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13, lineHeight: 1.4,
+    cursorBlink: true, scrollback: 2000,
+  });
+
+  _consoleTerm.open(termDiv);
+
+  // Fit addon
+  if (window.FitAddon) {
+    _consoleFit = new FitAddon.FitAddon();
+    _consoleTerm.loadAddon(_consoleFit);
+    setTimeout(() => { try { _consoleFit.fit(); } catch {} }, 50);
+  }
+
+  _consoleTerm.write(`Connecting to \x1b[1;35m${_consoleName}\x1b[0m via \x1b[1;33m${_consoleShell}\x1b[0m…\r\n`);
+
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${proto}//${location.host}/ws/console/${_consoleId}/${_consoleShell}`;
+  _consoleWs  = new WebSocket(wsUrl);
+  _consoleWs.binaryType = 'arraybuffer';
+
+  _consoleWs.onopen = () => {
+    _consoleTerm.write('\x1b[32mConnected.\x1b[0m\r\n');
+    // Send initial terminal size
+    if (_consoleFit) {
+      try {
+        const dims = _consoleFit.proposeDimensions();
+        if (dims && _consoleWs.readyState === 1) {
+          _consoleWs.send(JSON.stringify({ type: 'resize', cols: dims.cols, rows: dims.rows }));
+        }
+      } catch {}
+    }
+    _consoleTerm.onData(data => {
+      if (_consoleWs && _consoleWs.readyState === 1) _consoleWs.send(data);
+    });
+  };
+
+  _consoleWs.onmessage = e => {
+    const data = e.data instanceof ArrayBuffer
+      ? new TextDecoder().decode(e.data) : e.data;
+    _consoleTerm.write(data);
+  };
+
+  _consoleWs.onerror = ()  => _consoleTerm.write('\r\n\x1b[31m[WebSocket error]\x1b[0m\r\n');
+  _consoleWs.onclose = ()  => _consoleTerm.write('\r\n\x1b[33m[Disconnected]\x1b[0m\r\n');
+}
+
+function closeConsoleModal() {
+  el('console-modal').classList.remove('open');
+  if (_consoleWs)   { try { _consoleWs.close(); } catch {} _consoleWs = null; }
+  if (_consoleTerm) { _consoleTerm.dispose(); _consoleTerm = null; }
+}
+
+// Resize terminal when window resizes
+window.addEventListener('resize', () => {
+  if (_consoleFit && el('console-modal').classList.contains('open')) {
+    try { _consoleFit.fit(); } catch {}
+  }
+});
+
+el('console-modal').addEventListener('click', e => { if (e.target === el('console-modal')) closeConsoleModal(); });
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+const DEFAULT_CATEGORIES = [
+  { id: 'media',       label: 'Media',       icon: '🎬', color: '#a78bfa', dot: '#8b5cf6' },
+  { id: 'performance', label: 'Performance', icon: '⚡', color: '#f97316', dot: '#f97316' },
+  { id: 'utilities',  label: 'Utilities',   icon: '🔧', color: '#06b6d4', dot: '#06b6d4' },
+  { id: 'system',     label: 'System',      icon: '🖥',  color: '#22c55e', dot: '#22c55e' },
+];
+
+let CATEGORIES = [];
+
+function catCssClass(id) { return 'cat-' + id.replace(/[^a-z0-9]/gi, '_'); }
+
+function injectCatStyles() {
+  let el = document.getElementById('cat-dynamic-styles');
+  if (!el) { el = document.createElement('style'); el.id = 'cat-dynamic-styles'; document.head.appendChild(el); }
+  el.textContent = CATEGORIES.map(cat => {
+    const cls = catCssClass(cat.id);
+    // parse hex to r,g,b for rgba()
+    const hex = cat.dot.replace('#','');
+    const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+    return `.cat-badge-btn.${cls}{background:rgba(${r},${g},${b},.12);border-color:rgba(${r},${g},${b},.4);color:${cat.color};}`;
+  }).join('\n');
+}
+
+async function loadCategoryDefs() {
+  try {
+    const res = await fetch('/api/category-defs');
+    const data = await res.json();
+    CATEGORIES = data.length ? data : DEFAULT_CATEGORIES;
+  } catch {
+    CATEGORIES = DEFAULT_CATEGORIES;
+  }
+  injectCatStyles();
+}
+
+async function saveCategoryDefs() {
+  try {
+    await fetch('/api/category-defs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(CATEGORIES),
+    });
+  } catch (e) { console.error('Failed to save category defs:', e); }
+  injectCatStyles();
+}
+
+// ── Category Manager Modal ───────────────────────────────────────────────────
+const ICON_PALETTE = ['🎬','⚡','🔧','🖥','🌐','🔒','📊','🗃','🛠','📦','🚀','🎮','🔑','💾','🧹','📡','🤖','🔬','🎵','📁','🏠','☁','🔥','🧩'];
+const COLOR_PALETTE = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24','#4ade80','#38bdf8','#c084fc'];
+
+function openCatMgr() {
+  renderCatMgrList();
+  document.getElementById('catmgr-backdrop').classList.add('open');
+}
+
+function closeCatMgr(e) {
+  if (e && e.target !== document.getElementById('catmgr-backdrop')) return;
+  document.getElementById('catmgr-backdrop').classList.remove('open');
+}
+
+function renderCatMgrList() {
+  const body = document.getElementById('catmgr-body');
+  if (!CATEGORIES.length) {
+    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No categories yet. Add one below.</div>`;
+    return;
+  }
+  body.innerHTML = CATEGORIES.map((cat, i) => `
+    <div class="catmgr-row" id="catmgr-row-${i}">
+      <div class="catmgr-row-icon">${cat.icon}</div>
+      <div class="catmgr-row-label" style="color:${cat.color};">${esc(cat.label)}</div>
+      <div class="catmgr-row-color" style="background:${cat.dot};"></div>
+      <div class="catmgr-row-actions">
+        <button class="catmgr-btn edit" onclick="openCatEditForm(${i})">Edit</button>
+        <button class="catmgr-btn del"  onclick="deleteCat(${i})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openCatEditForm(idx) {
+  const isNew = idx === null;
+  const cat = isNew
+    ? { id: '', label: '', icon: '🔧', color: '#06b6d4', dot: '#06b6d4' }
+    : { ...CATEGORIES[idx] };
+
+  const body = document.getElementById('catmgr-body');
+  body.innerHTML = `
+    <div class="catedit-form">
+      <div class="catedit-row">
+        <div class="catedit-label">Label</div>
+        <input class="catedit-input" id="catedit-label" placeholder="e.g. Networking" value="${esc(cat.label)}"/>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Icon</div>
+        <div class="catedit-icon-grid" id="catedit-icon-grid">
+          ${ICON_PALETTE.map(ic => `<button class="catedit-icon-btn${ic===cat.icon?' selected':''}" onclick="selectCatIcon(this,'${ic}')">${ic}</button>`).join('')}
+        </div>
+        <input class="catedit-input" id="catedit-icon-custom" placeholder="Or type any emoji…" value="${cat.icon}" style="margin-top:6px;" oninput="syncCustomIcon(this)"/>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Color</div>
+        <div class="catedit-color-grid" id="catedit-color-grid">
+          ${COLOR_PALETTE.map(c => `<div class="catedit-color-btn${c===cat.dot?' selected':''}" style="background:${c};" onclick="selectCatColor(this,'${c}')"></div>`).join('')}
+        </div>
+        <div class="catedit-hex-row">
+          <div class="catedit-hex-swatch" id="catedit-hex-swatch" style="background:${cat.dot};"></div>
+          <input class="catedit-hex-input" id="catedit-hex-input" maxlength="7" placeholder="#RRGGBB" value="${cat.dot}" oninput="syncHexInput(this)"/>
+          <span class="catedit-hex-hint">or type any hex code</span>
+        </div>
+      </div>
+      <div class="catedit-actions">
+        <button class="catedit-cancel" onclick="renderCatMgrList()">Cancel</button>
+        <button class="catedit-save" onclick="saveCatEdit(${isNew ? 'null' : idx})">${isNew ? 'Add Category' : 'Save Changes'}</button>
+      </div>
+    </div>`;
+  // store chosen values in form dataset
+  body.querySelector('.catedit-form').dataset.icon  = cat.icon;
+  body.querySelector('.catedit-form').dataset.color = cat.dot;
+}
+
+function selectCatIcon(btn, icon) {
+  document.querySelectorAll('.catedit-icon-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('catedit-icon-custom').value = icon;
+  document.querySelector('.catedit-form').dataset.icon = icon;
+}
+
+function syncCustomIcon(input) {
+  const icon = input.value.trim() || '❓';
+  document.querySelectorAll('.catedit-icon-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.catedit-form').dataset.icon = icon;
+}
+
+function selectCatColor(el, color) {
+  document.querySelectorAll('.catedit-color-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.querySelector('.catedit-form').dataset.color = color;
+  // sync hex input + swatch
+  const hexInput = document.getElementById('catedit-hex-input');
+  const swatch   = document.getElementById('catedit-hex-swatch');
+  if (hexInput) { hexInput.value = color.toUpperCase(); hexInput.classList.remove('invalid'); }
+  if (swatch)   swatch.style.background = color;
+}
+
+function syncHexInput(input) {
+  let val = input.value.trim();
+  // auto-prepend # if user forgot it
+  if (val && !val.startsWith('#')) val = '#' + val;
+  const swatch = document.getElementById('catedit-hex-swatch');
+  const isValid = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val);
+  input.classList.toggle('invalid', !!val && !isValid);
+  if (isValid) {
+    // normalise 3-digit to 6-digit
+    const full = val.length === 4
+      ? '#' + val[1]+val[1]+val[2]+val[2]+val[3]+val[3]
+      : val;
+    document.querySelector('.catedit-form').dataset.color = full;
+    if (swatch) swatch.style.background = full;
+    // deselect palette buttons if custom color
+    const match = document.querySelector(`.catedit-color-btn[style*="${full.toLowerCase()}"], .catedit-color-btn[style*="${full.toUpperCase()}"]`);
+    document.querySelectorAll('.catedit-color-btn').forEach(b => b.classList.remove('selected'));
+    if (match) match.classList.add('selected');
+  }
+}
+
+async function saveCatEdit(idx) {
+  const form   = document.querySelector('.catedit-form');
+  const label  = document.getElementById('catedit-label').value.trim();
+  if (!label) { document.getElementById('catedit-label').focus(); return; }
+  const icon   = form.dataset.icon  || '🔧';
+  const dot    = form.dataset.color || '#06b6d4';
+  const color  = dot; // use same for text color; slightly lightened by CSS
+
+  if (idx === null) {
+    // new — generate a stable id from label
+    const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g,'') + '_' + Date.now().toString(36);
+    CATEGORIES.push({ id, label, icon, color, dot });
+  } else {
+    CATEGORIES[idx] = { ...CATEGORIES[idx], label, icon, color, dot };
+  }
+  await saveCategoryDefs();
+  renderCatMgrList();
+  // refresh the rest of the UI
+  if (currentTab === 'categories') renderCategories();
+  else renderContainers();
+}
+
+async function deleteCat(idx) {
+  const cat = CATEGORIES[idx];
+  if (!confirm(`Delete category "${cat.label}"? Containers assigned to it will become unassigned.`)) return;
+  CATEGORIES.splice(idx, 1);
+  // remove all assignments for this cat
+  for (const name of Object.keys(containerAssignments)) {
+    if (containerAssignments[name] === cat.id) delete containerAssignments[name];
+  }
+  await saveCategoryDefs();
+  await fetch('/api/categories', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ purge: cat.id }) });
+  renderCatMgrList();
+  if (currentTab === 'categories') renderCategories();
+  else renderContainers();
+}
+
+// containerAssignments: { containerName -> categoryId }  — loaded from server
+let containerAssignments = {};
+let _catDropdown = null;
+
+// Load assignments from server on startup
+async function loadAssignments() {
+  await loadCategoryDefs();
+  try {
+    const res = await fetch('/api/categories');
+    containerAssignments = await res.json();
+  } catch { containerAssignments = {}; }
+  render();
+}
+
+// Persist a single change to server (optimistic local update first)
+async function saveAssignment(containerName, categoryId) {
+  try {
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ containerName, categoryId: categoryId ?? null }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // Sync with server's authoritative state
+      containerAssignments = data.assignments;
+    }
+  } catch (e) {
+    console.error('Failed to save category assignment:', e);
+  }
+}
+loadAssignments();
+
+function getCatForContainer(name) {
+  return containerAssignments[name] || null;
+}
+
+async function assignCategory(containerName, catId) {
+  // Optimistic local update for instant UI response
+  if (catId === null) {
+    delete containerAssignments[containerName];
+  } else {
+    containerAssignments[containerName] = catId;
+  }
+  // Re-render immediately with optimistic state
+  if (currentTab === 'containers') renderContainers();
+  else if (currentTab === 'categories') renderCategories();
+  // Then persist to server in background
+  await saveAssignment(containerName, catId);
+}
+
+// ── Badge rendered inside container table ────────────────────────────────────
+function renderCategoryBadge(containerId, containerName) {
+  const catId = getCatForContainer(containerName);
+  const cat = catId ? CATEGORIES.find(c => c.id === catId) : null;
+  const label = cat ? `${cat.icon} ${cat.label}` : '＋ Assign';
+  const cls = cat ? catCssClass(cat.id) : '';
+  return `<button class="cat-badge-btn ${cls}"
+    onclick="openCatDropdown(event,'${esc(containerId)}','${esc(containerName)}')"
+    title="${cat ? 'Change category' : 'Assign to category'}">${label}</button>`;
+}
+
+// ── Dropdown ────────────────────────────────────────────────────────────────
+function openCatDropdown(evt, containerId, containerName) {
+  evt.stopPropagation();
+  closeCatDropdown();
+
+  const currentCat = getCatForContainer(containerName);
+  const btn = evt.currentTarget;
+  const rect = btn.getBoundingClientRect();
+
+  const dd = document.createElement('div');
+  dd.className = 'cat-dropdown';
+  dd.id = 'cat-dropdown';
+
+  let inner = '';
+  for (const cat of CATEGORIES) {
+    const isActive = currentCat === cat.id;
+    inner += `<div class="cat-dropdown-item${isActive?' active':''}"
+      onclick="assignCategory('${esc(containerName)}','${cat.id}');closeCatDropdown()">
+      <span class="cat-dot" style="background:${cat.dot}"></span>
+      ${cat.icon} ${cat.label}
+      ${isActive ? '<span style="margin-left:auto;color:var(--accent);">✓</span>' : ''}
+    </div>`;
+  }
+  if (currentCat) {
+    inner += `<div class="cat-dropdown-sep"></div>
+      <div class="cat-dropdown-item" style="color:var(--red);"
+        onclick="assignCategory('${esc(containerName)}',null);closeCatDropdown()">
+        ✕ Remove category
+      </div>`;
+  }
+  dd.innerHTML = inner;
+
+  // Position below the button, flip up if too close to bottom
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow < 220) {
+    dd.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+  } else {
+    dd.style.top = (rect.bottom + 4) + 'px';
+  }
+  dd.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
+
+  document.body.appendChild(dd);
+  _catDropdown = dd;
+
+  setTimeout(() => {
+    document.addEventListener('click', closeCatDropdown, { once: true });
+  }, 0);
+}
+
+function closeCatDropdown() {
+  if (_catDropdown) { _catDropdown.remove(); _catDropdown = null; }
+}
+
+// ── Categories tab renderer ──────────────────────────────────────────────────
+const catCollapsed = new Set(); // tracks which cat ids are expanded; all start collapsed
+
+function toggleCatSection(catId) {
+  const el = document.getElementById('cat-sec-' + catId);
+  if (!el) return;
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+    catCollapsed.delete(catId);
+  } else {
+    el.classList.add('open');
+    catCollapsed.add(catId);
+  }
+}
+
+function renderCategories() {
+  const root = el('cat-root');
+  if (!root) return;
+
+  const containers = allData.containers.map(c => ({
+    ...c,
+    cpuNum: parseFloat(c.cpu) || 0,
+    memNum: parseFloat(c.memPercent) || 0,
+  }));
+
+  // Separate assigned and unassigned
+  const byCategory = {};
+  CATEGORIES.forEach(cat => { byCategory[cat.id] = []; });
+  const unassigned = [];
+
+  containers.forEach(c => {
+    const catId = getCatForContainer(c.name);
+    if (catId && byCategory[catId]) byCategory[catId].push(c);
+    else unassigned.push(c);
+  });
+
+  const badge = el('cat-unassigned-badge');
+  if (badge) {
+    if (unassigned.length > 0) {
+      badge.textContent = `${unassigned.length} unassigned`;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function buildSection(catId, catDot, catColor, titleHtml, list, summaryExtra = '') {
+    const isOpen = catCollapsed.has(catId);
+    const totalCpu     = list.reduce((s, c) => s + c.cpuNum, 0);
+    const totalMem     = list.reduce((s, c) => s + c.memNum, 0);
+    const totalRx      = list.reduce((s, c) => s + (c.vethRxKBs || 0), 0);
+    const totalTx      = list.reduce((s, c) => s + (c.vethTxKBs || 0), 0);
+    const totalMemUsed = list.reduce((s, c) => s + parseMemUsage(c.memUsage), 0);
+    const running      = list.filter(c => (c.state||'').toLowerCase() === 'running').length;
+    const totalImg     = list.reduce((s, c) => s + parseImgSize(c.imageSize), 0);
+
+    const tableRows = list.length === 0
+      ? `<div class="cat-empty-drop">No containers — assign via the Category badge in Container Monitoring</div>`
+      : `<table class="cat-table">
+          <colgroup>
+            <col class="col-dot"/>
+            <col class="col-name"/>
+            <col class="col-cpu"/>
+            <col class="col-mem"/>
+            <col class="col-memused"/>
+            <col class="col-netin"/>
+            <col class="col-netout"/>
+            <col class="col-img"/>
+            <col class="col-status"/>
+            <col class="col-cat"/>
+          </colgroup>
+          <thead><tr>
+            <th class="col-dot"></th>
+            <th class="col-name">Name</th>
+            <th class="col-cpu">CPU</th>
+            <th class="col-mem">Mem %</th>
+            <th class="col-memused">Mem Used</th>
+            <th class="col-netin">Net In</th>
+            <th class="col-netout">Net Out</th>
+            <th class="col-img">Image</th>
+            <th class="col-status">Status</th>
+            <th class="col-cat">Category</th>
+          </tr></thead>
+          <tbody>
+            ${list.map(c => {
+              const stateClass = (c.state||'').toLowerCase();
+              return `<tr onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')">
+                <td class="col-dot"><span class="status-dot ${stateClass}"></span></td>
+                <td class="col-name" style="font-weight:600;color:var(--text);">${esc(c.name)}</td>
+                <td class="col-cpu" style="color:${cpuHex(c.cpuNum)};">${c.cpu || '0%'}</td>
+                <td class="col-mem" style="color:var(--pink);">${c.memPercent || '0%'}</td>
+                <td class="col-memused" style="color:var(--text2);">${c.memUsage || '–'}</td>
+                <td class="col-netin" style="color:var(--green);">${c.vethRxKBs ? c.vethRxKBs.toFixed(2)+' KB/s' : '–'}</td>
+                <td class="col-netout" style="color:var(--cyan);">${c.vethTxKBs ? c.vethTxKBs.toFixed(2)+' KB/s' : '–'}</td>
+                <td class="col-img" style="color:var(--text3);">${c.imageSize || '–'}</td>
+                <td class="col-status"><span class="state-text state-${stateClass.toUpperCase()}">${c.state || '–'}</span></td>
+                <td class="col-cat" onclick="event.stopPropagation()">${renderCategoryBadge(c.id, c.name)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+
+    return `<div class="cat-section${isOpen?' open':''}" id="cat-sec-${catId}">
+      <div class="cat-header-row" onclick="toggleCatSection('${catId}')">
+        <span class="cat-chevron">▶</span>
+        <div class="cat-title-pill" style="background:${catDot}18;border-color:${catDot}44;color:${catColor};">
+          ${titleHtml}
+        </div>
+        <div class="cat-summary-card">
+          <div class="cat-summary-cell cat-sc-containers">
+            <div class="cat-summary-label">Containers</div>
+            <div class="cat-summary-value" style="color:${catColor};">${list.length} <span style="font-size:10px;font-weight:400;color:var(--text3);">${running} running</span></div>
+          </div>
+          <div class="cat-summary-cell cat-sc-cpu">
+            <div class="cat-summary-label">CPU</div>
+            <div class="cat-summary-value" style="color:${cpuHex(totalCpu)};">${totalCpu.toFixed(1)}%</div>
+            <div class="cat-mini-bar"><div class="cat-mini-bar-fill" style="width:${Math.min(totalCpu,100)}%;background:${cpuHex(totalCpu)};"></div></div>
+          </div>
+          <div class="cat-summary-cell cat-sc-mem">
+            <div class="cat-summary-label">Mem %</div>
+            <div class="cat-summary-value" style="color:var(--pink);">${totalMem.toFixed(1)}%</div>
+          </div>
+          <div class="cat-summary-cell cat-sc-memused">
+            <div class="cat-summary-label">Mem Used</div>
+            <div class="cat-summary-value" style="color:var(--text2);">${fmtBytes(totalMemUsed)}</div>
+          </div>
+          <div class="cat-summary-cell cat-sc-netin">
+            <div class="cat-summary-label">Net In</div>
+            <div class="cat-summary-value" style="color:var(--green);">${totalRx.toFixed(1)} <span style="font-size:10px;font-weight:400;">KB/s</span></div>
+          </div>
+          <div class="cat-summary-cell cat-sc-netout">
+            <div class="cat-summary-label">Net Out</div>
+            <div class="cat-summary-value" style="color:var(--cyan);">${totalTx.toFixed(1)} <span style="font-size:10px;font-weight:400;">KB/s</span></div>
+          </div>
+          <div class="cat-summary-cell cat-sc-img">
+            <div class="cat-summary-label">Img Size</div>
+            <div class="cat-summary-value" style="color:var(--text2);">${totalImg > 0 ? fmtBytes(totalImg) : '–'}</div>
+          </div>
+          ${summaryExtra}
+        </div>
+      </div>
+      <div class="cat-body">${tableRows}</div>
+    </div>`;
+  }
+
+  let html = '';
+  for (const cat of CATEGORIES) {
+    html += buildSection(cat.id, cat.dot, cat.color, `${cat.icon} ${cat.label}`, byCategory[cat.id]);
+  }
+
+  if (unassigned.length > 0) {
+    html += buildSection('__unassigned__', '#545b7a', 'var(--text3)', '❓ Unassigned', unassigned);
+  }
+
+  root.innerHTML = html;
+}
+
+// Parse memory usage string like "1.2GiB", "512MiB", "2GB" → bytes
+function parseMemUsage(str) {
+  if (!str) return 0;
+  const m = str.match(/^([\d.]+)\s*(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)?/i);
+  if (!m) return 0;
+  const val = parseFloat(m[1]);
+  const unit = (m[2]||'B').toLowerCase();
+  const map = { b:1, kb:1e3, kib:1024, mb:1e6, mib:1048576, gb:1e9, gib:1073741824, tb:1e12, tib:1099511627776 };
+  return val * (map[unit] || 1);
+}
+
+// Parse image size string like "1.2GB", "512MB" → bytes (server sends formatted strings)
+function parseImgSize(str) {
+  return parseMemUsage(str); // same format
+}
+
+// Return a hex color for a CPU% value (matches cpuColor logic)
+function cpuHex(v) {
+  if (v >= 80) return 'var(--red)';
+  if (v >= 50) return 'var(--orange)';
+  if (v >= 20) return 'var(--yellow)';
+  return 'var(--green)';
+}
+
+
+
+</script>
+</body>
+</html>
