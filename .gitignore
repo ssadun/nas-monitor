@@ -1,3 +1,6 @@
 @eaDir
 .DS_Store
 Thumbs.db
+category-assignments.json
+credentials.json
+disk-history.json
