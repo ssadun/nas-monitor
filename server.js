@@ -1629,6 +1629,25 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/data/refresh') {
+    try {
+      await refreshCache();
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
+      });
+      res.end(JSON.stringify(cache));
+    } catch (e) {
+      res.writeHead(500, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(JSON.stringify({ error: e.message || 'refresh failed' }));
+    }
+    return;
+  }
+
   // SSE for live push
   if (url.pathname === '/api/stream') {
     res.writeHead(200, {

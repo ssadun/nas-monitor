@@ -2842,43 +2842,95 @@ async function executeAction() {
   const isComposeUpAction = action === 'composeUp';
   let composeCancelled = false;
 
+  const setLocalContainerState = (containerId, state) => {
+    if (!allData || !Array.isArray(allData.containers)) return;
+    const item = allData.containers.find(c => c.id === containerId);
+    if (!item) return;
+    item.state = state;
+    item.status = state;
+    item.running = state === 'running';
+    render();
+  };
+
+  const removeLocalContainer = (containerId) => {
+    if (!allData || !Array.isArray(allData.containers)) return;
+    const before = allData.containers.length;
+    allData.containers = allData.containers.filter(c => c.id !== containerId);
+    if (allData.containers.length !== before) render();
+  };
+
   const refreshContainersNow = async () => {
     try {
       if (typeof refreshContainerMonitoring === 'function') refreshContainerMonitoring();
-      const r = await fetch('/api/data');
+      const r = await fetch('/api/data/refresh');
       const latest = await r.json();
       if (latest && Array.isArray(latest.containers)) {
         allData = latest;
         render();
+        return latest.containers;
       }
     } catch {}
+    return Array.isArray(allData?.containers) ? allData.containers : [];
   };
 
-  const openComposeStartedContainerDetail = async () => {
+  const waitForContainerCondition = async (predicate, tries = 18, intervalMs = 250) => {
+    for (let i = 0; i < tries; i++) {
+      const list = await refreshContainersNow();
+      try {
+        if (predicate(list || [])) return true;
+      } catch {}
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    return false;
+  };
+
+  const resolveComposeResultTarget = async () => {
+    let composeFallback = null;
     try {
-      // Give Docker a short time window to register the new container in stats output.
-      for (let i = 0; i < 8; i++) {
-        const res = await fetch('/api/data');
+      // Give Docker a short time window to register a newly created container in stats output.
+      for (let i = 0; i < 16; i++) {
+        const res = await fetch('/api/data/refresh');
         const latest = await res.json();
         if (latest && Array.isArray(latest.containers)) {
           allData = latest;
           const list = latest.containers;
-          let target = list.find(c => !c.composeOnly && c.composeProject === project && c.composeService === service);
-          if (!target && name) {
+
+          let containerTarget = list.find(c => !c.composeOnly && c.composeProject === project && c.composeService === service);
+          if (!containerTarget && name) {
             const n = String(name).toLowerCase();
-            target = list.find(c => !c.composeOnly && String(c.name || '').toLowerCase() === n);
+            containerTarget = list.find(c => !c.composeOnly && String(c.name || '').toLowerCase() === n);
           }
-          if (target) {
-            switchTab('containers');
-            render();
-            openCDetailModal(target.id, target.name, getContainerStateClass(target));
-            return true;
+          if (!containerTarget && name) {
+            try {
+              const byNameRes = await fetch(`/api/container/detail/${encodeURIComponent(name)}`);
+              const byName = await byNameRes.json();
+              if (byName && !byName.error && byName.id) {
+                containerTarget = {
+                  id: byName.id,
+                  name: byName.name || name,
+                  status: byName.status || '',
+                  composeOnly: false,
+                };
+              }
+            } catch {}
+          }
+          if (containerTarget) return { kind: 'container', target: containerTarget };
+
+          if (!composeFallback) {
+            composeFallback = list.find(c => c.composeOnly && c.composeProject === project && c.composeService === service) || null;
           }
         }
         await new Promise(r => setTimeout(r, 500));
       }
     } catch {}
-    return false;
+    return composeFallback ? { kind: 'compose', target: composeFallback } : { kind: 'none', target: null };
+  };
+
+  const openResolvedTargetDetail = (resolved) => {
+    if (!resolved || !resolved.target) return;
+    switchTab('containers');
+    render();
+    openCDetailModal(resolved.target.id, resolved.target.name, getContainerStateClass(resolved.target));
   };
 
   // Lock UI during execution — remove onclick so button is fully inert
@@ -2977,22 +3029,25 @@ async function executeAction() {
           addProgressStep(meta.steps[2], 'done');
           el('action-modal-confirm').textContent = '✓ Done';
           el('action-modal-confirm').style.background = '#16a34a';
-          await refreshContainersNow();
-          const found = await openComposeStartedContainerDetail();
-          if (found) {
-            closeActionModal();
-            closeCDetailModal();
-            return;
-          }
-          showToast('Compose up finished but container was not detected.', 'err', 3600);
+          const resolved = await resolveComposeResultTarget();
           closeActionModal();
+          openResolvedTargetDetail(resolved);
+          if (resolved.kind !== 'container') {
+            showToast('Compose up finished but container was not detected.', 'err', 3600);
+          }
           return;
         } else {
           updateStep(s2, 'error', 'Failed: ' + (failedMsg || 'unknown error'));
           el('action-modal-confirm').textContent = '✕ Failed';
           el('action-modal-confirm').style.background = 'var(--red)';
-          showToast(`Compose up failed: ${failedMsg || 'unknown error'}`, 'err', 3600);
+          const resolved = await resolveComposeResultTarget();
           closeActionModal();
+          openResolvedTargetDetail(resolved);
+          if (resolved.kind === 'container') {
+            showToast(`Compose up failed, but container was created: ${failedMsg || 'unknown error'}`, 'err', 4200);
+          } else {
+            showToast(`Compose up failed: ${failedMsg || 'unknown error'}`, 'err', 3600);
+          }
           return;
         }
       }
@@ -3019,6 +3074,7 @@ async function executeAction() {
         el('action-modal-confirm').style.background = 'var(--red)';
       }
     } else if (action === 'delete') {
+      removeLocalContainer(id);
       // Step 1: Stop
       const s1 = addProgressStep('Stopping container…', 'active');
       try {
@@ -3036,7 +3092,7 @@ async function executeAction() {
         addProgressStep('Done — container deleted.', 'done');
         el('action-modal-confirm').textContent = '✓ Deleted';
         el('action-modal-confirm').style.background = 'var(--green)';
-        await refreshContainersNow();
+        await waitForContainerCondition(list => !list.some(c => c.id === id));
         closeActionModal();
         closeCDetailModal();
         switchTab('containers');
@@ -3049,6 +3105,8 @@ async function executeAction() {
     } else {
       // start / stop / restart
       const s1 = addProgressStep(meta.steps[0], 'active');
+      if (action === 'start') setLocalContainerState(id, 'running');
+      if (action === 'stop') setLocalContainerState(id, 'stopped');
       const res = await fetch(`/api/container/${action}?id=${encodeURIComponent(id)}`);
       const data = await res.json();
       if (data.ok) {
@@ -3056,7 +3114,12 @@ async function executeAction() {
         addProgressStep(meta.steps[2], 'done');
         el('action-modal-confirm').textContent = '✓ Done';
         el('action-modal-confirm').style.background = '#16a34a';
-        if (action === 'start' || action === 'restart' || action === 'stop') {
+        if (action === 'start') {
+          await waitForContainerCondition(list => list.some(c => c.id === id && getContainerStateClass(c) === 'running'));
+        } else if (action === 'stop') {
+          await waitForContainerCondition(list => list.some(c => c.id === id && getContainerStateClass(c) !== 'running'));
+        } else if (action === 'restart') {
+          await waitForContainerCondition(list => list.some(c => c.id === id));
           await refreshContainersNow();
         }
       } else {
@@ -3990,7 +4053,19 @@ async function openCDetailModal(id, name, stateClass) {
   try {
     const res  = await fetch(`/api/container/detail/${encodeURIComponent(id)}`);
     const d    = await res.json();
-    if (d.error) { el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(d.error)}</div>`; return; }
+    if (d.error) {
+      const err = String(d.error || '').toLowerCase();
+      const isSynthetic = String(id || '').startsWith('compose:');
+      if (!isSynthetic && err.includes('not found') && Array.isArray(allData?.containers)) {
+        const fallback = allData.containers.find(c => c.composeOnly && String(c.name || '').toLowerCase() === String(name || '').toLowerCase());
+        if (fallback && fallback.id && fallback.id !== id) {
+          openCDetailModal(fallback.id, fallback.name || name, getContainerStateClass(fallback));
+          return;
+        }
+      }
+      el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(d.error)}</div>`;
+      return;
+    }
 
     // Update header with full name/id
     el('cdetail-name').textContent = d.name || name;
