@@ -289,7 +289,9 @@
   }
   .status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .status-dot.stopped,.status-dot.exited { background: var(--red); }
+  .status-dot.created { background: var(--text3); }
   .status-dot.paused { background: var(--yellow); }
+  .status-dot.configured { background: var(--yellow); box-shadow: 0 0 6px rgba(234,179,8,.45); }
   .status-dot.S { background: var(--green); }
   .status-dot.R { background: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
   .status-dot.D { background: var(--orange); }
@@ -304,6 +306,7 @@
   .state-Z { color: var(--red); }
   .state-T { color: var(--yellow); }
   .state-I { color: var(--text3); }
+  .state-CONFIGURED { color: var(--yellow); }
 
   .cpu-bar, .mem-bar {
     display: inline-flex; align-items: center; gap: 6px;
@@ -327,6 +330,12 @@
   /* ─── Container name ────────────────────────────────────── */
   .container-name {
     display: flex; align-items: center; gap: 8px; font-size: 12px;
+  }
+  .compose-subline {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    white-space: nowrap;
   }
   .port-link {
     display: inline-block;
@@ -373,6 +382,8 @@
   .action-btn.restart:hover:not(:disabled){ background: rgba(234,179,8,.12);   border-color: var(--yellow); }
   .action-btn.logs    { color: var(--cyan); }
   .action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);   border-color: var(--cyan); }
+  .action-btn.archive { color: var(--accent); }
+  .action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.14); border-color: var(--accent); }
   .action-btn.console { color: var(--green); }
   .action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12);  border-color: var(--green); }
   .action-btn.delete  { color: var(--red); opacity: .6; }
@@ -416,6 +427,14 @@
     animation: modalIn .15s ease;
     display: flex; flex-direction: column; overflow: hidden;
   }
+  .action-modal-backdrop.composeup-large .action-modal {
+    width: 720px;
+    min-height: 420px;
+  }
+  .action-modal-backdrop.composeup-large .action-modal-body {
+    flex: 1;
+    min-height: 0;
+  }
   .action-modal-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 18px; border-bottom: 1px solid var(--border);
@@ -436,6 +455,24 @@
   .action-progress-step.active { color: var(--text); }
   .action-progress-step.done   { color: var(--green); }
   .action-progress-step.error  { color: var(--red); }
+  .action-stream-log {
+    margin-top: 4px;
+    max-height: 190px;
+    overflow: auto;
+    background: rgba(12, 16, 28, .75);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text2);
+  }
+  .action-modal-backdrop.composeup-large .action-stream-log {
+    max-height: 285px;
+  }
   .step-icon { width: 16px; text-align: center; flex-shrink: 0; }
   .spin { display: inline-block; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -513,7 +550,7 @@
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,.82); z-index: 1003;
     align-items: flex-start; justify-content: center;
-    backdrop-filter: blur(4px); padding: 20px 0; overflow-y: auto;
+    backdrop-filter: blur(4px); padding: 8px 0; overflow-y: auto;
   }
   .cdetail-backdrop.open { display: flex; }
   .cdetail-modal {
@@ -522,6 +559,7 @@
     box-shadow: 0 32px 80px rgba(0,0,0,.7);
     animation: modalIn .15s ease; overflow: hidden;
     display: flex; flex-direction: column; margin: auto;
+    height: calc(100vh - 16px);
   }
   .cdetail-header {
     display: flex; align-items: center; gap: 12px;
@@ -544,11 +582,28 @@
   .cdetail-action-btn.stop:hover:not(:disabled)    { background: rgba(249,115,22,.12); border-color: var(--orange); }
   .cdetail-action-btn.logs    { color: var(--cyan); }
   .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);  border-color: var(--cyan); }
+  .cdetail-action-btn.archive { color: var(--accent); }
+  .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.12); border-color: var(--accent); }
   .cdetail-action-btn.console { color: var(--green); }
   .cdetail-action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12); border-color: var(--green); }
   .cdetail-action-btn.delete  { color: var(--red); opacity: .7; }
+  .cdetail-action-btn.delete:disabled { opacity: .25; }
   .cdetail-action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.12);  border-color: var(--red); opacity:1; }
-  .cdetail-body { padding: 0; overflow-y: auto; }
+  .cdetail-body { padding: 0; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .cdetail-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    background: var(--bg2); padding: 0 20px; flex-shrink: 0;
+  }
+  .cdetail-tab {
+    padding: 11px 18px; font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--text3); background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; margin-bottom: -1px; transition: color .15s, border-color .15s;
+    letter-spacing: .4px;
+  }
+  .cdetail-tab:hover { color: var(--text); }
+  .cdetail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .cdetail-tab-panel { overflow-y: auto; flex: 1; min-height: 0; }
+  .cdetail-tab-panel.compose-panel { overflow: hidden; }
   .cdetail-section {
     border-bottom: 1px solid var(--border); padding: 16px 20px;
   }
@@ -597,6 +652,266 @@
   }
   .cdetail-table tr:last-child td { border-bottom: none; }
   .cdetail-table tr:hover td { background: rgba(79,142,247,.04); }
+  /* ─── New Compose modal ────────────────────────────────── */
+  .newcompose-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); z-index: 1010;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .newcompose-backdrop.open { display: flex; }
+  .newcompose-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 16px; width: 640px; max-width: 98vw;
+    box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: modalIn .15s ease;
+  }
+  .newcompose-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0;
+  }
+  .newcompose-header-title {
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .newcompose-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+  .newcompose-field-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text3); font-family: var(--mono); margin-bottom: 5px;
+  }
+  .newcompose-name-input {
+    width: 100%; box-sizing: border-box;
+    background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; font-family: var(--mono); font-size: 13px;
+    outline: none; transition: border-color .15s;
+  }
+  .newcompose-name-input:focus { border-color: var(--accent); }
+  .newcompose-path-preview {
+    font-size: 11px; color: var(--text3); font-family: var(--mono);
+    margin-top: 4px; min-height: 14px;
+  }
+  .newcompose-editor {
+    flex: 1; min-height: 260px; width: 100%; box-sizing: border-box; resize: none;
+    background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; font-family: var(--mono); font-size: 12px;
+    line-height: 1.6; outline: none; transition: border-color .15s;
+  }
+  .newcompose-editor:focus { border-color: var(--accent); }
+  .newcompose-footer {
+    display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0;
+  }
+
+  /* ─── Archive browser modal ─────────────────────────────── */
+  .archivebrowser-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); z-index: 1004;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .archivebrowser-backdrop.open { display: flex; }
+  #restore-confirm-modal {
+    z-index: 1015;
+  }
+  .archivebrowser-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 16px; width: 820px; max-width: 98vw;
+    max-height: 80vh; min-height: 200px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: modalIn .15s ease;
+  }
+  .archivebrowser-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); flex-shrink: 0;
+  }
+  .archivebrowser-header-title {
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .archivebrowser-header-path {
+    font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px;
+  }
+  .archivebrowser-body {
+    flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .archivebrowser-empty {
+    text-align: center; color: var(--text3); font-family: var(--mono);
+    font-size: 13px; padding: 40px 0;
+  }
+  .archivebrowser-project {
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    background: rgba(28,32,48,.55);
+  }
+  .archivebrowser-project-header {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 46px;
+    padding: 10px 14px;
+    background: var(--bg3); cursor: pointer; user-select: none;
+  }
+  .archivebrowser-project-name {
+    font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text);
+    line-height: 1.25;
+  }
+  .archivebrowser-project-count {
+    font-family: var(--mono); font-size: 12px; color: var(--cyan);
+    white-space: nowrap;
+  }
+  .archivebrowser-files {
+    display: none;
+    padding: 10px 14px;
+  }
+  .archivebrowser-files.open { display: block; }
+  .archivebrowser-file {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 34px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px;
+  }
+  .archivebrowser-file:last-child { border-bottom: none; }
+  .archivebrowser-file-name { color: var(--text); }
+  .archivebrowser-file-mtime { color: var(--text3); font-size: 11px; }
+  .archivebrowser-search-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); flex-shrink: 0;
+  }
+  .archivebrowser-search {
+    flex: 1; background: var(--bg3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; font-family: var(--mono); font-size: 12px;
+    outline: none; transition: border-color .15s;
+  }
+  .archivebrowser-search:focus { border-color: var(--accent); }
+  .archivebrowser-count {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    white-space: nowrap;
+  }
+  .archivebrowser-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+    font-family: var(--mono); font-size: 12px;
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  }
+  .archivebrowser-table thead th {
+    text-align: left; font-size: 10px; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text3); background: var(--bg3); border-bottom: 1px solid var(--border2);
+    padding: 10px 12px;
+  }
+  .archivebrowser-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    background: rgba(28,32,48,.45);
+  }
+  .archivebrowser-table tbody tr:nth-child(even) {
+    background: rgba(28,32,48,.65);
+  }
+  .archivebrowser-table td {
+    padding: 10px 12px;
+    min-height: 44px;
+    color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .archivebrowser-table .files-col {
+    width: 100px;
+  }
+  .archivebrowser-table .actions-col {
+    width: 180px;
+  }
+  .archivebrowser-table .files-col { color: var(--cyan); text-align: right; }
+  .archivebrowser-table .actions-col { text-align: right; }
+  .archivebrowser-actions {
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .archive-restore-btn {
+    padding: 6px 12px; border-radius: 6px;
+    border: 1px solid rgba(34,197,94,.45);
+    background: rgba(34,197,94,.12);
+    color: var(--green); font-family: var(--mono); font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .archive-restore-btn:hover:enabled {
+    background: rgba(34,197,94,.2);
+    border-color: rgba(34,197,94,.7);
+  }
+  .archive-restore-btn:disabled {
+    opacity: .55; cursor: not-allowed;
+  }
+  .archivebrowser-file-list {
+    padding: 10px 12px 12px;
+    background: rgba(13,15,20,.55);
+    border-top: 1px solid var(--border2);
+  }
+  .archivebrowser-file-list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 30px; border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px;
+  }
+  .archivebrowser-file-list-item:last-child { border-bottom: none; }
+
+  .compose-editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .compose-editor-path {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    flex: 1;
+    min-width: 260px;
+  }
+  .compose-editor-btn {
+    background: none;
+    border: 1px solid rgba(6,182,212,.35);
+    color: var(--cyan);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--mono);
+    transition: all .15s;
+  }
+  .compose-editor-btn:hover:not(:disabled) {
+    background: rgba(6,182,212,.12);
+    border-color: var(--cyan);
+  }
+  .compose-editor-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+  .compose-editor-status {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+  .compose-editor-status.ok { color: var(--green); }
+  .compose-editor-status.error { color: var(--red); }
+  .compose-editor-textarea {
+    width: 100%;
+    min-height: 360px;
+    resize: vertical;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: #0f131d;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 14px;
+    outline: none;
+  }
+  .compose-editor-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,142,247,.15);
+  }
   @keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -657,6 +972,15 @@
   .view-btn.active { background: var(--accent); color: white; }
   .toolbar-spacer { flex: 1; }
   .toolbar-info { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .toolbar-right { display:flex; align-items:center; gap:8px; }
+  .toolbar-refresh-btn {
+    padding: 3px 8px; border-radius: 6px;
+    border: 1px solid var(--border2); background: none;
+    font-size: 12px; cursor: pointer; transition: all .15s;
+    color: var(--accent); font-family: var(--mono);
+  }
+  .toolbar-refresh-btn:hover { border-color: var(--accent); background: rgba(79,142,247,.15); }
+  .toolbar-refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
   .high-cpu-btn, .high-mem-btn {
     padding: 4px 10px; border-radius: 6px;
     border: 1px solid var(--border); background: none;
@@ -676,9 +1000,9 @@
   
   /* ─── Expand all button ─────────────────────────────────── */
   .expand-all-btn {
-    padding: 4px 10px; border-radius: 6px;
+    padding: 6px 12px; border-radius: 6px;
     border: 1px solid var(--border); background: none;
-    font-size: 12px; cursor: pointer; transition: all .15s;
+    font-size: 12px; font-family: var(--mono); cursor: pointer; transition: all .15s;
     color: var(--cyan);
   }
   .expand-all-btn:hover { background: rgba(6,182,212,.15); border-color: var(--cyan); }
@@ -998,6 +1322,36 @@
     font-family: var(--mono); font-size: 11px;
     transition: color .2s;
   }
+  .app-toast {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 5000;
+    background: rgba(20,23,32,.95);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    min-width: 220px;
+    max-width: 420px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    font-family: var(--mono);
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .app-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .app-toast.ok {
+    border-color: rgba(34,197,94,.55);
+  }
+  .app-toast.err {
+    border-color: rgba(239,68,68,.55);
+  }
 </style>
 </head>
 <body>
@@ -1006,6 +1360,8 @@
   <div class="icon">🐋</div>
   <p>Connecting to NAS Monitor…</p>
 </div>
+
+<div id="app-toast" class="app-toast" aria-live="polite"></div>
 
 <!-- MODAL -->
 <div class="modal-backdrop" id="modal">
@@ -1120,6 +1476,36 @@
   </div>
 </div>
 
+<!-- RESTORE CONFIRMATION MODAL -->
+<div class="action-modal-backdrop" id="restore-confirm-modal">
+  <div class="action-modal">
+    <div class="action-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🗄</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;" id="restore-confirm-title">Restore Archive</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="restore-confirm-project">–</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeRestoreConfirmModal()">✕</button>
+    </div>
+    <div class="action-modal-body">
+      <div id="restore-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+    </div>
+    <div class="action-modal-footer">
+      <button id="restore-confirm-btn" onclick="confirmRestoreProject()"
+        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;background:var(--green);color:white;">
+        Restore
+      </button>
+      <button onclick="closeRestoreConfirmModal()"
+        style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);
+               background:none;color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- CONSOLE MODAL -->
 <div class="console-backdrop" id="console-modal">
   <div class="console-modal">
@@ -1136,6 +1522,57 @@
       <button class="modal-close" onclick="closeConsoleModal()" style="margin-left:8px;">✕</button>
     </div>
     <div id="console-terminal"></div>
+  </div>
+</div>
+
+<!-- ARCHIVE BROWSER MODAL -->
+<div class="archivebrowser-backdrop" id="archivebrowser-modal">
+  <div class="archivebrowser-modal">
+    <div class="archivebrowser-header">
+      <div>
+        <div class="archivebrowser-header-title">🗄 Archive Browser</div>
+        <div class="archivebrowser-header-path">/volume1/docker/_backups</div>
+      </div>
+      <button class="modal-close" onclick="closeArchiveBrowserModal()">✕</button>
+    </div>
+    <div class="archivebrowser-search-wrap">
+      <input id="archivebrowser-search" class="archivebrowser-search" type="text"
+        placeholder="Filter projects…"
+        oninput="filterArchiveBrowser(this.value)" autocomplete="off" spellcheck="false"/>
+      <span id="archivebrowser-count" class="archivebrowser-count"></span>
+    </div>
+    <div class="archivebrowser-body" id="archivebrowser-body">
+      <div class="archivebrowser-empty">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW COMPOSE MODAL -->
+<div class="newcompose-backdrop" id="newcompose-modal">
+  <div class="newcompose-modal">
+    <div class="newcompose-header">
+      <span class="newcompose-header-title">📄 New compose.yaml</span>
+      <button class="modal-close" onclick="closeNewComposeModal()">✕</button>
+    </div>
+    <div class="newcompose-body">
+      <div>
+        <div class="newcompose-field-label">Project / Container Name</div>
+        <input id="newcompose-name" class="newcompose-name-input" type="text"
+          placeholder="e.g. my-app"
+          oninput="updateNewComposePath()"
+          onkeydown="if(event.key==='Enter')document.getElementById('newcompose-editor').focus()"/>
+        <div class="newcompose-path-preview" id="newcompose-path-preview"></div>
+      </div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
+        <div class="newcompose-field-label">compose.yaml</div>
+        <textarea id="newcompose-editor" class="newcompose-editor" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="newcompose-footer">
+      <span id="newcompose-status" style="font-family:var(--mono);font-size:12px;margin-right:auto;"></span>
+      <button class="restart-policy-save" style="background:none;color:var(--text3);border-color:var(--border2);" onclick="closeNewComposeModal()">Cancel</button>
+      <button id="newcompose-save-btn" class="restart-policy-save" onclick="saveNewCompose()">Save</button>
+    </div>
   </div>
 </div>
 
@@ -1262,10 +1699,15 @@
   <!-- ═══ CONTAINERS TAB ═══════════════════════════════════════════════ -->
   <div class="tab-panel active" id="tab-containers">
     <div class="toolbar">
-      <button class="expand-all-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
+      <button class="expand-all-btn" onclick="openNewComposeModal()" style="color:var(--green);border-color:rgba(34,197,94,.4);">＋ New Compose</button>
+      <button class="expand-all-btn" onclick="openArchiveBrowserModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🗄 Archive</button>
       <button class="expand-all-btn" onclick="openPruneModal()" style="color:var(--orange);border-color:rgba(249,115,22,.4);">🧹 Prune</button>
       <div class="toolbar-spacer"></div>
-      <div class="toolbar-info" id="container-count-info">–</div>
+      <div class="toolbar-right">
+        <div class="toolbar-info" id="container-count-info">–</div>
+        <button class="expand-all-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
+        <button class="toolbar-refresh-btn" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list">↻ Refresh</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table id="container-table">
@@ -1511,11 +1953,19 @@ let collapsedProcs = new Set();
 let allContainersExpanded = false;
 let procByPid = {};
 let pidContainerMap = {};
+let streamEs = null;
+let streamReconnectTimer = null;
 
 // ─── SSE / Polling ────────────────────────────────────────────────────────────
 function startStream() {
+  if (streamEs) {
+    try { streamEs.close(); } catch {}
+    streamEs = null;
+  }
   const es = new EventSource('/api/stream');
+  streamEs = es;
   es.onmessage = e => {
+    if (streamEs !== es) return;
     allData = JSON.parse(e.data);
     procByPid = {};
     allData.processes.forEach(p => procByPid[p.pid] = p);
@@ -1529,11 +1979,31 @@ function startStream() {
     document.getElementById('loading').classList.add('done');
     const t = new Date(allData.lastUpdate);
     document.getElementById('last-update').textContent = 'Updated ' + t.toLocaleTimeString();
+    const refreshBtn = el('container-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '↻ Refresh';
+    }
   };
   es.onerror = () => {
-    setTimeout(() => { es.close(); startStream(); }, 3000);
+    if (streamEs !== es) return;
+    if (streamReconnectTimer) clearTimeout(streamReconnectTimer);
+    streamReconnectTimer = setTimeout(() => {
+      try { es.close(); } catch {}
+      startStream();
+    }, 3000);
   };
 }
+
+function refreshContainerMonitoring() {
+  const btn = el('container-refresh-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⟳ Refreshing';
+  }
+  startStream();
+}
+
 startStream();
 
 // ─── Load persisted disk history on startup ───────────────────────────────────
@@ -1662,6 +2132,7 @@ function renderSummary() {
   const s = allData.summary;
   const containers = allData.containers;
   const processes = allData.processes;
+  const composeDefined = containers.filter(c => c.composeOnly).length;
 
   // Containers
   const running = containers.filter(c => (c.state||'').toLowerCase() === 'running').length;
@@ -1726,7 +2197,9 @@ function renderSummary() {
   // Badges
   el('tb-containers').textContent = containers.length;
   el('tb-processes').textContent = processes.length;
-  el('container-count-info').textContent = containers.length + ' containers';
+  el('container-count-info').textContent = composeDefined > 0
+    ? `${containers.length} containers · ${composeDefined} from compose config`
+    : containers.length + ' containers';
 }
 
 function drawSummaryNwSparkline() {
@@ -1865,6 +2338,36 @@ function drawMemPie(fraction, colorName) {
   ctx.stroke();
 }
 
+function isComposeBacked(container) {
+  return Boolean(container && container.composeManaged && container.composeProject && container.composeService);
+}
+
+function isComposeOnly(container) {
+  return Boolean(container && container.composeOnly);
+}
+
+function getContainerStateClass(container) {
+  const raw = String(container && container.state || '').toLowerCase();
+  return raw === 'configured' ? 'configured' : raw;
+}
+
+function renderContainerTitle(container) {
+  const subline = isComposeBacked(container)
+    ? `<div class="compose-subline">${esc(container.composeProject)}/${esc(container.composeService)}</div>`
+    : '';
+
+  return `<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+    <div class="container-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-weight:500">${esc(container.name)}</span>
+    </div>
+    ${subline}
+  </div>`;
+}
+
+function openComposeUpAction(project, service, name) {
+  openActionModal('composeUp', `${project}/${service}`, name, { project, service });
+}
+
 // ─── Container table ──────────────────────────────────────────────────────────
 function renderContainers() {
   const tbody = el('container-tbody');
@@ -1880,8 +2383,9 @@ function renderContainers() {
   if (filterText) {
     list = list.filter(c =>
       c.name.toLowerCase().includes(filterText) ||
-      c.id.toLowerCase().includes(filterText) ||
-      c.image.toLowerCase().includes(filterText) ||
+      (c.composeProject || '').toLowerCase().includes(filterText) ||
+      (c.composeDir || '').toLowerCase().includes(filterText) ||
+      (c.composeFile || '').toLowerCase().includes(filterText) ||
       (c.ports || []).some(p =>
         String(p.host).includes(filterText) ||
         String(p.container).includes(filterText) ||
@@ -1896,46 +2400,55 @@ function renderContainers() {
   for (const c of list) {
     const rowId = 'cr-' + c.id;
     const isExpanded = expandedContainers.has(c.id);
-    const stateClass = (c.state||'').toLowerCase();
+    const stateClass = getContainerStateClass(c);
+    const rowClick = ` onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')"`;
+    const startAction = isComposeBacked(c)
+      ? `openComposeUpAction('${esc(c.composeProject)}','${esc(c.composeService)}','${esc(c.name)}')`
+      : `openActionModal('start','${c.id}','${esc(c.name)}')`;
+    const startTitle = isComposeBacked(c) ? 'Compose Up' : 'Start';
+    const canArchiveFromList = stateClass === 'configured' && Boolean(c.composeProject);
 
-    html += `<tr id="${rowId}" onclick="openCDetailModal('${c.id}','${esc(c.name)}','${(c.state||'').toLowerCase()}')">
+    html += `<tr id="${rowId}"${rowClick}>
       <td style="width:30px">
         <span class="status-dot ${stateClass}"></span>
       </td>
       <td>
-        <div class="container-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-weight:500">${esc(c.name)}</span>
-        </div>
+        ${renderContainerTitle(c)}
       </td>
-      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:13px;">${c.cpu}</td>
-      <td class="accent-text" style="font-family:var(--mono);font-size:13px;">${c.memPercent}</td>
+      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:13px;">${esc(c.cpu || '–')}</td>
+      <td class="accent-text" style="font-family:var(--mono);font-size:13px;">${esc(c.memPercent || '–')}</td>
       <td>${esc(c.memUsage)}</td>
-      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
-      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
       <td class="muted">${esc(c.blockIO)}</td>
       <td class="muted">${esc(c.imageSize||'–')}</td>
       <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
       <td onclick="event.stopPropagation()">
         <div class="container-actions">
-          <button class="action-btn start"   title="Start"
+          <button class="action-btn start"   title="${startTitle}"
             ${stateClass === 'running' ? 'disabled' : ''}
-            onclick="openActionModal('start','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
+            onclick="${startAction}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
           <button class="action-btn restart" title="Restart"
-            ${stateClass !== 'running' ? 'disabled' : ''}
+            ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
             onclick="openActionModal('restart','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
           <button class="action-btn stop"    title="Stop"
-            ${stateClass !== 'running' ? 'disabled' : ''}
+            ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
             onclick="openActionModal('stop','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
-          <button class="action-btn logs"    title="Logs"    onclick="openLogs('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg></button>
-          <button class="action-btn console" title="Console" style="display:none;"
+          <button class="action-btn archive" title="${canArchiveFromList ? 'Archive compose config' : 'Archive (non-registered only)'}"
+            ${canArchiveFromList ? '' : 'disabled'}
+            onclick="openActionModal('archive','${c.id}','${esc(c.name)}',{project:'${esc(c.composeProject || '')}'})"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg></button>
+          <button class="action-btn logs"    title="Logs"
             ${stateClass !== 'running' ? 'disabled' : ''}
+            onclick="openLogs('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg></button>
+          <button class="action-btn console" title="Console" style="display:none;"
+            ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
             onclick="openConsoleModal('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></button>
-          <button class="action-btn delete"  title="Delete container" onclick="openActionModal('delete','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          <button class="action-btn delete"  title="Delete (disabled)" disabled><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
       </td>
       <td onclick="event.stopPropagation()">
-        <button class="container-expand-btn ${isExpanded?'open':''}" onclick="toggleContainerRow('${c.id}', event)">
+        <button class="container-expand-btn ${isExpanded?'open':''}" ${isComposeOnly(c) ? 'disabled' : ''} onclick="toggleContainerRow('${c.id}', event)">
           ${isExpanded ? `▼ ${c.pids.length || c.processCount} SUB-PROCESSES` : `▶ ${c.pids.length || c.processCount} SUB-PROCESSES`}
         </button>
       </td>
@@ -2266,25 +2779,33 @@ el('modal').addEventListener('click', e => { if (e.target === el('modal')) close
 // ─── Container Actions ────────────────────────────────────────────────────────
 // ─── Container Action Modal ───────────────────────────────────────────────────
 let _actionPending = null; // { action, id, name }
+let _composeUpAbortController = null;
 
 const ACTION_META = {
   start:   { icon: '▶', label: 'Start Container',   color: 'var(--green)',  btnBg: '#16a34a',
               desc: c => `Start container <strong>${esc(c)}</strong>?`,
               steps: ['Sending start command…', 'Waiting for container to start…', 'Done'] },
+  composeUp:{ icon: '▲', label: 'Compose Up',        color: 'var(--cyan)',   btnBg: '#0891b2',
+              desc: c => `Run <strong>docker compose up -d</strong> for <strong>${esc(c)}</strong>?`,
+              steps: ['Reading compose project…', 'Running docker compose up -d…', 'Done'] },
   restart: { icon: '↺', label: 'Restart Container', color: 'var(--yellow)', btnBg: '#ca8a04',
               desc: c => `Restart container <strong>${esc(c)}</strong>? It will briefly go offline.`,
               steps: ['Sending restart command…', 'Waiting for container to come back up…', 'Done'] },
   stop:    { icon: '■', label: 'Stop Container',    color: 'var(--orange)', btnBg: '#ea580c',
               desc: c => `Stop container <strong>${esc(c)}</strong>? Running processes inside will be terminated.`,
               steps: ['Sending stop command…', 'Waiting for container to stop…', 'Done'] },
+  archive: { icon: '🗄', label: 'Archive Compose',   color: 'var(--accent)', btnBg: '#2563eb',
+              desc: c => `Archive compose config for <strong>${esc(c)}</strong>?<br><span style="font-size:12px;">This moves files from <code>/volume1/docker/_config/&lt;project&gt;</code> to <code>/volume1/docker/_backups/&lt;project&gt;</code>.</span>`,
+              steps: ['Preparing archive target…', 'Moving compose files to backup…', 'Done'] },
   delete:  { icon: '🗑', label: 'Delete Container',  color: 'var(--red)',    btnBg: '#dc2626',
               desc: c => `Permanently delete container <strong>${esc(c)}</strong>?<br><span style="color:var(--red);font-size:12px;">⚠ This cannot be undone. The container will be stopped and removed.</span>`,
               steps: ['Stopping container…', 'Removing container…', 'Done'] },
 };
 
-function openActionModal(action, id, name) {
-  _actionPending = { action, id, name };
+function openActionModal(action, id, name, extra = {}) {
+  _actionPending = { action, id, name, ...extra };
   const meta = ACTION_META[action];
+  el('action-modal').classList.toggle('composeup-large', action === 'composeUp');
   el('action-modal-icon').textContent    = meta.icon;
   el('action-modal-title').textContent   = meta.label;
   el('action-modal-container').textContent = name + '  ·  ' + id;
@@ -2316,19 +2837,188 @@ function updateStep(stepEl, state, text) {
 
 async function executeAction() {
   if (!_actionPending) return;
-  const { action, id, name } = _actionPending;
+  const { action, id, name, project, service } = _actionPending;
   const meta = ACTION_META[action];
+  const isComposeUpAction = action === 'composeUp';
+  let composeCancelled = false;
+
+  const refreshContainersNow = async () => {
+    try {
+      if (typeof refreshContainerMonitoring === 'function') refreshContainerMonitoring();
+      const r = await fetch('/api/data');
+      const latest = await r.json();
+      if (latest && Array.isArray(latest.containers)) {
+        allData = latest;
+        render();
+      }
+    } catch {}
+  };
+
+  const openComposeStartedContainerDetail = async () => {
+    try {
+      // Give Docker a short time window to register the new container in stats output.
+      for (let i = 0; i < 8; i++) {
+        const res = await fetch('/api/data');
+        const latest = await res.json();
+        if (latest && Array.isArray(latest.containers)) {
+          allData = latest;
+          const list = latest.containers;
+          let target = list.find(c => !c.composeOnly && c.composeProject === project && c.composeService === service);
+          if (!target && name) {
+            const n = String(name).toLowerCase();
+            target = list.find(c => !c.composeOnly && String(c.name || '').toLowerCase() === n);
+          }
+          if (target) {
+            switchTab('containers');
+            render();
+            openCDetailModal(target.id, target.name, getContainerStateClass(target));
+            return true;
+          }
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+    } catch {}
+    return false;
+  };
 
   // Lock UI during execution — remove onclick so button is fully inert
   el('action-modal-confirm').disabled = true;
   el('action-modal-confirm').onclick = null;
   el('action-modal-confirm').textContent = 'Running…';
-  el('action-modal-cancel').style.display = 'none';
+  el('action-modal-cancel').style.display = isComposeUpAction ? '' : 'none';
+  if (isComposeUpAction) {
+    el('action-modal-cancel').textContent = 'Cancel Run';
+    el('action-modal-cancel').style.borderColor = 'var(--red)';
+    el('action-modal-cancel').style.color = 'var(--red)';
+    el('action-modal-cancel').onclick = () => {
+      composeCancelled = true;
+      if (_composeUpAbortController) {
+        try { _composeUpAbortController.abort(); } catch {}
+      }
+    };
+  }
   el('action-modal-close').style.display  = 'none';
   el('action-progress').innerHTML = '';
 
   try {
-    if (action === 'delete') {
+    if (action === 'composeUp') {
+      const s1 = addProgressStep(meta.steps[0], 'active');
+      const s2 = addProgressStep(meta.steps[1], 'pending');
+      const logBox = document.createElement('pre');
+      logBox.className = 'action-stream-log';
+      logBox.textContent = '';
+      el('action-progress').appendChild(logBox);
+
+      const appendLog = (line, type = 'stdout') => {
+        const prefix = type === 'stderr' ? '[err] ' : type === 'status' ? '[info] ' : '';
+        logBox.textContent += `${prefix}${line}\n`;
+        logBox.scrollTop = logBox.scrollHeight;
+      };
+
+      _composeUpAbortController = new AbortController();
+      const res = await fetch('/api/compose/up/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project, service }),
+        signal: _composeUpAbortController.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        updateStep(s1, 'error', 'Failed: unable to start compose stream');
+        updateStep(s2, 'error', 'Compose up did not start');
+        el('action-modal-confirm').textContent = '✕ Failed';
+        el('action-modal-confirm').style.background = 'var(--red)';
+        showToast('Compose up failed: unable to start stream', 'err', 3400);
+        closeActionModal();
+        return;
+      } else {
+        updateStep(s1, 'done', 'Compose project loaded.');
+        updateStep(s2, 'active', meta.steps[1]);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let failedMsg = '';
+        let doneOk = false;
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let idx;
+          while ((idx = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, idx).trim();
+            buffer = buffer.slice(idx + 1);
+            if (!line) continue;
+
+            let evt;
+            try { evt = JSON.parse(line); } catch { continue; }
+            if (evt.message) appendLog(evt.message, evt.type);
+
+            if (evt.type === 'error') {
+              failedMsg = evt.message || 'compose up failed';
+            }
+            if (evt.type === 'done') {
+              doneOk = !!evt.ok;
+            }
+          }
+        }
+
+        if (composeCancelled) {
+          addProgressStep('Compose up cancelled by user.', 'error');
+          showToast('Compose up cancelled.', 'err', 2600);
+          closeActionModal();
+          return;
+        }
+
+        if (doneOk && !failedMsg) {
+          updateStep(s2, 'done', 'Compose up completed.');
+          addProgressStep(meta.steps[2], 'done');
+          el('action-modal-confirm').textContent = '✓ Done';
+          el('action-modal-confirm').style.background = '#16a34a';
+          await refreshContainersNow();
+          const found = await openComposeStartedContainerDetail();
+          if (found) {
+            closeActionModal();
+            closeCDetailModal();
+            return;
+          }
+          showToast('Compose up finished but container was not detected.', 'err', 3600);
+          closeActionModal();
+          return;
+        } else {
+          updateStep(s2, 'error', 'Failed: ' + (failedMsg || 'unknown error'));
+          el('action-modal-confirm').textContent = '✕ Failed';
+          el('action-modal-confirm').style.background = 'var(--red)';
+          showToast(`Compose up failed: ${failedMsg || 'unknown error'}`, 'err', 3600);
+          closeActionModal();
+          return;
+        }
+      }
+    } else if (action === 'archive') {
+      const s1 = addProgressStep(meta.steps[0], 'active');
+      const res = await fetch('/api/compose/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        updateStep(s1, 'done', meta.steps[1]);
+        addProgressStep(meta.steps[2], 'done');
+        el('action-modal-confirm').textContent = '✓ Archived';
+        el('action-modal-confirm').style.background = '#16a34a';
+        if (typeof refreshContainerMonitoring === 'function') refreshContainerMonitoring();
+        closeActionModal();
+        closeCDetailModal();
+        return;
+      } else {
+        updateStep(s1, 'error', 'Failed: ' + (data.error || 'unknown error'));
+        el('action-modal-confirm').textContent = '✕ Failed';
+        el('action-modal-confirm').style.background = 'var(--red)';
+      }
+    } else if (action === 'delete') {
       // Step 1: Stop
       const s1 = addProgressStep('Stopping container…', 'active');
       try {
@@ -2346,6 +3036,11 @@ async function executeAction() {
         addProgressStep('Done — container deleted.', 'done');
         el('action-modal-confirm').textContent = '✓ Deleted';
         el('action-modal-confirm').style.background = 'var(--green)';
+        await refreshContainersNow();
+        closeActionModal();
+        closeCDetailModal();
+        switchTab('containers');
+        return;
       } else {
         updateStep(s2, 'error', 'Remove failed: ' + (data.error || 'unknown error'));
         el('action-modal-confirm').textContent = '✕ Failed';
@@ -2361,6 +3056,9 @@ async function executeAction() {
         addProgressStep(meta.steps[2], 'done');
         el('action-modal-confirm').textContent = '✓ Done';
         el('action-modal-confirm').style.background = '#16a34a';
+        if (action === 'start' || action === 'restart' || action === 'stop') {
+          await refreshContainersNow();
+        }
       } else {
         updateStep(s1, 'error', 'Failed: ' + (data.error || 'unknown error'));
         el('action-modal-confirm').textContent = '✕ Failed';
@@ -2371,6 +3069,16 @@ async function executeAction() {
     addProgressStep('Error: ' + e.message, 'error');
     el('action-modal-confirm').textContent = '✕ Error';
     el('action-modal-confirm').style.background = 'var(--red)';
+    if (action === 'composeUp') {
+      if (e && e.name === 'AbortError') {
+        showToast('Compose up cancelled.', 'err', 2600);
+        closeActionModal();
+        return;
+      }
+      showToast(`Compose up error: ${e.message}`, 'err', 3600);
+      closeActionModal();
+      return;
+    }
   }
 
   // After completion: hide confirm, show only Close (styled red)
@@ -2386,6 +3094,8 @@ async function executeAction() {
 
 function closeActionModal() {
   el('action-modal').classList.remove('open');
+  el('action-modal').classList.remove('composeup-large');
+  _composeUpAbortController = null;
   _actionPending = null;
   // Reset for next open
   el('action-modal-confirm').style.display = '';
@@ -2467,7 +3177,8 @@ function closeLogModal() {
 }
 
 el('log-modal').addEventListener('click', e => { if (e.target === el('log-modal')) closeLogModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); closeNewComposeModal(); } });
+el('newcompose-modal').addEventListener('click', e => { if (e.target === el('newcompose-modal')) closeNewComposeModal(); });
 
 
 // ─── Main render ──────────────────────────────────────────────────────────────
@@ -2482,6 +3193,18 @@ function render() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let _toastTimer = null;
+function showToast(message, type = 'ok', ms = 2600) {
+  const node = el('app-toast');
+  if (!node) return;
+  node.textContent = message;
+  node.className = `app-toast ${type === 'err' ? 'err' : 'ok'} show`;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => {
+    node.classList.remove('show');
+  }, ms);
+}
 
 function fmtBytes(b) {
   if (!b) return '0B';
@@ -3274,22 +3997,35 @@ async function openCDetailModal(id, name, stateClass) {
     el('cdetail-id').textContent   = d.id + (d.fullId ? '  ·  sha256:' + d.fullId.slice(0,12) : '');
     el('cdetail-status-dot').className = `status-dot ${(d.status||'').toLowerCase()}`;
 
-    // Populate action buttons
+    // Populate action buttons based on container mode/state
     const isRunning = d.running;
     const cid = d.id, cname = esc(d.name || name);
-    el('cdetail-actions').innerHTML = `
-      <button class="cdetail-action-btn start"   title="Start"   ${isRunning ? 'disabled' : ''}
-        onclick="openActionModal('start','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Start</span></button>
-      <button class="cdetail-action-btn restart" title="Restart" ${!isRunning ? 'disabled' : ''}
-        onclick="openActionModal('restart','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Restart</span></button>
-      <button class="cdetail-action-btn stop"    title="Stop"    ${!isRunning ? 'disabled' : ''}
-        onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Stop</span></button>
-      <button class="cdetail-action-btn logs"    title="Logs"
-        onclick="openLogs('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>Logs</span></button>
-      <button class="cdetail-action-btn console" title="Console" style="display:none;" ${!isRunning ? 'disabled' : ''}
-        onclick="openConsoleModal('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>Console</span></button>
-      <button class="cdetail-action-btn delete"  title="Delete"
-        onclick="openActionModal('delete','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span>Delete</span></button>`;
+    const composeBacked = d.composeManaged && d.composeProject && d.composeService;
+    const isComposeConfigured = String(d.status || '').toLowerCase() === 'configured' || Boolean(d.composeOnly);
+    const composeStartOnclick = `openComposeUpAction('${esc(d.composeProject || '')}','${esc(d.composeService || '')}','${cname}')`;
+    const standardStartOnclick = `openActionModal('start','${cid}','${cname}')`;
+
+    if (isComposeConfigured) {
+      // Registered only: show Compose Up + Archive, hide all other actions
+      el('cdetail-actions').innerHTML = `
+        <button class="cdetail-action-btn start" title="Compose Up" ${composeBacked ? '' : 'disabled'}
+          onclick="${composeStartOnclick}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Compose Up</span></button>
+        <button class="cdetail-action-btn archive" title="Archive compose config" ${d.composeProject ? '' : 'disabled'}
+          onclick="openActionModal('archive','${cid}','${cname}',{project:'${esc(d.composeProject || '')}'})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg><span>Archive</span></button>`;
+    } else {
+      // Running/stopped containers: hide Compose Up + Archive, show standard controls
+      el('cdetail-actions').innerHTML = `
+        <button class="cdetail-action-btn start" title="Start" ${isRunning ? 'disabled' : ''}
+          onclick="${standardStartOnclick}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Start</span></button>
+        <button class="cdetail-action-btn restart" title="Restart" ${isRunning ? '' : 'disabled'}
+          onclick="openActionModal('restart','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Restart</span></button>
+        <button class="cdetail-action-btn stop" title="Stop" ${isRunning ? '' : 'disabled'}
+          onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Stop</span></button>
+        <button class="cdetail-action-btn logs" title="Logs"
+          onclick="openLogs('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>Logs</span></button>
+        <button class="cdetail-action-btn delete" title="Delete" ${isRunning ? 'disabled' : ''}
+          onclick="openActionModal('delete','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span>Delete</span></button>`;
+    }
 
     function kv(key, val, cls='') {
       return `<div class="cdetail-kv ${cls}"><div class="cdetail-key">${esc(key)}</div><div class="cdetail-val">${esc(String(val||'–'))}</div></div>`;
@@ -3426,7 +4162,67 @@ async function openCDetailModal(id, name, stateClass) {
       </tr>`),
       'No networks'));
 
-    el('cdetail-body').innerHTML = statusSection + detailSection + volumesSection + networksSection;
+    // ── Tab layout ──
+    const isComposeOnly = d.composeOnly;
+    const defaultTab = (isComposeOnly && composeBacked) ? 'compose' : 'status';
+    const editorId = `compose-editor-${d.id}`;
+    const statusId = `compose-save-status-${d.id}`;
+    const saveId   = `compose-save-btn-${d.id}`;
+
+    const statusPanelHtml = isComposeOnly
+      ? `<div style="padding:48px 20px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;">No container running — use <strong style="color:var(--accent);font-style:normal;">Compose Up</strong> to start this service.</div>`
+      : statusSection + detailSection + volumesSection + networksSection;
+
+    const tabBar = `<div class="cdetail-tabs">
+      <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')">Container Status</button>
+      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')">compose.yaml</button>` : ''}
+    </div>`;
+
+    el('cdetail-body').innerHTML = tabBar
+      + `<div class="cdetail-tab-panel" id="cdetail-panel-status"${defaultTab !== 'status' ? ' style="display:none"' : ''}>`
+      + statusPanelHtml
+      + `</div>`
+      + (composeBacked
+          ? `<div class="cdetail-tab-panel compose-panel" id="cdetail-panel-compose"${defaultTab !== 'compose' ? ' style="display:none"' : ''}>`
+            + `<div id="${editorId}-wrap" style="padding:20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;">`
+            + `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">⟳ Loading compose file…</div>`
+            + `</div></div>`
+          : '');
+
+    // ── compose.yaml editor (compose-managed containers only) ──
+    if (composeBacked) {
+      try {
+        const params = new URLSearchParams({ project: d.composeProject });
+        if (d.composeFile) params.set('composeFile', d.composeFile);
+        const fr = await fetch('/api/compose/file?' + params.toString());
+        const fd = await fr.json();
+        const wrap = document.getElementById(editorId + '-wrap');
+        if (!wrap) return;
+        if (!fd.ok) {
+          wrap.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:8px 0;">⚠ ${esc(fd.error||'Failed to load compose file')}</div>`;
+        } else {
+          wrap.innerHTML = `
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);">${esc(fd.composeFile)}</div>
+            <textarea id="${editorId}"
+              spellcheck="false"
+              style="width:100%;flex:1;min-height:120px;resize:none;
+                     background:var(--bg3);color:var(--text);border:1px solid var(--border);
+                     border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;
+                     line-height:1.5;box-sizing:border-box;outline:none;"
+            ></textarea>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+              <button id="${saveId}" class="restart-policy-save"
+                onclick="saveComposeFile('${esc(d.composeProject)}','${esc(fd.composeFile)}','${editorId}','${saveId}','${statusId}')">Save</button>
+              <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
+            </div>`;
+          const ta = document.getElementById(editorId);
+          if (ta) ta.value = fd.composeFileContent || '';
+        }
+      } catch (e) {
+        const wrap = document.getElementById(editorId + '-wrap');
+        if (wrap) wrap.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:8px 0;">⚠ ${esc(e.message)}</div>`;
+      }
+    }
 
   } catch (e) {
     el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(e.message)}</div>`;
@@ -3478,6 +4274,254 @@ async function saveRestartPolicy(containerId) {
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Apply';
+  }
+}
+
+function switchCDetailTab(tab) {
+  document.querySelectorAll('.cdetail-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.cdetail-tab-panel').forEach(p => {
+    p.style.display = p.id === `cdetail-panel-${tab}` ? '' : 'none';
+  });
+}
+
+async function saveComposeFile(project, composeFile, editorId, saveId, statusId) {
+  const ta     = document.getElementById(editorId);
+  const saveBtn= document.getElementById(saveId);
+  const status = document.getElementById(statusId);
+  if (!ta || !saveBtn || !status) return;
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = '…';
+  status.style.color = 'var(--text3)';
+  status.textContent = 'Saving…';
+
+  try {
+    const res  = await fetch('/api/compose/file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project, composeFile, content: ta.value }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Saved';
+      setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '✗ ' + (data.error || 'Failed');
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ ' + e.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+  }
+}
+
+// ─── Archive Browser Modal ────────────────────────────────────────────────────
+async function openArchiveBrowserModal() {
+  el('archivebrowser-modal').classList.add('open');
+  el('archivebrowser-body').innerHTML = '<div class="archivebrowser-empty">Loading…</div>';
+  try {
+    const res = await fetch('/api/compose/backups');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to load');
+    renderArchiveBrowser(data.backups);
+  } catch (e) {
+    el('archivebrowser-body').innerHTML = `<div class="archivebrowser-empty" style="color:var(--red)">✗ ${e.message}</div>`;
+  }
+}
+
+function closeArchiveBrowserModal() {
+  el('archivebrowser-modal').classList.remove('open');
+}
+
+let _archiveBackups = [];
+let _archiveVisibleBackups = [];
+let _archiveExpandedIndex = -1;
+let _archiveRestoringProject = '';
+
+function renderArchiveBrowser(backups) {
+  _archiveBackups = backups || [];
+  _archiveExpandedIndex = -1;
+  el('archivebrowser-search').value = '';
+  el('archivebrowser-count').textContent = `${_archiveBackups.length} project${_archiveBackups.length !== 1 ? 's' : ''}`;
+  _renderArchiveList(_archiveBackups);
+}
+
+function filterArchiveBrowser(query) {
+  const q = query.trim().toLowerCase();
+  const filtered = q ? _archiveBackups.filter(p => p.project.toLowerCase().includes(q)) : _archiveBackups;
+  el('archivebrowser-count').textContent = q
+    ? `${filtered.length} / ${_archiveBackups.length}`
+    : `${_archiveBackups.length} project${_archiveBackups.length !== 1 ? 's' : ''}`;
+  _renderArchiveList(filtered);
+}
+
+function _renderArchiveList(backups) {
+  _archiveVisibleBackups = backups || [];
+  const body = el('archivebrowser-body');
+  if (!_archiveVisibleBackups.length) {
+    body.innerHTML = '<div class="archivebrowser-empty">No projects found.</div>';
+    return;
+  }
+  const rows = _archiveVisibleBackups.map((proj, i) => {
+    const files = Array.isArray(proj.files) ? proj.files : [];
+    const isOpen = i === _archiveExpandedIndex;
+    const isRestoring = _archiveRestoringProject === (proj.project || '');
+    const detailRow = isOpen
+      ? `<tr><td colspan="3" style="padding:0;">
+          <div class="archivebrowser-file-list">
+            ${files.length
+              ? files.map(f => `<div class="archivebrowser-file-list-item"><span>${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
+              : '<div class="archivebrowser-empty" style="padding:8px 0;text-align:left;">No files</div>'}
+          </div>
+        </td></tr>`
+      : '';
+    return `<tr>
+      <td title="${esc(proj.project || '')}">${esc(proj.project || '(unnamed)')}</td>
+      <td class="files-col">${files.length}</td>
+      <td class="actions-col"><div class="archivebrowser-actions"><button class="expand-all-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button></div></td>
+    </tr>${detailRow}`;
+  }).join('');
+
+  body.innerHTML = `<table class="archivebrowser-table">
+    <thead><tr><th>Project</th><th class="files-col">Files</th><th class="actions-col">Details</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function toggleArchiveProject(i) {
+  _archiveExpandedIndex = (_archiveExpandedIndex === i) ? -1 : i;
+  _renderArchiveList(_archiveVisibleBackups);
+}
+
+let _archiveProjectToRestore = '';
+
+function openRestoreConfirmModal(project) {
+  _archiveProjectToRestore = project;
+  el('restore-confirm-project').textContent = project;
+  el('restore-confirm-desc').innerHTML = `Restore archive for <strong>${esc(project)}</strong>?<br><br>This moves files from <code style="color:var(--cyan)">/volume1/docker/_backups/${esc(project)}/</code> to <code style="color:var(--cyan)">/volume1/docker/_config/${esc(project)}/</code>.`;
+  el('restore-confirm-modal').classList.add('open');
+}
+
+function closeRestoreConfirmModal() {
+  el('restore-confirm-modal').classList.remove('open');
+  _archiveProjectToRestore = '';
+}
+
+async function confirmRestoreProject() {
+  const project = _archiveProjectToRestore;
+  if (!project) return;
+  
+  el('restore-confirm-btn').disabled = true;
+  el('restore-confirm-btn').textContent = 'Restoring…';
+  
+  try {
+    const res = await fetch('/api/compose/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Restore failed');
+
+    const listRes = await fetch('/api/compose/backups');
+    const listData = await listRes.json();
+    if (!listData.ok) throw new Error(listData.error || 'Failed to refresh archives');
+    renderArchiveBrowser(listData.backups);
+    if (typeof refreshContainerMonitoring === 'function') refreshContainerMonitoring();
+    showToast(`Restored ${project} to /volume1/docker/_config/${project}/`, 'ok');
+    closeRestoreConfirmModal();
+  } catch (e) {
+    showToast(`Restore failed: ${e.message}`, 'err', 3400);
+    closeRestoreConfirmModal();
+  }
+}
+
+async function restoreArchiveProject(i) {
+  const proj = _archiveVisibleBackups[i];
+  const project = proj && proj.project ? proj.project : '';
+  if (!project) return;
+  openRestoreConfirmModal(project);
+}
+
+// ─── New Compose Modal ────────────────────────────────────────────────────────
+const _DEFAULT_COMPOSE = `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
+
+function openNewComposeModal() {
+  const modal = el('newcompose-modal');
+  el('newcompose-name').value = '';
+  el('newcompose-editor').value = _DEFAULT_COMPOSE;
+  el('newcompose-path-preview').textContent = '';
+  el('newcompose-status').textContent = '';
+  el('newcompose-save-btn').disabled = false;
+  modal.classList.add('open');
+  setTimeout(() => el('newcompose-name').focus(), 50);
+}
+
+function closeNewComposeModal() {
+  el('newcompose-modal').classList.remove('open');
+}
+
+function updateNewComposePath() {
+  const name = el('newcompose-name').value.trim();
+  const preview = el('newcompose-path-preview');
+  if (name) {
+    preview.style.color = 'var(--text3)';
+    preview.textContent = `/volume1/docker/_config/${name}/compose.yaml`;
+  } else {
+    preview.textContent = '';
+  }
+}
+
+async function saveNewCompose() {
+  const name    = el('newcompose-name').value.trim();
+  const content = el('newcompose-editor').value;
+  const saveBtn = el('newcompose-save-btn');
+  const status  = el('newcompose-status');
+
+  if (!name) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ Project name is required.';
+    el('newcompose-name').focus();
+    return;
+  }
+  if (!content.trim()) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ compose.yaml content is required.';
+    el('newcompose-editor').focus();
+    return;
+  }
+
+  saveBtn.disabled = true;
+  status.style.color = 'var(--text3)';
+  status.textContent = 'Creating…';
+
+  try {
+    const res  = await fetch('/api/compose/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, content }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      closeNewComposeModal();
+      if (data.openTarget && data.openTarget.id) {
+        openCDetailModal(data.openTarget.id, data.openTarget.name || name, data.openTarget.stateClass || 'configured');
+      } else if (typeof refreshContainerMonitoring === 'function') {
+        refreshContainerMonitoring();
+      }
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '✗ ' + (data.error || 'Failed');
+      saveBtn.disabled = false;
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ ' + e.message;
+    saveBtn.disabled = false;
   }
 }
 
@@ -4090,7 +5134,8 @@ function renderCategories() {
           <tbody>
             ${list.map(c => {
               const stateClass = (c.state||'').toLowerCase();
-              return `<tr onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')">
+              const rowClick = ` onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')"`;
+              return `<tr${rowClick}>
                 <td class="col-dot"><span class="status-dot ${stateClass}"></span></td>
                 <td class="col-name" style="font-weight:600;color:var(--text);">${esc(c.name)}</td>
                 <td class="col-cpu" style="color:${cpuHex(c.cpuNum)};">${c.cpu || '0%'}</td>

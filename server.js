@@ -7,11 +7,12 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { exec, execFile } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
 const crypto = require('crypto');
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const PORT = process.env.PORT || 3232;
 
 // ─── Credentials file (PBKDF2-hashed) ────────────────────────────────────────
@@ -534,6 +535,359 @@ function findDocker() {
 }
 
 const DOCKER = findDocker();
+const DOCKER_COMPOSE_PATHS = [
+  '/usr/bin/docker-compose',
+  '/usr/local/bin/docker-compose',
+  '/bin/docker-compose',
+];
+const COMPOSE_CONFIG_ROOT = process.env.COMPOSE_CONFIG_ROOT || '/volume1/docker/_config';
+const COMPOSE_BACKUP_ROOT = process.env.COMPOSE_BACKUP_ROOT || '/volume1/docker/_backups';
+const COMPOSE_FILE_CANDIDATES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml'];
+const COMPOSE_DISCOVERY_TTL_MS = 30 * 1000;
+
+function findDockerComposeBinary() {
+  for (const p of DOCKER_COMPOSE_PATHS) {
+    if (fs.existsSync(p)) return p;
+  }
+  return 'docker-compose';
+}
+
+const DOCKER_COMPOSE = findDockerComposeBinary();
+
+function stripInlineYamlComment(value) {
+  return String(value || '').replace(/\s+#.*$/, '').trim();
+}
+
+function unquoteYamlScalar(value) {
+  const cleaned = stripInlineYamlComment(value);
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    return cleaned.slice(1, -1);
+  }
+  return cleaned;
+}
+
+function parseComposePortSpec(spec) {
+  const cleaned = unquoteYamlScalar(spec);
+  if (!cleaned) return null;
+  const [portPart, protoRaw] = cleaned.split('/');
+  const proto = (protoRaw || 'tcp').trim();
+  const segments = portPart.split(':').map(s => s.trim()).filter(Boolean);
+  if (!segments.length) return null;
+
+  let host = '';
+  let container = '';
+  if (segments.length === 1) {
+    host = segments[0];
+    container = segments[0];
+  } else if (segments.length === 2) {
+    host = segments[0];
+    container = segments[1];
+  } else {
+    host = segments[segments.length - 2];
+    container = segments[segments.length - 1];
+  }
+
+  const hostMatch = host.match(/\d+(?:-\d+)?/);
+  const containerMatch = container.match(/\d+(?:-\d+)?/);
+  if (!hostMatch && !containerMatch) return null;
+
+  return {
+    host: hostMatch ? hostMatch[0] : '',
+    container: containerMatch ? containerMatch[0] : '',
+    proto,
+  };
+}
+
+function parseComposeServices(raw) {
+  const services = [];
+  const lines = String(raw || '').replace(/\r/g, '').split('\n');
+  let inServices = false;
+  let servicesIndent = 0;
+  let current = null;
+  let currentIndent = 0;
+  let inPorts = false;
+  let portsIndent = 0;
+
+  const flushCurrent = () => {
+    if (!current) return;
+    services.push({
+      service: current.service,
+      containerName: current.containerName || '',
+      image: current.image || '',
+      ports: current.ports || [],
+      displayName: current.containerName || current.service,
+    });
+    current = null;
+    inPorts = false;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const indent = line.match(/^\s*/)[0].length;
+    if (!inServices) {
+      if (trimmed === 'services:' || trimmed.startsWith('services:')) {
+        inServices = true;
+        servicesIndent = indent;
+      }
+      continue;
+    }
+
+    if (indent <= servicesIndent && !trimmed.startsWith('-')) {
+      flushCurrent();
+      break;
+    }
+
+    if (indent === servicesIndent + 2 && /^[A-Za-z0-9_.-]+:\s*$/.test(trimmed)) {
+      flushCurrent();
+      current = { service: trimmed.slice(0, -1), ports: [] };
+      currentIndent = indent;
+      continue;
+    }
+
+    if (!current) continue;
+
+    if (inPorts && indent <= portsIndent) inPorts = false;
+
+    if (indent === currentIndent + 2) {
+      const m = trimmed.match(/^([A-Za-z0-9_.-]+):\s*(.*)$/);
+      if (!m) continue;
+      const [, key, value] = m;
+      if (key === 'container_name') {
+        current.containerName = unquoteYamlScalar(value);
+      } else if (key === 'image') {
+        current.image = unquoteYamlScalar(value);
+      } else if (key === 'ports') {
+        inPorts = true;
+        portsIndent = indent;
+      }
+      continue;
+    }
+
+    if (inPorts && indent > portsIndent && trimmed.startsWith('- ')) {
+      const parsed = parseComposePortSpec(trimmed.slice(2));
+      if (parsed) current.ports.push(parsed);
+    }
+  }
+
+  flushCurrent();
+  return services;
+}
+
+let composeDiscoveryCache = { ts: 0, projects: [] };
+
+function discoverComposeProjects(force = false) {
+  const now = Date.now();
+  if (!force && now - composeDiscoveryCache.ts < COMPOSE_DISCOVERY_TTL_MS) {
+    return composeDiscoveryCache.projects;
+  }
+
+  const projects = [];
+  try {
+    const entries = fs.readdirSync(COMPOSE_CONFIG_ROOT, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const projectDir = path.join(COMPOSE_CONFIG_ROOT, entry.name);
+      const composeFileName = COMPOSE_FILE_CANDIDATES.find(name => fs.existsSync(path.join(projectDir, name)));
+      if (!composeFileName) continue;
+
+      const composeFile = path.join(projectDir, composeFileName);
+      let services = [];
+      try {
+        services = parseComposeServices(fs.readFileSync(composeFile, 'utf8'));
+      } catch {}
+
+      projects.push({
+        project: entry.name,
+        dir: projectDir,
+        composeFile,
+        services,
+      });
+    }
+  } catch {}
+
+  composeDiscoveryCache = { ts: now, projects };
+  return projects;
+}
+
+function buildComposeSyntheticId(project, service) {
+  return `compose:${project}:${service}`;
+}
+
+function parseComposeSyntheticId(id) {
+  const raw = String(id || '');
+  if (!raw.startsWith('compose:')) return null;
+  const parts = raw.split(':');
+  if (parts.length < 3) return null;
+  return {
+    project: parts[1],
+    service: parts.slice(2).join(':'),
+  };
+}
+
+function findComposeServiceTarget(projectName, serviceName) {
+  const project = discoverComposeProjects().find(p => p.project === projectName);
+  if (!project) return null;
+  const service = project.services.find(s => s.service === serviceName);
+  if (!service) return null;
+  return { project, service };
+}
+
+function findComposeProject(projectName) {
+  return discoverComposeProjects().find(p => p.project === projectName) || null;
+}
+
+function isPathInsideRoot(filePath, rootPath) {
+  const resolvedFile = path.resolve(filePath);
+  const resolvedRoot = path.resolve(rootPath);
+  return resolvedFile === resolvedRoot || resolvedFile.startsWith(resolvedRoot + path.sep);
+}
+
+function getSafeComposeFilePath(projectName, explicitComposeFile = '') {
+  const explicit = String(explicitComposeFile || '').trim();
+  if (explicit && fs.existsSync(explicit) && isPathInsideRoot(explicit, COMPOSE_CONFIG_ROOT)) {
+    return explicit;
+  }
+
+  const project = findComposeProject(projectName);
+  if (!project || !project.composeFile) return '';
+  if (!fs.existsSync(project.composeFile) || !isPathInsideRoot(project.composeFile, COMPOSE_CONFIG_ROOT)) return '';
+  return project.composeFile;
+}
+
+function readComposeFilePayload(projectName, explicitComposeFile = '') {
+  const composeFile = getSafeComposeFilePath(projectName, explicitComposeFile);
+  if (!composeFile) return { ok: false, error: 'Compose file not found.' };
+  try {
+    return {
+      ok: true,
+      composeFile,
+      composeFileName: path.basename(composeFile),
+      composeFileContent: fs.readFileSync(composeFile, 'utf8'),
+    };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+async function runComposeProject(composeFile, args, timeout = 30000) {
+  const cwd = path.dirname(composeFile);
+  try {
+    return await execFileAsync(DOCKER, ['compose', '-f', composeFile, ...args], { cwd, timeout });
+  } catch (error) {
+    return await execFileAsync(DOCKER_COMPOSE, ['-f', composeFile, ...args], { cwd, timeout });
+  }
+}
+
+function spawnComposeCommand(command, args, cwd, onChunk, timeout = 120000, onSpawn = null, isCancelled = null) {
+  return new Promise(resolve => {
+    let settled = false;
+    const child = spawn(command, args, { cwd, env: process.env });
+    if (typeof onSpawn === 'function') {
+      try { onSpawn(child); } catch {}
+    }
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      try { child.kill('SIGTERM'); } catch {}
+      settled = true;
+      resolve({ ok: false, code: null, error: `Timed out after ${Math.floor(timeout / 1000)}s` });
+    }, timeout);
+
+    child.stdout.on('data', buf => onChunk('stdout', String(buf || '')));
+    child.stderr.on('data', buf => onChunk('stderr', String(buf || '')));
+
+    child.on('error', err => {
+      if (settled) return;
+      clearTimeout(timer);
+      settled = true;
+      resolve({ ok: false, code: null, error: err.message || 'Failed to spawn compose process' });
+    });
+
+    child.on('close', code => {
+      if (settled) return;
+      clearTimeout(timer);
+      settled = true;
+      if (typeof isCancelled === 'function' && isCancelled()) {
+        resolve({ ok: false, code: null, error: 'Compose run cancelled by user' });
+        return;
+      }
+      resolve({ ok: code === 0, code, error: code === 0 ? '' : `compose exited with code ${code}` });
+    });
+  });
+}
+
+async function runComposeUpStream(composeFile, service, onChunk, options = {}) {
+  const { onSpawn = null, isCancelled = null } = options;
+  const cwd = path.dirname(composeFile);
+  const primaryArgs = ['compose', '-f', composeFile, 'up', '-d', service];
+  const fallbackArgs = ['-f', composeFile, 'up', '-d', service];
+
+  onChunk('status', `Running: docker compose -f ${composeFile} up -d ${service}`);
+  let result = await spawnComposeCommand(DOCKER, primaryArgs, cwd, onChunk, 120000, onSpawn, isCancelled);
+  if (result.ok) return result;
+
+  // Fall back to docker-compose only if docker command appears unavailable.
+  const dockerMissing = /ENOENT|not found|spawn/i.test(result.error || '');
+  if (!dockerMissing) return result;
+
+  onChunk('status', `Falling back: docker-compose -f ${composeFile} up -d ${service}`);
+  return await spawnComposeCommand(DOCKER_COMPOSE, fallbackArgs, cwd, onChunk, 120000, onSpawn, isCancelled);
+}
+
+function getComposeSyntheticDetail(id) {
+  const synthetic = parseComposeSyntheticId(id);
+  if (!synthetic) return null;
+  const target = findComposeServiceTarget(synthetic.project, synthetic.service);
+  if (!target) return { error: 'Compose service not found.' };
+  const { project, service } = target;
+  const composeFilePayload = readComposeFilePayload(project.project, project.composeFile);
+  return {
+    id: buildComposeSyntheticId(project.project, service.service),
+    fullId: '',
+    name: service.displayName,
+    status: 'configured',
+    running: false,
+    created: '',
+    startedAt: '',
+    finishedAt: '',
+    uptime: 'Defined in compose',
+    restartCount: 0,
+    restartPolicy: { name: 'compose', maximumRetryCount: 0 },
+    image: service.image || '',
+    imageId: '',
+    imageHash: '',
+    imageSize: '',
+    cmd: `docker compose up -d ${service.service}`,
+    entrypoint: '',
+    memUsage: '',
+    memPercent: '',
+    cpu: '',
+    blockIO: '',
+    portConfig: (service.ports || []).map(p => ({
+      containerPort: p.container ? `${p.container}/${p.proto || 'tcp'}` : '',
+      hostIp: '0.0.0.0',
+      hostPort: p.host || '',
+    })),
+    volumes: [],
+    networks: [],
+    env: [],
+    labels: [
+      { key: 'compose.project', value: project.project },
+      { key: 'compose.service', value: service.service },
+      { key: 'compose.file', value: project.composeFile },
+    ],
+    composeProject: project.project,
+    composeService: service.service,
+    composeManaged: true,
+    composeOnly: true,
+    composeFile: composeFilePayload.ok ? composeFilePayload.composeFile : project.composeFile,
+    composeFileName: composeFilePayload.ok ? composeFilePayload.composeFileName : path.basename(project.composeFile),
+    composeFileContent: composeFilePayload.ok ? composeFilePayload.composeFileContent : '',
+    composeFileError: composeFilePayload.ok ? '' : composeFilePayload.error,
+  };
+}
 
 async function runDocker(args) {
   try {
@@ -572,9 +926,7 @@ async function collectContainers() {
 
   // ── Batch-fetch network definitions for all running containers ───────────────
   // docker inspect gives NetworkSettings.Networks: { <netName>: { IPAddress, Gateway, ... } }
-  const runningIds = containers
-    .filter(c => (c.State||'').toLowerCase() === 'running')
-    .map(c => c.ID);
+  const allIds = containers.map(c => c.ID).filter(Boolean);
 
   // Build driver + hostIface map from docker network ls + network inspect
   const networkDriverMap = {}; // networkName → { driver, hostIface }
@@ -652,17 +1004,25 @@ async function collectContainers() {
     }
   }); 
 
+  const inspectMetaMap = {}; // fullId → compose metadata
   const netDefsMap = {}; // fullId → [ { name, driver, ip, gateway, macAddr } ]
-  if (runningIds.length) {
+  if (allIds.length) {
     try {
       const inspectOut = await runDocker(
-        `inspect --format '{{json .}}' ${runningIds.join(' ')}`
+        `inspect --format '{{json .}}' ${allIds.join(' ')}`
       );
       if (inspectOut) {
         inspectOut.split('\n').filter(Boolean).forEach(line => {
           try {
             const obj = JSON.parse(line);
             const fullId = obj.Id;
+            const labels = obj.Config && obj.Config.Labels ? obj.Config.Labels : {};
+            inspectMetaMap[fullId] = {
+              composeProject: labels['com.docker.compose.project'] || '',
+              composeService: labels['com.docker.compose.service'] || '',
+              composeWorkingDir: labels['com.docker.compose.project.working_dir'] || '',
+              composeConfigFiles: labels['com.docker.compose.project.config_files'] || '',
+            };
             const nets = obj.NetworkSettings && obj.NetworkSettings.Networks
               ? obj.NetworkSettings.Networks : {};
             netDefsMap[fullId] = Object.entries(nets).map(([netName, n]) => {
@@ -687,6 +1047,7 @@ async function collectContainers() {
   for (const c of containers) {
     const id = c.ID;
     const stats = statsMap[id] || {};
+    const inspectMeta = inspectMetaMap[id] || {};
 
     // docker top gives us PIDs on the host
     const topOut = await runDocker(`top ${id} -eo pid,ppid`);
@@ -783,7 +1144,83 @@ async function collectContainers() {
       vethRxBytes,
       vethTxBytes,
       netMode,
+      composeProject: inspectMeta.composeProject || '',
+      composeService: inspectMeta.composeService || '',
+      composeDir: inspectMeta.composeWorkingDir || '',
+      composeFile: (inspectMeta.composeConfigFiles || '').split(',').map(s => s.trim()).find(Boolean) || '',
+      composeManaged: Boolean(
+        inspectMeta.composeProject ||
+        inspectMeta.composeService ||
+        inspectMeta.composeWorkingDir ||
+        inspectMeta.composeConfigFiles
+      ),
+      composeOnly: false,
     });
+  }
+
+  const composeProjects = discoverComposeProjects(true);
+  const composeProjectMap = new Map(composeProjects.map(project => [project.project, project]));
+  const matchedComposeKeys = new Set();
+  const matchedContainerNames = new Set(result.map(container => container.name));
+
+  for (const container of result) {
+    const project = container.composeProject ? composeProjectMap.get(container.composeProject) : null;
+    if (!project) continue;
+    const service = project.services.find(s =>
+      s.service === container.composeService ||
+      s.containerName === container.name ||
+      s.displayName === container.name
+    );
+    if (!service) continue;
+
+    matchedComposeKeys.add(`${project.project}/${service.service}`);
+    container.composeProject = project.project;
+    container.composeService = service.service;
+    container.composeFile = container.composeFile || project.composeFile;
+    container.composeDir = container.composeDir || project.dir;
+    container.composeManaged = true;
+    if ((!container.ports || !container.ports.length) && service.ports.length) {
+      container.ports = service.ports;
+    }
+  }
+
+  for (const project of composeProjects) {
+    for (const service of project.services) {
+      const composeKey = `${project.project}/${service.service}`;
+      if (matchedComposeKeys.has(composeKey) || matchedContainerNames.has(service.displayName)) continue;
+
+      result.push({
+        name: service.displayName,
+        id: buildComposeSyntheticId(project.project, service.service),
+        fullId: '',
+        image: service.image || '',
+        status: 'Defined in compose',
+        state: 'configured',
+        cpu: '–',
+        memUsage: '–',
+        memLimit: '',
+        memPercent: '–',
+        netIn: '–',
+        netOut: '–',
+        blockIO: '–',
+        imageSize: '',
+        ports: service.ports || [],
+        pids: [],
+        processCount: 0,
+        networks: [],
+        vethRxKBs: 0,
+        vethTxKBs: 0,
+        vethRxBytes: 0,
+        vethTxBytes: 0,
+        netMode: 'compose',
+        composeProject: project.project,
+        composeService: service.service,
+        composeDir: project.dir,
+        composeFile: project.composeFile,
+        composeManaged: true,
+        composeOnly: true,
+      });
+    }
   }
 
   return result;
@@ -1172,7 +1609,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    });
     res.end(HTML);
     return;
   }
@@ -1206,6 +1648,354 @@ const server = http.createServer(async (req, res) => {
     send();
     const iv = setInterval(send, 3000);
     req.on('close', () => clearInterval(iv));
+    return;
+  }
+
+  if (url.pathname === '/api/compose/up' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { project, service } = JSON.parse(body || '{}');
+        if (!project || !service) {
+          res.end(JSON.stringify({ ok: false, error: 'project and service are required' }));
+          return;
+        }
+
+        const target = findComposeServiceTarget(project, service);
+        if (!target) {
+          res.end(JSON.stringify({ ok: false, error: 'Compose service not found under configured compose root.' }));
+          return;
+        }
+
+        const { stdout, stderr } = await runComposeProject(target.project.composeFile, ['up', '-d', target.service.service], 60000);
+        res.end(JSON.stringify({
+          ok: true,
+          output: `${stdout || ''}${stderr || ''}`.trim(),
+          project: target.project.project,
+          service: target.service.service,
+        }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/compose/up/stream' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      let activeChild = null;
+      let clientClosed = false;
+      const cancelActiveCompose = () => {
+        clientClosed = true;
+        if (activeChild && !activeChild.killed) {
+          try { activeChild.kill('SIGTERM'); } catch {}
+          setTimeout(() => {
+            try {
+              if (activeChild && !activeChild.killed) activeChild.kill('SIGKILL');
+            } catch {}
+          }, 1500);
+        }
+      };
+      // Use response-side close and aborted events. req.close can fire on normal request completion.
+      res.on('close', cancelActiveCompose);
+      req.on('aborted', cancelActiveCompose);
+
+      res.writeHead(200, {
+        'Content-Type': 'application/x-ndjson; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      });
+
+      const send = payload => {
+        if (!res.writableEnded && !res.destroyed) res.write(JSON.stringify(payload) + '\n');
+      };
+      const sendChunk = (type, text) => {
+        const lines = String(text || '').replace(/\r/g, '').split('\n').filter(Boolean);
+        for (const line of lines) send({ type, message: line });
+      };
+
+      try {
+        const { project, service } = JSON.parse(body || '{}');
+        if (!project || !service) {
+          send({ type: 'error', message: 'project and service are required' });
+          send({ type: 'done', ok: false });
+          res.end();
+          return;
+        }
+
+        const target = findComposeServiceTarget(project, service);
+        if (!target) {
+          send({ type: 'error', message: 'Compose service not found under configured compose root.' });
+          send({ type: 'done', ok: false });
+          res.end();
+          return;
+        }
+
+        send({ type: 'status', message: 'Reading compose project…' });
+        const result = await runComposeUpStream(target.project.composeFile, target.service.service, sendChunk, {
+          onSpawn: child => { activeChild = child; },
+          isCancelled: () => clientClosed,
+        });
+        if (clientClosed) {
+          if (!res.writableEnded && !res.destroyed) res.end();
+          return;
+        }
+        if (result.ok) {
+          send({ type: 'done', ok: true, message: 'Compose up completed successfully.' });
+        } else {
+          send({ type: 'error', message: result.error || 'compose up failed' });
+          send({ type: 'done', ok: false });
+        }
+      } catch (e) {
+        send({ type: 'error', message: e.message || 'Unexpected error' });
+        send({ type: 'done', ok: false });
+      }
+      res.end();
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/compose/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name, content } = JSON.parse(body || '{}');
+
+        // Validate name: alphanumeric, hyphens, underscores only
+        if (!name || !/^[a-zA-Z0-9_-]+$/.test(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project name. Use only letters, numbers, hyphens and underscores.' }));
+          return;
+        }
+        if (typeof content !== 'string' || !content.trim()) {
+          res.end(JSON.stringify({ ok: false, error: 'compose.yaml content is required.' }));
+          return;
+        }
+
+        const projectDir  = path.join(COMPOSE_CONFIG_ROOT, name);
+        const composeFile = path.join(projectDir, 'compose.yaml');
+
+        // Safety: ensure target stays inside the root
+        if (!isPathInsideRoot(projectDir, COMPOSE_CONFIG_ROOT)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
+          return;
+        }
+        if (fs.existsSync(projectDir)) {
+          res.end(JSON.stringify({ ok: false, error: `Project "${name}" already exists.` }));
+          return;
+        }
+
+        fs.mkdirSync(projectDir, { recursive: true });
+        fs.writeFileSync(composeFile, content, 'utf8');
+
+        // Build an open target so UI can jump straight into the created compose file.
+        const parsedServices = parseComposeServices(content);
+        const firstService = parsedServices[0] || null;
+        const openTarget = firstService
+          ? {
+              id: buildComposeSyntheticId(name, firstService.service),
+              name: firstService.displayName || firstService.service,
+              stateClass: 'configured',
+            }
+          : null;
+
+        // Invalidate discovery cache so new project appears immediately
+        composeDiscoveryCache = { ts: 0, projects: [] };
+        await refreshCache();
+
+        res.end(JSON.stringify({ ok: true, composeFile, openTarget }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/compose/backups' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    try {
+      const result = [];
+      if (fs.existsSync(COMPOSE_BACKUP_ROOT)) {
+        const projects = fs.readdirSync(COMPOSE_BACKUP_ROOT).filter(e => {
+          try { return fs.statSync(path.join(COMPOSE_BACKUP_ROOT, e)).isDirectory(); } catch { return false; }
+        });
+        for (const project of projects) {
+          const dir = path.join(COMPOSE_BACKUP_ROOT, project);
+          const files = fs.readdirSync(dir).map(f => {
+            const fp = path.join(dir, f);
+            let mtime = null;
+            try { mtime = fs.statSync(fp).mtime.toISOString(); } catch {}
+            return { name: f, mtime };
+          }).sort((a, b) => (b.mtime || '').localeCompare(a.mtime || ''));
+          result.push({ project, path: dir, files });
+        }
+        result.sort((a, b) => a.project.localeCompare(b.project));
+      }
+      res.end(JSON.stringify({ ok: true, backups: result }));
+    } catch (e) {
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/compose/archive' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { project } = JSON.parse(body || '{}');
+        if (!project || !/^[a-zA-Z0-9_-]+$/.test(project)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project name.' }));
+          return;
+        }
+
+        const sourceDir = path.join(COMPOSE_CONFIG_ROOT, project);
+        const backupDir = path.join(COMPOSE_BACKUP_ROOT, project);
+        if (!isPathInsideRoot(sourceDir, COMPOSE_CONFIG_ROOT) || !isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
+          return;
+        }
+        if (!fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) {
+          res.end(JSON.stringify({ ok: false, error: 'Compose project folder not found.' }));
+          return;
+        }
+
+        fs.mkdirSync(backupDir, { recursive: true });
+        const moved = [];
+        const entries = fs.readdirSync(sourceDir);
+        for (const entry of entries) {
+          const src = path.join(sourceDir, entry);
+          let dst = path.join(backupDir, entry);
+          if (fs.existsSync(dst)) {
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            dst = path.join(backupDir, `${entry}.${stamp}`);
+          }
+          fs.renameSync(src, dst);
+          moved.push(path.basename(dst));
+        }
+
+        try {
+          fs.rmdirSync(sourceDir);
+        } catch {
+          fs.rmSync(sourceDir, { recursive: true, force: true });
+        }
+
+        composeDiscoveryCache = { ts: 0, projects: [] };
+        await refreshCache();
+        res.end(JSON.stringify({ ok: true, backupDir, moved }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/compose/restore' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { project } = JSON.parse(body || '{}');
+        if (!project || !/^[a-zA-Z0-9_-]+$/.test(project)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project name.' }));
+          return;
+        }
+
+        const backupDir = path.join(COMPOSE_BACKUP_ROOT, project);
+        const targetDir = path.join(COMPOSE_CONFIG_ROOT, project);
+        if (!isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT) || !isPathInsideRoot(targetDir, COMPOSE_CONFIG_ROOT)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
+          return;
+        }
+        if (!fs.existsSync(backupDir) || !fs.statSync(backupDir).isDirectory()) {
+          res.end(JSON.stringify({ ok: false, error: 'Backup project folder not found.' }));
+          return;
+        }
+
+        fs.mkdirSync(targetDir, { recursive: true });
+        const moved = [];
+        const entries = fs.readdirSync(backupDir);
+        for (const entry of entries) {
+          const src = path.join(backupDir, entry);
+          let dst = path.join(targetDir, entry);
+          if (fs.existsSync(dst)) {
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            dst = path.join(targetDir, `${entry}.${stamp}`);
+          }
+          fs.renameSync(src, dst);
+          moved.push(path.basename(dst));
+        }
+
+        const remaining = fs.readdirSync(backupDir);
+        if (!remaining.length) {
+          try {
+            fs.rmdirSync(backupDir);
+          } catch {
+            fs.rmSync(backupDir, { recursive: true, force: true });
+          }
+        }
+
+        composeDiscoveryCache = { ts: 0, projects: [] };
+        await refreshCache();
+        res.end(JSON.stringify({ ok: true, targetDir, moved }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/compose/file' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    try {
+      const project     = url.searchParams.get('project') || '';
+      const composeFile = url.searchParams.get('composeFile') || '';
+      const payload = readComposeFilePayload(project, composeFile);
+      res.end(JSON.stringify(payload));
+    } catch (e) {
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/compose/file' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { project, composeFile, content } = JSON.parse(body || '{}');
+        if (!project) {
+          res.end(JSON.stringify({ ok: false, error: 'project is required' }));
+          return;
+        }
+        if (typeof content !== 'string') {
+          res.end(JSON.stringify({ ok: false, error: 'content must be a string' }));
+          return;
+        }
+
+        const safeComposeFile = getSafeComposeFilePath(project, composeFile);
+        if (!safeComposeFile) {
+          res.end(JSON.stringify({ ok: false, error: 'Compose file not found under configured compose root.' }));
+          return;
+        }
+
+        fs.writeFileSync(safeComposeFile, content, 'utf8');
+        composeDiscoveryCache = { ts: 0, projects: [] };
+        await refreshCache();
+        res.end(JSON.stringify({ ok: true, composeFile: safeComposeFile }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
     return;
   }
 
@@ -1313,10 +2103,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname.startsWith('/api/container/detail/')) {
-    const id = url.pathname.split('/')[4];
+    const id = decodeURIComponent(url.pathname.split('/')[4] || '');
     if (!id) { res.writeHead(400); res.end('{}'); return; }
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     try {
+      const syntheticDetail = getComposeSyntheticDetail(id);
+      if (syntheticDetail) {
+        res.end(JSON.stringify(syntheticDetail));
+        return;
+      }
+
       const raw = await runDocker(`inspect ${id}`);
       if (!raw) { res.end(JSON.stringify({ error: 'Not found' })); return; }
       const arr = JSON.parse(raw);
@@ -1375,6 +2171,12 @@ const server = http.createServer(async (req, res) => {
 
       // Labels
       const labels = Object.entries(d.Config && d.Config.Labels || {}).map(([k, v]) => ({ key: k, value: v }));
+      const currentContainer = cache.containers.find(c => c.id === id || c.fullId === id) || {};
+      const composeProject = currentContainer.composeProject || (d.Config && d.Config.Labels && d.Config.Labels['com.docker.compose.project']) || '';
+      const composeService = currentContainer.composeService || (d.Config && d.Config.Labels && d.Config.Labels['com.docker.compose.service']) || '';
+      const composeFile = currentContainer.composeFile || '';
+      const composeManaged = Boolean(currentContainer.composeManaged || composeProject || composeService || composeFile);
+      const composeFilePayload = composeManaged ? readComposeFilePayload(composeProject, composeFile) : null;
 
       res.end(JSON.stringify({
         id:           d.Id ? d.Id.slice(0, 12) : '',
@@ -1397,15 +2199,23 @@ const server = http.createServer(async (req, res) => {
         imageSize,
         cmd:          d.Config && d.Config.Cmd       ? d.Config.Cmd.join(' ')         : '',
         entrypoint:   d.Config && d.Config.Entrypoint ? d.Config.Entrypoint.join(' ') : '',
-        memUsage:     (cache.containers.find(c => c.id === id || c.fullId === id) || {}).memUsage  || '',
-        memPercent:   (cache.containers.find(c => c.id === id || c.fullId === id) || {}).memPercent || '',
-        cpu:          (cache.containers.find(c => c.id === id || c.fullId === id) || {}).cpu        || '',
-        blockIO:      (cache.containers.find(c => c.id === id || c.fullId === id) || {}).blockIO    || '',
+        memUsage:     currentContainer.memUsage  || '',
+        memPercent:   currentContainer.memPercent || '',
+        cpu:          currentContainer.cpu        || '',
+        blockIO:      currentContainer.blockIO    || '',
         portConfig,
         volumes,
         networks,
         env,
         labels,
+        composeProject,
+        composeService,
+        composeManaged,
+        composeOnly: false,
+        composeFile: composeFilePayload && composeFilePayload.ok ? composeFilePayload.composeFile : composeFile,
+        composeFileName: composeFilePayload && composeFilePayload.ok ? composeFilePayload.composeFileName : (composeFile ? path.basename(composeFile) : ''),
+        composeFileContent: composeFilePayload && composeFilePayload.ok ? composeFilePayload.composeFileContent : '',
+        composeFileError: composeFilePayload && !composeFilePayload.ok ? composeFilePayload.error : '',
       }));
     } catch (e) {
       res.end(JSON.stringify({ error: e.message }));
@@ -1580,7 +2390,63 @@ const server = http.createServer(async (req, res) => {
   res.end('Not found');
 });
 
-// ─── Prune: scan for unused Docker resources ──────────────────────────────────
+
+// ─── Health Check ─────────────────────────────────────────────────────────────
+
+async function checkDiskSpace() {
+  try {
+    const { stdout } = await execAsync('df -k /', { timeout: 5000 });
+    const lines = stdout.trim().split('\n');
+    if (lines.length < 2) return { usagePct: null, totalKB: null, usedKB: null, availKB: null };
+    const parts = lines[1].trim().split(/\s+/);
+    const totalKB = parseInt(parts[1]) || 0;
+    const usedKB  = parseInt(parts[2]) || 0;
+    const availKB = parseInt(parts[3]) || 0;
+    const usagePct = totalKB > 0 ? parseFloat(((usedKB / totalKB) * 100).toFixed(1)) : null;
+    return { usagePct, totalKB, usedKB, availKB };
+  } catch {
+    return { usagePct: null, totalKB: null, usedKB: null, availKB: null };
+  }
+}
+
+async function healthCheck(req, res) {
+  try {
+    const pkgPath = path.join(__dirname, 'package.json');
+    const pkg = fs.existsSync(pkgPath) ? JSON.parse(fs.readFileSync(pkgPath, 'utf8')) : { version: 'dev' };
+    const dockerAvail = fs.existsSync(DOCKER);
+    const diskSpace = await checkDiskSpace();
+    const memUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+
+    const health = {
+      status: 'healthy',
+      uptime: process.uptime(),
+      version: pkg.version,
+      checks: {
+        dockerAvailable: dockerAvail,
+        credentialsExists: fs.existsSync(CREDENTIALS_FILE),
+        diskSpace,
+        memory: {
+          rss: formatBytes(memUsage.rss),
+          heapUsed: formatBytes(memUsage.heapUsed),
+          heapTotal: formatBytes(memUsage.heapTotal),
+        },
+        cpu: {
+          userMs: cpuUsage.user,
+          systemMs: cpuUsage.system,
+        },
+      },
+    };
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(JSON.stringify(health));
+  } catch (e) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'error', error: e.message }));
+  }
+}
 
 const PRUNE_LOG_FILE = path.join(__dirname, 'prune.log');
 const PRUNE_LOG_RETAIN_DAYS = 30;
