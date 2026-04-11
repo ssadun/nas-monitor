@@ -14,6 +14,8 @@ A real-time system monitoring dashboard for **Synology NAS** (and other Linux-ba
 - **Container categories** — organise containers into custom labelled groups with icons and colours; collapsible accordion view with aggregate stats
 - **System processes** — full process tree with flat/tree view toggle, sortable columns, and per-process detail modal
 - **Disk usage** — mounted volume breakdown with a history chart and filesystem tree browser
+- **Docker volumes** — view and manage Docker volumes with detailed metadata, ownership, labels, and container usage
+- **Docker networks** — view and manage Docker networks with driver info and connected containers
 - **Network utilisation** — per-interface real-time rx/tx rates with a live sparkline chart
 - **Secure login** — session-based authentication with PBKDF2-SHA512 hashed credentials stored in a local file
 - **Dark UI** — polished dark theme using Space Grotesk + JetBrains Mono; fully responsive
@@ -156,6 +158,23 @@ All running host processes with:
 - Expandable filesystem tree browser per mount point
 - Historical usage chart (last 20 snapshots, sampled every poll cycle)
 
+### 💽 Docker Volumes
+Manage and view Docker volumes with full CRUD operations:
+- **List view** — Shows all volumes with Stack, Driver, Mount Point, Ownership, Created Date, and Container Count columns
+- **Detail view** — Three-section layout:
+  - **Volume details** — ID, created date, mount path, driver type, and labels
+  - **Access control** — Ownership information (UID:GID format)
+  - **Containers using volume** — Table of connected containers with mount points and read-only status
+- **Create volumes** — Form to create new volumes with name, driver, and custom labels
+- **Delete volumes** — Remove volumes with confirmation
+
+### 🔌 Docker Networks
+Manage and view Docker networks:
+- **List view** — Shows all networks with driver, scope, IPv4 subnet, and connected container count
+- **Detail view** — Network metadata, driver info, and list of connected containers
+- **Create networks** — Form to create new networks with name, driver, and optional subnet
+- **Delete networks** — Remove networks with confirmation
+
 ### 🌐 Network Utilisation
 - Per-interface live rx/tx rates
 - Sparkline chart for each interface
@@ -212,6 +231,14 @@ All endpoints require a valid session cookie except `/login`.
 | `GET` | `/api/category-defs` | Get category definitions |
 | `POST` | `/api/category-defs` | Save category definitions |
 | `POST` | `/api/change-credentials` | Change username and password |
+| `GET` | `/api/docker/volumes/list` | List all Docker volumes with metadata |
+| `GET` | `/api/docker/volumes/detail?name=<volume-name>` | Get detailed info for a specific volume |
+| `POST` | `/api/docker/volumes/create` | Create a new Docker volume |
+| `POST` | `/api/docker/volumes/delete` | Delete a Docker volume |
+| `GET` | `/api/docker/networks/list` | List all Docker networks with metadata |
+| `GET` | `/api/docker/networks/detail?name=<network-name>` | Get detailed info for a specific network |
+| `POST` | `/api/docker/networks/create` | Create a new Docker network |
+| `POST` | `/api/docker/networks/delete` | Delete a Docker network |
 | `WS` | `/ws/console/:id` | WebSocket for interactive container terminal |
 
 ---

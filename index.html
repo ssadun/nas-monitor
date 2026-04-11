@@ -165,6 +165,11 @@
   }
   .filter-input:focus { border-color: var(--accent); }
   .filter-input::placeholder { color: var(--text3); }
+  .netedit-input { width: 100%; }
+  .netedit-input:disabled {
+    opacity: .7;
+    cursor: not-allowed;
+  }
 
   /* ─── Main content ──────────────────────────────────────── */
   main {
@@ -419,6 +424,7 @@
     align-items: center; justify-content: center;
     backdrop-filter: blur(4px);
   }
+  #net-delete-modal { z-index: 3200; }
   .action-modal-backdrop.open { display: flex; }
   .action-modal {
     background: var(--bg2); border: 1px solid var(--border2);
@@ -445,6 +451,87 @@
     display: flex; gap: 8px; justify-content: flex-end;
     padding: 14px 18px; border-top: 1px solid var(--border);
     background: var(--bg3);
+  }
+  .action-modal-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.1;
+    transition: all .15s;
+  }
+  .action-modal-btn:disabled {
+    opacity: .25;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .action-modal-btn.confirm {
+    color: var(--accent);
+    border-color: rgba(79,142,247,.45);
+  }
+  .action-modal-btn.confirm:hover:not(:disabled) {
+    background: rgba(79,142,247,.12);
+    border-color: var(--accent);
+  }
+  .action-modal-btn.confirm[data-action="composeUp"] {
+    color: var(--cyan);
+    border-color: rgba(6,182,212,.45);
+  }
+  .action-modal-btn.confirm[data-action="composeUp"]:hover:not(:disabled) {
+    background: rgba(6,182,212,.12);
+    border-color: var(--cyan);
+  }
+  .action-modal-btn.confirm[data-action="start"] {
+    color: var(--green);
+    border-color: rgba(34,197,94,.45);
+  }
+  .action-modal-btn.confirm[data-action="start"]:hover:not(:disabled) {
+    background: rgba(34,197,94,.12);
+    border-color: var(--green);
+  }
+  .action-modal-btn.confirm[data-action="restart"] {
+    color: var(--yellow);
+    border-color: rgba(234,179,8,.45);
+  }
+  .action-modal-btn.confirm[data-action="restart"]:hover:not(:disabled) {
+    background: rgba(234,179,8,.12);
+    border-color: var(--yellow);
+  }
+  .action-modal-btn.confirm[data-action="stop"] {
+    color: var(--orange);
+    border-color: rgba(249,115,22,.45);
+  }
+  .action-modal-btn.confirm[data-action="stop"]:hover:not(:disabled) {
+    background: rgba(249,115,22,.12);
+    border-color: var(--orange);
+  }
+  .action-modal-btn.confirm[data-action="archive"] {
+    color: var(--accent);
+    border-color: rgba(79,142,247,.45);
+  }
+  .action-modal-btn.confirm[data-action="archive"]:hover:not(:disabled) {
+    background: rgba(79,142,247,.12);
+    border-color: var(--accent);
+  }
+  .action-modal-btn.confirm[data-action="delete"] {
+    color: var(--red);
+    border-color: rgba(239,68,68,.45);
+  }
+  .action-modal-btn.confirm[data-action="delete"]:hover:not(:disabled) {
+    background: rgba(239,68,68,.12);
+    border-color: var(--red);
+  }
+  .action-modal-btn.cancel {
+    color: var(--red);
+    border-color: rgba(239,68,68,.45);
+  }
+  .action-modal-btn.cancel:hover:not(:disabled) {
+    background: rgba(239,68,68,.12);
+    border-color: var(--red);
   }
   .action-progress { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
   .action-progress-step {
@@ -576,6 +663,15 @@
   .cdetail-action-btn:disabled { opacity: .25; cursor: not-allowed; pointer-events: none; }
   .cdetail-action-btn.start   { color: var(--green); }
   .cdetail-action-btn.start:hover:not(:disabled)   { background: rgba(34,197,94,.12);  border-color: var(--green); }
+  .cdetail-action-btn.apply   {
+    color: #477ed9;
+    border-color: rgba(71,126,217,.45);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    gap: 0;
+  }
+  .cdetail-action-btn.apply:hover:not(:disabled)   { background: rgba(71,126,217,.12); border-color: #477ed9; }
   .cdetail-action-btn.restart { color: var(--yellow); }
   .cdetail-action-btn.restart:hover:not(:disabled) { background: rgba(234,179,8,.12);  border-color: var(--yellow); }
   .cdetail-action-btn.stop    { color: var(--orange); }
@@ -758,9 +854,70 @@
   }
   .newcompose-editor:focus { border-color: var(--accent); }
   .newcompose-footer {
-    display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 20px; border-top: 1px solid var(--border);
     background: var(--bg3); flex-shrink: 0;
+  }
+  .newcompose-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .newcompose-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .newcompose-status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .newcompose-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.1;
+    transition: all .15s;
+  }
+  .newcompose-btn:disabled {
+    opacity: .25;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .newcompose-btn.template {
+    color: var(--cyan);
+  }
+  .newcompose-btn.template:hover:not(:disabled) {
+    background: rgba(6,182,212,.12);
+    border-color: var(--cyan);
+  }
+  .newcompose-btn.cancel {
+    color: var(--red);
+    border-color: rgba(239,68,68,.45);
+  }
+  .newcompose-btn.cancel:hover:not(:disabled) {
+    background: rgba(239,68,68,.12);
+    border-color: var(--red);
+  }
+  .newcompose-btn.save {
+    color: var(--green);
+    border-color: rgba(34,197,94,.45);
+  }
+  .newcompose-btn.save:hover:not(:disabled) {
+    background: rgba(34,197,94,.12);
+    border-color: var(--green);
   }
 
   /* ─── Archive browser modal ─────────────────────────────── */
@@ -1036,10 +1193,17 @@
     padding: 3px 8px; border-radius: 6px;
     border: 1px solid var(--border2); background: none;
     font-size: 12px; cursor: pointer; transition: all .15s;
-    color: var(--accent); font-family: var(--mono);
+    color: var(--accent); font-family: var(--mono); line-height: 1.2;
   }
   .toolbar-refresh-btn:hover { border-color: var(--accent); background: rgba(79,142,247,.15); }
   .toolbar-refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .toolbar-main-btn {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--mono);
+    line-height: 1.2;
+  }
   .high-cpu-btn, .high-mem-btn {
     padding: 4px 10px; border-radius: 6px;
     border: 1px solid var(--border); background: none;
@@ -1065,6 +1229,14 @@
     color: var(--cyan);
   }
   .expand-all-btn:hover { background: rgba(6,182,212,.15); border-color: var(--cyan); }
+  .expand-all-btn.prune-btn {
+    color: var(--orange);
+    border-color: rgba(249,115,22,.4);
+  }
+  .expand-all-btn.prune-btn:hover:not(:disabled) {
+    background: rgba(249,115,22,.15);
+    border-color: var(--orange);
+  }
   .expand-all-btn.danger-btn {
     color: var(--red);
     border-color: rgba(239,68,68,.35);
@@ -1076,6 +1248,20 @@
   .expand-all-btn:disabled {
     opacity: .4;
     cursor: not-allowed;
+  }
+  .disk-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    white-space: nowrap;
+  }
+  button.expand-all-btn.toolbar-main-btn {
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-family: var(--mono) !important;
+    line-height: 1.2 !important;
   }
 
   /* ─── Sort indicator ────────────────────────────────────── */
@@ -1369,7 +1555,8 @@
     background: var(--bg4); border: 1px solid var(--border2);
     border-radius: 6px; color: var(--text);
     font-family: var(--mono); font-size: 12px;
-    padding: 4px 8px; outline: none; cursor: pointer;
+    padding: 3px 8px; outline: none; cursor: pointer;
+    width: 170px;
     transition: border-color .15s;
   }
   .restart-policy-select:focus { border-color: var(--accent); }
@@ -1534,13 +1721,10 @@
       <div class="action-progress" id="action-progress"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="action-modal-confirm" onclick="executeAction()"
-        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">
+      <button id="action-modal-confirm" class="action-modal-btn confirm" onclick="executeAction()">
         Confirm
       </button>
-      <button id="action-modal-cancel" onclick="closeActionModal()"
-        style="padding:8px 16px;border:1px solid var(--red);border-radius:var(--radius);
-               background:none;color:var(--red);font-family:var(--sans);font-size:13px;cursor:pointer;">
+      <button id="action-modal-cancel" class="action-modal-btn cancel" onclick="closeActionModal()">
         Cancel
       </button>
     </div>
@@ -1577,6 +1761,32 @@
   </div>
 </div>
 
+<!-- COMPOSE DISMISS CONFIRMATION MODAL -->
+<div class="action-modal-backdrop" id="compose-dismiss-modal" onclick="closeComposeDismissModal(event)">
+  <div class="action-modal" onclick="event.stopPropagation()">
+    <div class="action-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🗑</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;">Dismiss Compose Changes</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">Unsaved compose file edits</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="resolveComposeDismiss(false)">✕</button>
+    </div>
+    <div class="action-modal-body">
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">
+        You have unsaved compose file changes. Dismiss them and continue?<br>
+        <span style="color:var(--red);font-size:12px;">⚠ This cannot be undone.</span>
+      </div>
+    </div>
+    <div class="action-modal-footer">
+      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(false)">Cancel</button>
+      <button class="action-modal-btn confirm" data-action="delete" onclick="resolveComposeDismiss(true)">Dismiss Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONSOLE MODAL -->
 <div class="console-backdrop" id="console-modal">
   <div class="console-modal">
@@ -1607,7 +1817,7 @@
       <button class="modal-close" onclick="closeArchiveBrowserModal()">✕</button>
     </div>
     <div class="archivebrowser-search-wrap">
-      <input id="archivebrowser-search" class="archivebrowser-search" type="text"
+      <input id="archivebrowser-search" class="filter-input archivebrowser-search" type="text"
         placeholder="Filter projects…"
         oninput="filterArchiveBrowser(this.value)" autocomplete="off" spellcheck="false"/>
       <span id="archivebrowser-count" class="archivebrowser-count"></span>
@@ -1628,7 +1838,7 @@
     <div class="newcompose-body">
       <div>
         <div class="newcompose-field-label">Project / Container Name</div>
-        <input id="newcompose-name" class="newcompose-name-input" type="text"
+        <input id="newcompose-name" class="filter-input newcompose-name-input" type="text"
           placeholder="e.g. my-app"
           oninput="updateNewComposePath()"
           onkeydown="if(event.key==='Enter')document.getElementById('newcompose-editor').focus()"/>
@@ -1640,9 +1850,14 @@
       </div>
     </div>
     <div class="newcompose-footer">
-      <span id="newcompose-status" style="font-family:var(--mono);font-size:12px;margin-right:auto;"></span>
-      <button class="restart-policy-save" style="background:none;color:var(--text3);border-color:var(--border2);" onclick="closeNewComposeModal()">Cancel</button>
-      <button id="newcompose-save-btn" class="restart-policy-save" onclick="saveNewCompose()">Save</button>
+      <div class="newcompose-footer-left">
+        <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()">Save Template</button>
+        <span id="newcompose-status" class="newcompose-status"></span>
+      </div>
+      <div class="newcompose-footer-right">
+        <button class="newcompose-btn cancel" onclick="closeNewComposeModal()">Cancel</button>
+        <button id="newcompose-save-btn" class="newcompose-btn save" onclick="saveNewCompose()">Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1770,13 +1985,13 @@
   <!-- ═══ CONTAINERS TAB ═══════════════════════════════════════════════ -->
   <div class="tab-panel active" id="tab-containers">
     <div class="toolbar">
-      <button class="expand-all-btn" onclick="openNewComposeModal()" style="color:var(--green);border-color:rgba(34,197,94,.4);">＋ New Compose</button>
-      <button class="expand-all-btn" onclick="openArchiveBrowserModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🗄 Archive</button>
-      <button class="expand-all-btn" onclick="openPruneModal()" style="color:var(--orange);border-color:rgba(249,115,22,.4);">🧹 Prune</button>
+      <button class="expand-all-btn toolbar-main-btn" onclick="openNewComposeModal()" style="color:var(--green);border-color:rgba(34,197,94,.4);">＋ New Compose</button>
+      <button class="expand-all-btn toolbar-main-btn" onclick="openArchiveBrowserModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🗄 Archive</button>
+      <button class="expand-all-btn prune-btn toolbar-main-btn" onclick="openPruneModal()">🧹 Prune</button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
         <div class="toolbar-info" id="container-count-info">–</div>
-        <button class="expand-all-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
+        <button class="expand-all-btn toolbar-main-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
         <button class="toolbar-refresh-btn" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list">↻ Refresh</button>
       </div>
     </div>
@@ -1845,6 +2060,7 @@
   <div class="tab-panel" id="tab-disk">
     <div class="toolbar">
       <div style="display:flex;align-items:center;gap:8px;">
+        <button class="expand-all-btn disk-toolbar-btn" onclick="openDockerVolumesModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">💽 Docker Volumes</button>
         <span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Path:</span>
         <input class="filter-input" type="text" id="disk-path-input" value="/volume1"
           style="width:200px" placeholder="/volume1"
@@ -1857,8 +2073,8 @@
           <option value="5">5</option>
           <option value="6">6</option>
         </select>
-        <button class="expand-all-btn" id="disk-scan-btn" onclick="scanDisk()">⟳ Scan</button>
-        <button class="expand-all-btn danger-btn" id="disk-delete-btn" onclick="deleteSelectedDiskScan()">🗑 Delete</button>
+        <button class="expand-all-btn disk-toolbar-btn" id="disk-scan-btn" onclick="scanDisk()">⟳ Scan</button>
+        <button class="expand-all-btn danger-btn disk-toolbar-btn" id="disk-delete-btn" onclick="deleteSelectedDiskScan()" style="display:none;">🗑 Delete</button>
       </div>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-info" id="disk-scan-info">–</div>
@@ -1928,6 +2144,7 @@
         </div>
         <div style="flex:1;"></div>
         <span id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
+        <button class="expand-all-btn" onclick="openNetworkMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🔌 Manage Networks</button>
       </div>
       <div id="net-ifaces" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start;"></div>
     </div>
@@ -1965,7 +2182,7 @@
       <div style="height:1px;background:var(--border);margin:2px 0;"></div>
       <div class="catedit-row">
         <div class="catedit-label">New Username</div>
-        <input class="catedit-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
+        <input class="filter-input catedit-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
       </div>
       <div class="catedit-row">
         <div class="catedit-label">New Password</div>
@@ -2001,6 +2218,59 @@
     <div class="catmgr-body" id="catmgr-body"></div>
     <div class="catmgr-footer">
       <button class="catmgr-add-btn" onclick="openCatEditForm(null)">＋ Add new category</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DOCKER VOLUMES MODAL ═════════════════════════════════════════════ -->
+<div class="catmgr-backdrop" id="volmgr-backdrop" onclick="closeDockerVolumesModal(event)">
+  <div class="catmgr-modal" onclick="event.stopPropagation()" style="width:900px;max-width:98vw;">
+    <div class="catmgr-header">
+      <div class="catmgr-title">💽 Docker Volumes</div>
+      <button class="modal-close" onclick="closeDockerVolumesModal()">✕</button>
+    </div>
+    <div class="catmgr-body" id="volmgr-body"></div>
+    <div class="catmgr-footer">
+      <button class="catmgr-add-btn" onclick="openDockerVolumeCreateForm()">＋ Create Volume</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NETWORK MANAGER MODAL ═════════════════════════════════════════════ -->
+<div class="catmgr-backdrop" id="netmgr-backdrop" onclick="closeNetworkMgr(event)">
+  <div class="catmgr-modal" onclick="event.stopPropagation()">
+    <div class="catmgr-header">
+      <div class="catmgr-title">🔌 Manage Docker Networks</div>
+      <button class="modal-close" onclick="closeNetworkMgr()">✕</button>
+    </div>
+    <div class="catmgr-body" id="netmgr-body"></div>
+    <div class="catmgr-footer">
+      <button class="catmgr-add-btn" onclick="openNetworkEditForm(null)">＋ Create Network</button>
+    </div>
+  </div>
+</div>
+
+<!-- NETWORK DELETE MODAL -->
+<div class="action-modal-backdrop" id="net-delete-modal" onclick="closeNetworkDeleteModal(event)">
+  <div class="action-modal" onclick="event.stopPropagation()">
+    <div class="action-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🗑</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;">Delete Docker Network</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="net-delete-network">–</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeNetworkDeleteModal()">✕</button>
+    </div>
+    <div class="action-modal-body">
+      <div id="net-delete-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div class="action-progress" id="net-delete-progress"></div>
+    </div>
+    <div class="action-modal-footer">
+      <button id="net-delete-confirm" class="action-modal-btn confirm" data-action="delete" onclick="confirmDeleteNetwork()">
+        Delete Network
+      </button>
     </div>
   </div>
 </div>
@@ -2881,16 +3151,19 @@ const ACTION_META = {
 function openActionModal(action, id, name, extra = {}) {
   _actionPending = { action, id, name, ...extra };
   const meta = ACTION_META[action];
+  const isDeleteAction = action === 'delete';
   el('action-modal').classList.toggle('composeup-large', action === 'composeUp');
   el('action-modal-icon').textContent    = meta.icon;
   el('action-modal-title').textContent   = meta.label;
   el('action-modal-container').textContent = name + '  ·  ' + id;
   el('action-modal-desc').innerHTML      = meta.desc(name);
   el('action-modal-confirm').textContent = meta.label;
-  el('action-modal-confirm').style.background = meta.btnBg;
-  el('action-modal-confirm').style.color = 'white';
+  el('action-modal-confirm').dataset.action = action;
+  el('action-modal-confirm').style.background = '';
+  el('action-modal-confirm').style.borderColor = isDeleteAction ? 'var(--red)' : '';
+  el('action-modal-confirm').style.color = isDeleteAction ? 'var(--red)' : '';
   el('action-modal-confirm').disabled    = false;
-  el('action-modal-cancel').style.display = '';
+  el('action-modal-cancel').style.display = isDeleteAction ? 'none' : '';
   el('action-modal-close').style.display  = '';
   el('action-progress').innerHTML = '';
   el('action-modal').classList.add('open');
@@ -2947,6 +3220,23 @@ async function executeAction() {
       }
     } catch {}
     return Array.isArray(allData?.containers) ? allData.containers : [];
+  };
+
+  const refreshOpenCDetailBehind = async () => {
+    const cdetailModal = el('cdetail-modal');
+    if (!cdetailModal || !cdetailModal.classList.contains('open')) return;
+
+    const idText = String(el('cdetail-id')?.textContent || '').trim();
+    const currentId = idText ? idText.split('  · ')[0].trim() : '';
+    if (!currentId) return;
+
+    const currentName = String(el('cdetail-name')?.textContent || '').trim() || name || currentId;
+    const activeTab = document.querySelector('.cdetail-tab.active')?.dataset?.tab || 'status';
+
+    if (activeTab === 'compose' && hasUnsavedComposeChanges()) return;
+
+    await openCDetailModal(currentId, currentName, 'configured');
+    if (activeTab && activeTab !== 'status') switchCDetailTab(activeTab);
   };
 
   const waitForContainerCondition = async (predicate, tries = 18, intervalMs = 250) => {
@@ -3054,11 +3344,7 @@ async function executeAction() {
       if (!res.ok || !res.body) {
         updateStep(s1, 'error', 'Failed: unable to start compose stream');
         updateStep(s2, 'error', 'Compose up did not start');
-        el('action-modal-confirm').textContent = '✕ Failed';
-        el('action-modal-confirm').style.background = 'var(--red)';
         showToast('Compose up failed: unable to start stream', 'err', 3400);
-        closeActionModal();
-        return;
       } else {
         updateStep(s1, 'done', 'Compose project loaded.');
         updateStep(s2, 'active', meta.steps[1]);
@@ -3096,35 +3382,25 @@ async function executeAction() {
         if (composeCancelled) {
           addProgressStep('Compose up cancelled by user.', 'error');
           showToast('Compose up cancelled.', 'err', 2600);
-          closeActionModal();
-          return;
         }
 
-        if (doneOk && !failedMsg) {
+        else if (doneOk && !failedMsg) {
           updateStep(s2, 'done', 'Compose up completed.');
           addProgressStep(meta.steps[2], 'done');
-          el('action-modal-confirm').textContent = '✓ Done';
-          el('action-modal-confirm').style.background = '#16a34a';
           const resolved = await resolveComposeResultTarget();
-          closeActionModal();
-          openResolvedTargetDetail(resolved);
+          if (resolved.kind !== 'none') openResolvedTargetDetail(resolved);
           if (resolved.kind !== 'container') {
             showToast('Compose up finished but container was not detected.', 'err', 3600);
           }
-          return;
         } else {
           updateStep(s2, 'error', 'Failed: ' + (failedMsg || 'unknown error'));
-          el('action-modal-confirm').textContent = '✕ Failed';
-          el('action-modal-confirm').style.background = 'var(--red)';
           const resolved = await resolveComposeResultTarget();
-          closeActionModal();
-          openResolvedTargetDetail(resolved);
+          if (resolved.kind !== 'none') openResolvedTargetDetail(resolved);
           if (resolved.kind === 'container') {
             showToast(`Compose up failed, but container was created: ${failedMsg || 'unknown error'}`, 'err', 4200);
           } else {
             showToast(`Compose up failed: ${failedMsg || 'unknown error'}`, 'err', 3600);
           }
-          return;
         }
       }
     } else if (action === 'archive') {
@@ -3166,17 +3442,15 @@ async function executeAction() {
       if (data.ok) {
         updateStep(s2, 'done', 'Container removed.');
         addProgressStep('Done — container deleted.', 'done');
-        el('action-modal-confirm').textContent = '✓ Deleted';
-        el('action-modal-confirm').style.background = 'var(--green)';
         await waitForContainerCondition(list => !list.some(c => c.id === id));
-        closeActionModal();
+        await refreshContainersNow();
+        await refreshOpenCDetailBehind();
         closeCDetailModal();
         switchTab('containers');
-        return;
       } else {
         updateStep(s2, 'error', 'Remove failed: ' + (data.error || 'unknown error'));
-        el('action-modal-confirm').textContent = '✕ Failed';
-        el('action-modal-confirm').style.background = 'var(--red)';
+        await refreshContainersNow();
+        await refreshOpenCDetailBehind();
       }
     } else {
       // start / stop / restart
@@ -3188,21 +3462,23 @@ async function executeAction() {
       if (data.ok) {
         updateStep(s1, 'done', meta.steps[1]);
         addProgressStep(meta.steps[2], 'done');
-        el('action-modal-confirm').textContent = '✓ Done';
-        el('action-modal-confirm').style.background = '#16a34a';
         if (action === 'start') {
-          await waitForContainerCondition(list => list.some(c => c.id === id && getContainerStateClass(c) === 'running'));
+          await refreshContainersNow();
         } else if (action === 'stop') {
-          await waitForContainerCondition(list => list.some(c => c.id === id && getContainerStateClass(c) !== 'running'));
+          // Don't block the UI while Docker transitions to stopped; refresh once more shortly after.
+          setTimeout(async () => {
+            await refreshContainersNow();
+            await refreshOpenCDetailBehind();
+          }, 1500);
         } else if (action === 'restart') {
           await waitForContainerCondition(list => list.some(c => c.id === id));
           await refreshContainersNow();
         }
       } else {
         updateStep(s1, 'error', 'Failed: ' + (data.error || 'unknown error'));
-        el('action-modal-confirm').textContent = '✕ Failed';
-        el('action-modal-confirm').style.background = 'var(--red)';
       }
+      await refreshContainersNow();
+      await refreshOpenCDetailBehind();
     }
   } catch (e) {
     addProgressStep('Error: ' + e.message, 'error');
@@ -3210,13 +3486,15 @@ async function executeAction() {
     el('action-modal-confirm').style.background = 'var(--red)';
     if (action === 'composeUp') {
       if (e && e.name === 'AbortError') {
+        addProgressStep('Compose up cancelled by user.', 'error');
         showToast('Compose up cancelled.', 'err', 2600);
-        closeActionModal();
-        return;
+      } else {
+        showToast(`Compose up error: ${e.message}`, 'err', 3600);
       }
-      showToast(`Compose up error: ${e.message}`, 'err', 3600);
-      closeActionModal();
-      return;
+    }
+    if (action === 'start' || action === 'stop' || action === 'restart' || action === 'delete') {
+      await refreshContainersNow();
+      await refreshOpenCDetailBehind();
     }
   }
 
@@ -3238,6 +3516,8 @@ function closeActionModal() {
   _actionPending = null;
   // Reset for next open
   el('action-modal-confirm').style.display = '';
+  el('action-modal-confirm').dataset.action = '';
+  el('action-modal-confirm').style.background = '';
   el('action-modal-confirm').disabled = false;
   el('action-modal-confirm').onclick = executeAction;
   el('action-modal-cancel').textContent = 'Cancel';
@@ -3430,6 +3710,17 @@ let diskAllExpanded = false;
 let diskHistory = []; // stored locally too
 let diskActiveHistoryIdx = 0;
 
+function updateDiskDeleteButtonVisibility() {
+  const btn = el('disk-delete-btn');
+  if (!btn) return;
+  const hasSelection = diskHistory.length > 0
+    && diskActiveHistoryIdx >= 0
+    && diskActiveHistoryIdx < diskHistory.length
+    && !!diskHistory[diskActiveHistoryIdx]
+    && !!diskHistory[diskActiveHistoryIdx].id;
+  btn.style.display = hasSelection ? '' : 'none';
+}
+
 async function scanDisk() {
   if (diskScanning) return;
   diskScanning = true;
@@ -3528,6 +3819,7 @@ function renderDiskHistory(activeIdx = 0) {
   const list = el('disk-history-list');
   if (!diskHistory.length) {
     list.innerHTML = `<div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
+    updateDiskDeleteButtonVisibility();
     return;
   }
   list.innerHTML = diskHistory.map((h, i) => {
@@ -3549,6 +3841,7 @@ function renderDiskHistory(activeIdx = 0) {
       <div style="font-size:11px;color:var(--cyan);margin-top:1px;font-family:var(--mono)">${size}</div>
     </div>`;
   }).join('');
+  updateDiskDeleteButtonVisibility();
 }
 
 async function deleteSelectedDiskScan() {
@@ -4173,9 +4466,55 @@ el('prune-modal').addEventListener('click', e => { if (e.target === el('prune-mo
 el('prune-log-modal').addEventListener('click', e => { if (e.target === el('prune-log-modal')) closePruneLogModal(); });
 el('cdetail-modal').addEventListener('click', e => { if (e.target === el('cdetail-modal')) closeCDetailModal(); });
 
+let _composeEditorState = { editorId: '', originalValue: '' };
+let _composeDismissResolver = null;
+
+function resetComposeEditorState() {
+  _composeEditorState = { editorId: '', originalValue: '' };
+}
+
+function hasUnsavedComposeChanges() {
+  if (!_composeEditorState.editorId) return false;
+  const ta = document.getElementById(_composeEditorState.editorId);
+  if (!ta) return false;
+  return ta.value !== _composeEditorState.originalValue;
+}
+
+function closeComposeDismissModal(e) {
+  if (e && e.target !== el('compose-dismiss-modal')) return;
+  resolveComposeDismiss(false);
+}
+
+function resolveComposeDismiss(shouldDismiss) {
+  el('compose-dismiss-modal').classList.remove('open');
+  if (_composeDismissResolver) {
+    const resolver = _composeDismissResolver;
+    _composeDismissResolver = null;
+    resolver(shouldDismiss);
+  }
+}
+
+function confirmDismissComposeChanges() {
+  if (!hasUnsavedComposeChanges()) return Promise.resolve(true);
+  return new Promise(resolve => {
+    _composeDismissResolver = resolve;
+    el('compose-dismiss-modal').classList.add('open');
+  });
+}
+
+window.addEventListener('beforeunload', e => {
+  if (!hasUnsavedComposeChanges()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
 // ─── Container Detail Modal ───────────────────────────────────────────────────
 async function openCDetailModal(id, name, stateClass) {
   const modal = el('cdetail-modal');
+  const idText = String(el('cdetail-id')?.textContent || '').trim();
+  const currentId = idText ? idText.split('  · ')[0].trim() : '';
+  if (modal.classList.contains('open') && currentId !== id && !(await confirmDismissComposeChanges())) return;
+  if (currentId !== id) resetComposeEditorState();
   modal.classList.add('open');
   el('cdetail-name').textContent = name;
   el('cdetail-id').textContent   = id;
@@ -4310,10 +4649,10 @@ async function openCDetailModal(id, name, stateClass) {
               placeholder="max retries"
               value="${(d.restartPolicy&&d.restartPolicy.name)==='on-failure' ? (d.restartPolicy.maximumRetryCount||0) : ''}"
               style="display:${(d.restartPolicy&&d.restartPolicy.name)==='on-failure'?'block':'none'}"/>
-            <button class="restart-policy-save" id="rp-save-${d.id}"
-              onclick="saveRestartPolicy('${d.id}')">Apply</button>
+            <button class="cdetail-action-btn apply" id="rp-save-${d.id}"
+              onclick="saveRestartPolicy('${d.id}')"><span>Apply</span></button>
             <span class="restart-policy-status" id="rp-status-${d.id}"></span>
-          </div>`, 'full')}
+          </div>`)}
       </div>`);
 
     // ── Container Details section ──
@@ -4425,12 +4764,16 @@ async function openCDetailModal(id, name, stateClass) {
                      line-height:1.5;box-sizing:border-box;outline:none;"
             ></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <button id="${saveId}" class="restart-policy-save"
+              <button id="${saveId}" class="action-modal-btn confirm" data-action="archive"
                 onclick="saveComposeFile('${esc(d.composeProject)}','${esc(fd.composeFile)}','${editorId}','${saveId}','${statusId}')">Save</button>
               <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
             </div>`;
           const ta = document.getElementById(editorId);
-          if (ta) ta.value = fd.composeFileContent || '';
+          if (ta) {
+            const originalValue = fd.composeFileContent || '';
+            ta.value = originalValue;
+            _composeEditorState = { editorId, originalValue };
+          }
         }
       } catch (e) {
         const wrap = document.getElementById(editorId + '-wrap');
@@ -4719,7 +5062,7 @@ async function saveRestartPolicy(containerId) {
   const maxRetries = policy === 'on-failure' ? (parseInt(retries && retries.value) || 0) : 0;
 
   saveBtn.disabled = true;
-  saveBtn.textContent = '…';
+  saveBtn.innerHTML = '<span>…</span>';
   status.style.color = 'var(--text3)';
   status.textContent = 'Applying…';
 
@@ -4743,11 +5086,13 @@ async function saveRestartPolicy(containerId) {
     status.textContent = '✗ ' + e.message;
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Apply';
+    saveBtn.innerHTML = '<span>Apply</span>';
   }
 }
 
-function switchCDetailTab(tab) {
+async function switchCDetailTab(tab) {
+  const activeTab = document.querySelector('.cdetail-tab.active')?.dataset?.tab || 'status';
+  if (activeTab === 'compose' && tab !== 'compose' && !(await confirmDismissComposeChanges())) return;
   document.querySelectorAll('.cdetail-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.cdetail-tab-panel').forEach(p => {
     p.style.display = p.id === `cdetail-panel-${tab}` ? '' : 'none';
@@ -4773,6 +5118,7 @@ async function saveComposeFile(project, composeFile, editorId, saveId, statusId)
     });
     const data = await res.json();
     if (data.ok) {
+      _composeEditorState.originalValue = ta.value;
       status.style.color = 'var(--green)';
       status.textContent = '✓ Saved';
       setTimeout(() => { if (status) status.textContent = ''; }, 3000);
@@ -4918,17 +5264,36 @@ async function restoreArchiveProject(i) {
 }
 
 // ─── New Compose Modal ────────────────────────────────────────────────────────
-const _DEFAULT_COMPOSE = `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
+function defaultComposeTemplate() {
+  return `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
+}
 
-function openNewComposeModal() {
+async function openNewComposeModal() {
   const modal = el('newcompose-modal');
   el('newcompose-name').value = '';
-  el('newcompose-editor').value = _DEFAULT_COMPOSE;
+  el('newcompose-editor').value = defaultComposeTemplate();
   el('newcompose-path-preview').textContent = '';
-  el('newcompose-status').textContent = '';
+  el('newcompose-status').textContent = 'Loading template…';
+  el('newcompose-status').style.color = 'var(--text3)';
   el('newcompose-save-btn').disabled = false;
+  el('newcompose-template-btn').disabled = false;
   modal.classList.add('open');
   setTimeout(() => el('newcompose-name').focus(), 50);
+
+  try {
+    const res = await fetch('/api/compose/template');
+    const data = await res.json();
+    if (data.ok && typeof data.content === 'string') {
+      el('newcompose-editor').value = data.content;
+      el('newcompose-status').textContent = '';
+    } else {
+      el('newcompose-status').style.color = 'var(--red)';
+      el('newcompose-status').textContent = '✗ ' + (data.error || 'Failed to load template');
+    }
+  } catch (e) {
+    el('newcompose-status').style.color = 'var(--red)';
+    el('newcompose-status').textContent = '✗ ' + e.message;
+  }
 }
 
 function closeNewComposeModal() {
@@ -4943,6 +5308,47 @@ function updateNewComposePath() {
     preview.textContent = `/volume1/docker/_config/${name}/compose.yaml`;
   } else {
     preview.textContent = '';
+  }
+}
+
+async function saveNewComposeTemplate() {
+  const content = el('newcompose-editor').value;
+  const btn = el('newcompose-template-btn');
+  const status = el('newcompose-status');
+
+  if (!content.trim()) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ Template cannot be empty.';
+    return;
+  }
+
+  btn.disabled = true;
+  status.style.color = 'var(--text3)';
+  status.textContent = 'Saving template…';
+
+  try {
+    const res = await fetch('/api/compose/template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Template saved';
+      setTimeout(() => {
+        const s = el('newcompose-status');
+        if (s && s.textContent === '✓ Template saved') s.textContent = '';
+      }, 2500);
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '✗ ' + (data.error || 'Failed');
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ ' + e.message;
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -4995,7 +5401,9 @@ async function saveNewCompose() {
   }
 }
 
-function closeCDetailModal() {
+async function closeCDetailModal() {
+  if (!(await confirmDismissComposeChanges())) return;
+  resetComposeEditorState();
   el('cdetail-modal').classList.remove('open');
   el('cdetail-actions').innerHTML = '';
 }
@@ -5699,6 +6107,444 @@ function cpuHex(v) {
   if (v >= 20) return 'var(--yellow)';
   return 'var(--green)';
 }
+
+// ─── Docker Volumes Manager ──────────────────────────────────────────────────
+let allDockerVolumes = [];
+
+async function openDockerVolumesModal() {
+  document.getElementById('volmgr-backdrop').classList.add('open');
+  await refreshDockerVolumesList();
+}
+
+function closeDockerVolumesModal(e) {
+  if (e && e.target !== document.getElementById('volmgr-backdrop')) return;
+  document.getElementById('volmgr-backdrop').classList.remove('open');
+}
+
+async function refreshDockerVolumesList() {
+  const body = document.getElementById('volmgr-body');
+  body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">Loading docker volumes…</div>`;
+  try {
+    const res = await fetch('/api/docker/volumes/list');
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      body.innerHTML = `<div style="text-align:center;color:var(--red);font-family:var(--mono);font-size:13px;padding:20px;">✗ ${esc(data.error || 'Failed to load volumes')}</div>`;
+      return;
+    }
+    allDockerVolumes = Array.isArray(data.volumes) ? data.volumes : [];
+    renderDockerVolumesList();
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:var(--red);font-family:var(--mono);font-size:13px;padding:20px;">✗ ${esc(e.message)}</div>`;
+  }
+}
+
+function renderDockerVolumesList() {
+  const body = document.getElementById('volmgr-body');
+  if (!allDockerVolumes.length) {
+    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No docker volumes found. Create one below.</div>`;
+    return;
+  }
+
+  const rows = allDockerVolumes.map((v, i) => {
+    const containerCount = Array.isArray(v.runningOn) ? v.runningOn.length : 0;
+    const containerCountText = containerCount > 0 ? String(containerCount) : '–';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.stack || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.driver || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.mountpoint || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.ownership || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.createdDate || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(containerCountText)}</td>
+      <td style="white-space:nowrap;">
+        <button class="catmgr-btn edit" onclick="openDockerVolumeDetail(${i})">Edit</button>
+        <button class="catmgr-btn del" onclick="deleteDockerVolume(${i})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;">${allDockerVolumes.length} volume(s)</div>
+    <div style="overflow:auto;border:1px solid var(--border);border-radius:10px;">
+      <table class="cdetail-table" style="min-width:980px;">
+        <thead>
+          <tr>
+            <th>Stack</th>
+            <th>Driver</th>
+            <th>Mount Point</th>
+            <th>Ownership</th>
+            <th>Created Date</th>
+            <th>Container Count</th>
+            <th style="width:130px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function openDockerVolumeCreateForm() {
+  const body = document.getElementById('volmgr-body');
+  body.innerHTML = `
+    <div class="catedit-form">
+      <div class="catedit-row">
+        <div class="catedit-label">Volume Name</div>
+        <input class="filter-input netedit-input" id="volcreate-name" placeholder="e.g. app_data" />
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Driver</div>
+        <select class="catedit-input" id="volcreate-driver">
+          <option value="local" selected>local</option>
+          <option value="nfs">nfs</option>
+        </select>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Stack Label (optional)</div>
+        <input class="filter-input netedit-input" id="volcreate-stack" placeholder="e.g. my-stack" />
+      </div>
+      <div class="catedit-actions">
+        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()">Cancel</button>
+        <button class="action-modal-btn confirm" data-action="archive" onclick="createDockerVolume()">Create Volume</button>
+      </div>
+    </div>`;
+}
+
+async function createDockerVolume() {
+  const name = String(document.getElementById('volcreate-name')?.value || '').trim();
+  const driver = String(document.getElementById('volcreate-driver')?.value || 'local').trim();
+  const stack = String(document.getElementById('volcreate-stack')?.value || '').trim();
+  if (!name) {
+    alert('Volume name is required');
+    return;
+  }
+  try {
+    const labels = stack ? { 'com.docker.compose.project': stack } : {};
+    const res = await fetch('/api/docker/volumes/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, driver, labels }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      alert('Error: ' + (data.error || 'Failed to create volume'));
+      return;
+    }
+    await refreshDockerVolumesList();
+  } catch (e) {
+    alert('Error creating volume: ' + e.message);
+  }
+}
+
+async function openDockerVolumeDetail(idx) {
+  const v = allDockerVolumes[idx];
+  if (!v) return;
+  const body = document.getElementById('volmgr-body');
+  body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">Loading volume details…</div>`;
+  try {
+    const res = await fetch('/api/docker/volumes/detail?name=' + encodeURIComponent(v.name));
+    const data = await res.json();
+    if (!res.ok || !data.ok || !data.volume) {
+      body.innerHTML = `<div style="text-align:center;color:var(--red);font-family:var(--mono);font-size:13px;padding:20px;">✗ ${esc(data.error || 'Failed to load volume details')}</div>`;
+      return;
+    }
+    const d = data.volume;
+    const labels = d.labels && Object.keys(d.labels).length
+      ? `<table class="cdetail-table"><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody>${Object.entries(d.labels).map(([k,val]) => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--accent);">${esc(k)}</td><td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(String(val ?? ''))}</td></tr>`).join('')}</tbody></table>`
+      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">No labels</div>`;
+    const containers = Array.isArray(d.containers) && d.containers.length
+      ? `<table class="cdetail-table"><thead><tr><th>Container</th><th>Status</th><th>Mount Path</th></tr></thead><tbody>${d.containers.map(c => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--text);">${esc(c.name || c.id || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:${c.status==='running'?'var(--green)':'var(--text3)'};">${esc(c.status || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(c.destination || '-')}</td></tr>`).join('')}</tbody></table>`
+      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">No containers using this volume</div>`;
+
+    const labelsHtml = d.labels && Object.keys(d.labels).length
+      ? Object.entries(d.labels).map(([k,val]) => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;"><span style="color:var(--text3);margin-right:20px;width:200px;display:inline-block;">${esc(k)}</span><span style="color:var(--text);">${esc(String(val ?? ''))}</span></div>`).join('')
+      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:8px 0;">No labels</div>`;
+    
+    const containersHtml = Array.isArray(d.containers) && d.containers.length
+      ? `<table style="width:100%;border-collapse:collapse;">
+           <thead style="border-bottom:1px solid var(--border);">
+             <tr>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Container Name</th>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Mounted At</th>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Read-only</th>
+             </tr>
+           </thead>
+           <tbody>
+             ${d.containers.map(c => `
+               <tr style="border-bottom:1px solid rgba(42,47,74,.5);">
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--cyan);">${esc(c.name || c.id || '-')}</td>
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(c.destination || '-')}</td>
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${c.readonly === true ? 'true' : 'true'}</td>
+               </tr>
+             `).join('')}
+           </tbody>
+         </table>`
+      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:8px 0;">No containers using this volume</div>`;
+
+    body.innerHTML = `
+      <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">📋</span>
+          Volume details
+        </div>
+        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()" style="padding:4px 8px;font-size:11px;">Back</button>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
+          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">ID</span>
+          <span style="color:var(--text);">${esc(d.name)}</span>
+        </div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
+          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Created</span>
+          <span style="color:var(--text);">${esc(d.createdDate || '-')}</span>
+        </div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
+          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Mount path</span>
+          <span style="color:var(--text);">${esc(d.mountpoint || '-')}</span>
+        </div>
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
+          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Driver</span>
+          <span style="color:var(--text);">${esc(d.driver || '-')}</span>
+        </div>
+        <div style="padding:12px 0;">
+          <div style="color:var(--text3);margin-bottom:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Labels</div>
+          <div style="margin-left:0;">${labelsHtml}</div>
+        </div>
+      </div>
+
+      <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">👁</span>
+          Access control
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
+          <span style="color:var(--text3);margin-right:20px;width:120px;display:inline-block;font-weight:600;">Ownership</span>
+          <span style="color:var(--text);">${esc(d.access?.owner || '-')}</span>
+          <a href="#" style="cursor:default;color:var(--cyan);margin-left:10px;font-size:11px;text-decoration:none;opacity:0.5;">Change ownership</a>
+        </div>
+      </div>
+
+      <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">📦</span>
+          Containers using volume
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        ${containersHtml}
+      </div>
+    `;
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:var(--red);font-family:var(--mono);font-size:13px;padding:20px;">✗ ${esc(e.message)}</div>`;
+  }
+}
+
+async function deleteDockerVolume(idx) {
+  const v = allDockerVolumes[idx];
+  if (!v) return;
+  if (!confirm(`Delete volume "${v.name}"? This cannot be undone.`)) return;
+  await deleteDockerVolumeByName(v.name);
+}
+
+async function deleteDockerVolumeByName(volumeName) {
+  if (!confirm(`Delete volume "${volumeName}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch('/api/docker/volumes/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: volumeName }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      alert('Error: ' + (data.error || 'Failed to delete volume'));
+      return;
+    }
+    await refreshDockerVolumesList();
+  } catch (e) {
+    alert('Error deleting volume: ' + e.message);
+  }
+}
+
+// ─── Network Management ────────────────────────────────────────────────────────
+let allNetworks = [];
+const SYSTEM_NETWORKS = new Set(['bridge', 'host', 'none']);
+let _networkDeletePending = null;
+
+async function openNetworkMgr() {
+  try {
+    const res = await fetch('/api/network/list');
+    allNetworks = await res.json();
+    // Filter out system networks
+    allNetworks = allNetworks.filter(n => !SYSTEM_NETWORKS.has(n.name));
+  } catch (e) {
+    console.error('Failed to load networks:', e);
+    allNetworks = [];
+  }
+  renderNetworkMgrList();
+  document.getElementById('netmgr-backdrop').classList.add('open');
+}
+
+function closeNetworkMgr(e) {
+  if (e && e.target !== document.getElementById('netmgr-backdrop')) return;
+  document.getElementById('netmgr-backdrop').classList.remove('open');
+}
+
+function renderNetworkMgrList() {
+  const body = document.getElementById('netmgr-body');
+  if (!allNetworks.length) {
+    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No custom networks. Create one below.</div>`;
+    return;
+  }
+  body.innerHTML = allNetworks.map((net, i) => `
+    <div class="catmgr-row" id="netmgr-row-${i}">
+      <div class="catmgr-row-icon">🔌</div>
+      <div class="catmgr-row-label" style="flex:1;">
+        <div style="color:var(--text1);font-weight:500;">${esc(net.name)}</div>
+        <div style="color:var(--text3);font-size:11px;margin-top:2px;">${esc(net.driver || 'unknown')} · ${net.containers ? net.containers.length + ' containers' : 'no containers'}</div>
+      </div>
+      <div class="catmgr-row-actions">
+        <button class="catmgr-btn edit" onclick="openNetworkEditForm(${i})">Edit</button>
+        <button class="catmgr-btn del"  onclick="openNetworkDeleteModal(${i})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openNetworkEditForm(idx) {
+  const isNew = idx === null;
+  const net = isNew ? { name: '', driver: 'bridge', subnet: '' } : { ...allNetworks[idx] };
+  
+  const body = document.getElementById('netmgr-body');
+  body.innerHTML = `
+    <div class="catedit-form">
+      <div class="catedit-row">
+        <div class="catedit-label">Network Name</div>
+        <input class="filter-input netedit-input" id="netedit-name" placeholder="e.g. my-network" value="${esc(net.name)}" ${isNew ? '' : 'disabled'}/>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Driver</div>
+        <select class="catedit-input" id="netedit-driver">
+          <option value="bridge" ${net.driver === 'bridge' ? 'selected' : ''}>bridge</option>
+          <option value="overlay" ${net.driver === 'overlay' ? 'selected' : ''}>overlay</option>
+          <option value="macvlan" ${net.driver === 'macvlan' ? 'selected' : ''}>macvlan</option>
+          <option value="ipvlan" ${net.driver === 'ipvlan' ? 'selected' : ''}>ipvlan</option>
+        </select>
+      </div>
+      <div class="catedit-row">
+        <div class="catedit-label">Subnet (optional)</div>
+        <input class="filter-input netedit-input" id="netedit-subnet" placeholder="e.g. 172.20.0.0/16" value="${esc(net.subnet || '')}"/>
+      </div>
+      <div class="catedit-actions">
+        <button class="action-modal-btn cancel" onclick="renderNetworkMgrList()">Cancel</button>
+        <button class="action-modal-btn confirm" data-action="archive" onclick="saveNetwork(${isNew ? 'null' : idx})">${isNew ? 'Create Network' : 'Update Network'}</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveNetwork(idx) {
+  const name = document.getElementById('netedit-name').value.trim();
+  const driver = document.getElementById('netedit-driver').value;
+  const subnet = document.getElementById('netedit-subnet').value.trim();
+  
+  if (!name) { alert('Network name is required'); return; }
+  
+  try {
+    const isEdit = idx !== null;
+    const endpoint = isEdit ? '/api/network/update' : '/api/network/create';
+    const payload = isEdit
+      ? { name: allNetworks[idx].name, driver, subnet: subnet || null }
+      : { name, driver, subnet: subnet || null };
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    
+    if (!res.ok || !data.ok) {
+      alert('Error: ' + (data.error || `Failed to ${isEdit ? 'update' : 'create'} network`));
+      return;
+    }
+    
+    // Reload and refresh UI
+    await openNetworkMgr();
+  } catch (e) {
+    console.error('Failed to save network:', e);
+    alert('Error saving network: ' + e.message);
+  }
+}
+
+function openNetworkDeleteModal(idx) {
+  const net = allNetworks[idx];
+  if (!net || SYSTEM_NETWORKS.has(net.name)) return;
+  _networkDeletePending = { idx, name: net.name };
+  const containers = Array.isArray(net.containers) ? net.containers.length : 0;
+  el('net-delete-network').textContent = net.name;
+  el('net-delete-desc').innerHTML = `Permanently delete network <strong>${esc(net.name)}</strong>?<br><span style="color:var(--red);font-size:12px;">⚠ This cannot be undone.${containers > 0 ? ` ${containers} connected container(s) will be disconnected.` : ''}</span>`;
+  el('net-delete-progress').innerHTML = '';
+  const btn = el('net-delete-confirm');
+  btn.textContent = 'Delete Network';
+  btn.disabled = false;
+  btn.dataset.mode = 'delete';
+  el('net-delete-modal').classList.add('open');
+}
+
+function closeNetworkDeleteModal(e) {
+  if (e && e.target !== el('net-delete-modal')) return;
+  el('net-delete-modal').classList.remove('open');
+  _networkDeletePending = null;
+}
+
+async function confirmDeleteNetwork() {
+  const btn = el('net-delete-confirm');
+  if (!btn) return;
+  if (btn.dataset.mode === 'close') {
+    closeNetworkDeleteModal();
+    return;
+  }
+  if (!_networkDeletePending) return;
+
+  const step = addProgressStep('Deleting network…', 'active');
+  btn.disabled = true;
+
+  try {
+    const { name } = _networkDeletePending;
+    const res = await fetch('/api/network/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    
+    if (!res.ok || !data.ok) {
+      updateStep(step, 'error', data.error || 'Failed to delete network');
+      btn.textContent = 'Close';
+      btn.dataset.mode = 'close';
+      btn.disabled = false;
+      return;
+    }
+
+    updateStep(step, 'done', 'Network deleted');
+    btn.textContent = 'Close';
+    btn.dataset.mode = 'close';
+    btn.disabled = false;
+    
+    // Reload and refresh UI
+    await openNetworkMgr();
+  } catch (e) {
+    console.error('Failed to delete network:', e);
+    updateStep(step, 'error', 'Error deleting network: ' + e.message);
+    btn.textContent = 'Close';
+    btn.dataset.mode = 'close';
+    btn.disabled = false;
+  }
+}
+
 
 
 

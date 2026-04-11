@@ -16,12 +16,17 @@ const execFileAsync = promisify(execFile);
 const PORT = process.env.PORT || 3232;
 
 // ─── App settings + logging ─────────────────────────────────────────────────
-const SETTINGS_FILE = path.join(__dirname, 'setting.json');
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+const LEGACY_SETTINGS_FILE = path.join(__dirname, 'setting.json');
 const LOG_LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
 const DEFAULT_SETTINGS = {
   logLevel: 'INFO',
   authenticationType: true,
   warnThresholdSeconds: 3,
+  pruneIntervalHours: 24,
+  composeInactivityTimeoutSeconds: 120,
+  dockerConfigFolder: '/volume1/docker/_config',
+  dockerDataFolder: '/volume1/docker/_data',
 };
 
 function normalizeSettings(raw = {}) {
@@ -30,10 +35,22 @@ function normalizeSettings(raw = {}) {
   const auth = raw.authenticationType;
   const thresholdRaw = raw.warnThresholdSeconds ?? raw.thresholdSeconds ?? DEFAULT_SETTINGS.warnThresholdSeconds;
   const thresholdNum = Number(thresholdRaw);
+  const pruneHoursRaw = raw.pruneIntervalHours ?? DEFAULT_SETTINGS.pruneIntervalHours;
+  const pruneHoursNum = Number(pruneHoursRaw);
+  const composeInactivityRaw = raw.composeInactivityTimeoutSeconds ?? DEFAULT_SETTINGS.composeInactivityTimeoutSeconds;
+  const composeInactivityNum = Number(composeInactivityRaw);
+  const dockerConfigFolder = String(raw.dockerConfigFolder || DEFAULT_SETTINGS.dockerConfigFolder).trim() || DEFAULT_SETTINGS.dockerConfigFolder;
+  const dockerDataFolder = String(raw.dockerDataFolder || DEFAULT_SETTINGS.dockerDataFolder).trim() || DEFAULT_SETTINGS.dockerDataFolder;
   return {
     logLevel: safeLevel,
     authenticationType: typeof auth === 'boolean' ? auth : DEFAULT_SETTINGS.authenticationType,
     warnThresholdSeconds: Number.isFinite(thresholdNum) && thresholdNum >= 0 ? thresholdNum : DEFAULT_SETTINGS.warnThresholdSeconds,
+    pruneIntervalHours: Number.isFinite(pruneHoursNum) && pruneHoursNum > 0 ? pruneHoursNum : DEFAULT_SETTINGS.pruneIntervalHours,
+    composeInactivityTimeoutSeconds: Number.isFinite(composeInactivityNum) && composeInactivityNum > 0
+      ? composeInactivityNum
+      : DEFAULT_SETTINGS.composeInactivityTimeoutSeconds,
+    dockerConfigFolder,
+    dockerDataFolder,
   };
 }
 
@@ -41,8 +58,15 @@ function loadSettings() {
   try {
     const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
     return normalizeSettings(data);
-  } catch {
-    return { ...DEFAULT_SETTINGS };
+  } catch (e) {
+    try {
+      const legacyData = JSON.parse(fs.readFileSync(LEGACY_SETTINGS_FILE, 'utf8'));
+      const normalized = normalizeSettings(legacyData);
+      try { fs.writeFileSync(SETTINGS_FILE, JSON.stringify(normalized, null, 2), 'utf8'); } catch {}
+      return normalized;
+    } catch {
+      return { ...DEFAULT_SETTINGS };
+    }
   }
 }
 
@@ -54,7 +78,8 @@ function saveSettingsFile(nextSettings) {
 
 let appSettings = loadSettings();
 if (!fs.existsSync(SETTINGS_FILE)) {
-  try { appSettings = saveSettingsFile(appSettings); } catch {}
+  try { appSettings = saveSettingsFile(appSettings); }
+  catch (e) { logError('Failed to initialize settings file', { error: e.message || 'unknown error' }); }
 }
 
 function shouldLog(level) {
@@ -637,11 +662,54 @@ const DOCKER_COMPOSE_PATHS = [
   '/usr/local/bin/docker-compose',
   '/bin/docker-compose',
 ];
-const COMPOSE_CONFIG_ROOT = process.env.COMPOSE_CONFIG_ROOT || '/volume1/docker/_config';
 const COMPOSE_BACKUP_ROOT = process.env.COMPOSE_BACKUP_ROOT || '/volume1/docker/_backups';
-const CONTAINER_DATA_ROOT = process.env.CONTAINER_DATA_ROOT || '/volume1/docker/_data';
 const COMPOSE_FILE_CANDIDATES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml'];
 const COMPOSE_DISCOVERY_TTL_MS = 30 * 1000;
+const NEW_COMPOSE_TEMPLATE_FILE = path.join(__dirname, 'compose.yaml');
+const DEFAULT_NEW_COMPOSE_TEMPLATE = `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
+
+function getComposeConfigRoot() {
+  return process.env.COMPOSE_CONFIG_ROOT || appSettings.dockerConfigFolder || DEFAULT_SETTINGS.dockerConfigFolder;
+}
+
+function getContainerDataRoot() {
+  return process.env.CONTAINER_DATA_ROOT || appSettings.dockerDataFolder || DEFAULT_SETTINGS.dockerDataFolder;
+}
+
+function ensureComposeTemplateFile() {
+  if (fs.existsSync(NEW_COMPOSE_TEMPLATE_FILE)) return;
+  try {
+    fs.writeFileSync(NEW_COMPOSE_TEMPLATE_FILE, DEFAULT_NEW_COMPOSE_TEMPLATE, 'utf8');
+    logInfo('Created default compose template file', { templateFile: NEW_COMPOSE_TEMPLATE_FILE });
+  } catch (e) {
+    logError('Failed to create default compose template file', { templateFile: NEW_COMPOSE_TEMPLATE_FILE, error: e.message });
+  }
+}
+
+function readComposeTemplatePayload() {
+  ensureComposeTemplateFile();
+  try {
+    return {
+      ok: true,
+      templateFile: NEW_COMPOSE_TEMPLATE_FILE,
+      content: fs.readFileSync(NEW_COMPOSE_TEMPLATE_FILE, 'utf8'),
+    };
+  } catch (e) {
+    return { ok: false, error: e.message || 'Failed to read compose template file' };
+  }
+}
+
+function saveComposeTemplatePayload(content) {
+  if (typeof content !== 'string') return { ok: false, error: 'content must be a string' };
+  const next = String(content || '').trim();
+  if (!next) return { ok: false, error: 'Template content cannot be empty' };
+  try {
+    fs.writeFileSync(NEW_COMPOSE_TEMPLATE_FILE, content, 'utf8');
+    return { ok: true, templateFile: NEW_COMPOSE_TEMPLATE_FILE };
+  } catch (e) {
+    return { ok: false, error: e.message || 'Failed to save compose template file' };
+  }
+}
 
 function findDockerComposeBinary() {
   for (const p of DOCKER_COMPOSE_PATHS) {
@@ -782,11 +850,12 @@ function discoverComposeProjects(force = false) {
   }
 
   const projects = [];
+  const composeRoot = getComposeConfigRoot();
   try {
-    const entries = fs.readdirSync(COMPOSE_CONFIG_ROOT, { withFileTypes: true });
+    const entries = fs.readdirSync(composeRoot, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const projectDir = path.join(COMPOSE_CONFIG_ROOT, entry.name);
+      const projectDir = path.join(composeRoot, entry.name);
       const composeFileName = COMPOSE_FILE_CANDIDATES.find(name => fs.existsSync(path.join(projectDir, name)));
       if (!composeFileName) continue;
 
@@ -857,8 +926,9 @@ function normalizeContainerSubPath(subPath = '') {
 
 function resolveContainerDataPath(containerName, subPath = '') {
   if (!isValidContainerFolderName(containerName)) return null;
-  const basePath = path.join(CONTAINER_DATA_ROOT, containerName);
-  if (!isPathInsideRoot(basePath, CONTAINER_DATA_ROOT)) return null;
+  const dataRoot = getContainerDataRoot();
+  const basePath = path.join(dataRoot, containerName);
+  if (!isPathInsideRoot(basePath, dataRoot)) return null;
   const normalizedSubPath = normalizeContainerSubPath(subPath);
   if (normalizedSubPath === null) return null;
   const targetPath = normalizedSubPath ? path.join(basePath, normalizedSubPath) : basePath;
@@ -867,14 +937,15 @@ function resolveContainerDataPath(containerName, subPath = '') {
 }
 
 function getSafeComposeFilePath(projectName, explicitComposeFile = '') {
+  const composeRoot = getComposeConfigRoot();
   const explicit = String(explicitComposeFile || '').trim();
-  if (explicit && fs.existsSync(explicit) && isPathInsideRoot(explicit, COMPOSE_CONFIG_ROOT)) {
+  if (explicit && fs.existsSync(explicit) && isPathInsideRoot(explicit, composeRoot)) {
     return explicit;
   }
 
   const project = findComposeProject(projectName);
   if (!project || !project.composeFile) return '';
-  if (!fs.existsSync(project.composeFile) || !isPathInsideRoot(project.composeFile, COMPOSE_CONFIG_ROOT)) return '';
+  if (!fs.existsSync(project.composeFile) || !isPathInsideRoot(project.composeFile, composeRoot)) return '';
   return project.composeFile;
 }
 
@@ -898,6 +969,11 @@ async function runComposeProject(composeFile, args, timeout = 30000) {
   try {
     return await execFileAsync(DOCKER, ['compose', '-f', composeFile, ...args], { cwd, timeout });
   } catch (error) {
+    logWarn('Primary docker compose command failed, trying fallback', {
+      composeFile,
+      args: args.join(' '),
+      error: error?.message || 'unknown error',
+    });
     return await execFileAsync(DOCKER_COMPOSE, ['-f', composeFile, ...args], { cwd, timeout });
   }
 }
@@ -910,30 +986,62 @@ function spawnComposeCommand(command, args, cwd, onChunk, timeout = 120000, onSp
       try { onSpawn(child); } catch {}
     }
 
-    const timer = setTimeout(() => {
-      if (settled) return;
-      try { child.kill('SIGTERM'); } catch {}
-      settled = true;
-      resolve({ ok: false, code: null, error: `Timed out after ${Math.floor(timeout / 1000)}s` });
-    }, timeout);
+    let idleTimer = null;
+    const resetIdleTimer = () => {
+      if (timeout <= 0) return;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (settled) return;
+        try { child.kill('SIGTERM'); } catch {}
+        logError('Compose command timed out due to inactivity', {
+          command,
+          args: args.join(' '),
+          cwd,
+          inactivityTimeoutSeconds: Math.floor(timeout / 1000),
+        });
+        settled = true;
+        resolve({ ok: false, code: null, error: `Timed out after ${Math.floor(timeout / 1000)}s of inactivity` });
+      }, timeout);
+    };
+    resetIdleTimer();
 
-    child.stdout.on('data', buf => onChunk('stdout', String(buf || '')));
-    child.stderr.on('data', buf => onChunk('stderr', String(buf || '')));
+    child.stdout.on('data', buf => {
+      resetIdleTimer();
+      onChunk('stdout', String(buf || ''));
+    });
+    child.stderr.on('data', buf => {
+      resetIdleTimer();
+      onChunk('stderr', String(buf || ''));
+    });
 
     child.on('error', err => {
       if (settled) return;
-      clearTimeout(timer);
+      if (idleTimer) clearTimeout(idleTimer);
+      logError('Compose command failed to spawn', {
+        command,
+        args: args.join(' '),
+        cwd,
+        error: err?.message || 'unknown error',
+      });
       settled = true;
       resolve({ ok: false, code: null, error: err.message || 'Failed to spawn compose process' });
     });
 
     child.on('close', code => {
       if (settled) return;
-      clearTimeout(timer);
+      if (idleTimer) clearTimeout(idleTimer);
       settled = true;
       if (typeof isCancelled === 'function' && isCancelled()) {
         resolve({ ok: false, code: null, error: 'Compose run cancelled by user' });
         return;
+      }
+      if (code !== 0) {
+        logError('Compose command exited with non-zero code', {
+          command,
+          args: args.join(' '),
+          cwd,
+          code,
+        });
       }
       resolve({ ok: code === 0, code, error: code === 0 ? '' : `compose exited with code ${code}` });
     });
@@ -943,11 +1051,12 @@ function spawnComposeCommand(command, args, cwd, onChunk, timeout = 120000, onSp
 async function runComposeUpStream(composeFile, service, onChunk, options = {}) {
   const { onSpawn = null, isCancelled = null } = options;
   const cwd = path.dirname(composeFile);
+  const inactivityTimeoutMs = Math.max(1000, Number(appSettings.composeInactivityTimeoutSeconds || DEFAULT_SETTINGS.composeInactivityTimeoutSeconds) * 1000);
   const primaryArgs = ['compose', '-f', composeFile, 'up', '-d', service];
   const fallbackArgs = ['-f', composeFile, 'up', '-d', service];
 
   onChunk('status', `Running: docker compose -f ${composeFile} up -d ${service}`);
-  let result = await spawnComposeCommand(DOCKER, primaryArgs, cwd, onChunk, 120000, onSpawn, isCancelled);
+  let result = await spawnComposeCommand(DOCKER, primaryArgs, cwd, onChunk, inactivityTimeoutMs, onSpawn, isCancelled);
   if (result.ok) return result;
 
   // Fall back to docker-compose only if docker command appears unavailable.
@@ -955,7 +1064,7 @@ async function runComposeUpStream(composeFile, service, onChunk, options = {}) {
   if (!dockerMissing) return result;
 
   onChunk('status', `Falling back: docker-compose -f ${composeFile} up -d ${service}`);
-  return await spawnComposeCommand(DOCKER_COMPOSE, fallbackArgs, cwd, onChunk, 120000, onSpawn, isCancelled);
+  return await spawnComposeCommand(DOCKER_COMPOSE, fallbackArgs, cwd, onChunk, inactivityTimeoutMs, onSpawn, isCancelled);
 }
 
 function getComposeSyntheticDetail(id) {
@@ -1016,8 +1125,119 @@ async function runDocker(args) {
     const { stdout } = await execAsync(`"${DOCKER}" ${args}`, { timeout: 8000 });
     return stdout.trim();
   } catch (e) {
+    logError('Docker command failed', {
+      args,
+      error: e?.message || 'unknown error',
+    });
     return '';
   }
+}
+
+function shellQuote(v) {
+  return `'${String(v ?? '').replace(/'/g, `'\\''`)}'`;
+}
+
+function statAccessInfo(targetPath) {
+  try {
+    const st = fs.statSync(targetPath);
+    const mode = (st.mode & 0o777).toString(8).padStart(3, '0');
+    return {
+      owner: `${st.uid}:${st.gid}`,
+      mode,
+      uid: st.uid,
+      gid: st.gid,
+    };
+  } catch {
+    return { owner: '', mode: '', uid: null, gid: null };
+  }
+}
+
+async function buildVolumeUsageMap() {
+  const usageMap = {};
+  const psOut = await runDocker(`ps -a --format '{{json .}}'`);
+  if (!psOut) return usageMap;
+
+  const containers = psOut.split('\n').filter(Boolean).map(line => {
+    try { return JSON.parse(line); } catch { return null; }
+  }).filter(Boolean);
+  const ids = containers.map(c => c.ID).filter(Boolean);
+  if (!ids.length) return usageMap;
+
+  try {
+    const { stdout } = await execAsync(`"${DOCKER}" inspect ${ids.map(shellQuote).join(' ')} --format '{{json .}}'`, { timeout: 25000 });
+    const inspected = String(stdout || '').split('\n').filter(Boolean).map(line => {
+      try { return JSON.parse(line); } catch { return null; }
+    }).filter(Boolean);
+
+    for (const c of inspected) {
+      const containerName = String(c.Name || '').replace(/^\//, '') || (c.Config && c.Config.Hostname) || '';
+      const isRunning = Boolean(c.State && c.State.Running);
+      for (const m of (c.Mounts || [])) {
+        if (m && m.Type === 'volume' && m.Name) {
+          if (!usageMap[m.Name]) usageMap[m.Name] = [];
+          usageMap[m.Name].push({
+            id: String(c.Id || '').slice(0, 12),
+            name: containerName,
+            status: isRunning ? 'running' : 'stopped',
+            destination: m.Destination || '',
+          });
+        }
+      }
+    }
+  } catch (e) {
+    logError('Failed to inspect containers for volume usage', { error: e.message || 'unknown error' });
+  }
+
+  return usageMap;
+}
+
+async function collectDockerVolumes() {
+  const usageMap = await buildVolumeUsageMap();
+  const out = await runDocker(`volume ls --format '{{json .}}'`);
+  if (!out) return [];
+
+  const listed = out.split('\n').filter(Boolean).map(line => {
+    try { return JSON.parse(line); } catch { return null; }
+  }).filter(Boolean);
+
+  const names = listed.map(v => v.Name).filter(Boolean);
+  if (!names.length) return [];
+
+  let inspectArr = [];
+  try {
+    const { stdout } = await execAsync(`"${DOCKER}" volume inspect ${names.map(shellQuote).join(' ')}`, { timeout: 25000 });
+    const parsed = JSON.parse(stdout || '[]');
+    inspectArr = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    logError('Failed to inspect docker volumes', { error: e.message || 'unknown error' });
+  }
+
+  const byName = Object.fromEntries(inspectArr.map(v => [v.Name, v]));
+  return names.map(name => {
+    const iv = byName[name] || {};
+    const labels = iv.Labels || {};
+    const stack = labels['com.docker.compose.project'] || labels['stack'] || '-';
+    const mountpoint = iv.Mountpoint || '';
+    const access = mountpoint ? statAccessInfo(mountpoint) : { owner: '', mode: '', uid: null, gid: null };
+    const containers = usageMap[name] || [];
+    const runningContainers = containers.filter(c => c.status === 'running').map(c => c.name).filter(Boolean);
+    return {
+      name,
+      stack,
+      driver: iv.Driver || '',
+      mountpoint,
+      ownership: access.owner || '-',
+      mode: access.mode || '-',
+      createdAt: iv.CreatedAt || '',
+      createdDate: iv.CreatedAt ? new Date(iv.CreatedAt).toLocaleString() : '-',
+      runningOn: runningContainers,
+      labels,
+      access,
+      containers,
+      options: iv.Options || {},
+      scope: iv.Scope || '',
+    };
+  });
 }
 
 async function collectContainers() {
@@ -1959,6 +2179,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/compose/template' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    const payload = readComposeTemplatePayload();
+    res.end(JSON.stringify(payload));
+    return;
+  }
+
+  if (url.pathname === '/api/compose/template' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { content } = JSON.parse(body || '{}');
+        const saved = saveComposeTemplatePayload(content);
+        if (saved.ok) {
+          logInfo('Compose template updated', { user: reqUser, templateFile: saved.templateFile });
+          res.end(JSON.stringify(saved));
+        } else {
+          logError('Compose template update failed', { user: reqUser, error: saved.error || 'unknown error' });
+          res.end(JSON.stringify(saved));
+        }
+      } catch (e) {
+        logError('Compose template update failed', { user: reqUser, error: e.message || 'Unexpected error' });
+        res.end(JSON.stringify({ ok: false, error: e.message || 'Unexpected error' }));
+      }
+    });
+    return;
+  }
+
   if (url.pathname === '/api/compose/create' && req.method === 'POST') {
     let body = '';
     req.on('data', d => body += d);
@@ -1977,11 +2227,12 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const projectDir  = path.join(COMPOSE_CONFIG_ROOT, name);
+        const composeRoot = getComposeConfigRoot();
+        const projectDir  = path.join(composeRoot, name);
         const composeFile = path.join(projectDir, 'compose.yaml');
 
         // Safety: ensure target stays inside the root
-        if (!isPathInsideRoot(projectDir, COMPOSE_CONFIG_ROOT)) {
+        if (!isPathInsideRoot(projectDir, composeRoot)) {
           res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
           return;
         }
@@ -2055,9 +2306,10 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const sourceDir = path.join(COMPOSE_CONFIG_ROOT, project);
+        const composeRoot = getComposeConfigRoot();
+        const sourceDir = path.join(composeRoot, project);
         const backupDir = path.join(COMPOSE_BACKUP_ROOT, project);
-        if (!isPathInsideRoot(sourceDir, COMPOSE_CONFIG_ROOT) || !isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT)) {
+        if (!isPathInsideRoot(sourceDir, composeRoot) || !isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT)) {
           res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
           return;
         }
@@ -2109,8 +2361,9 @@ const server = http.createServer(async (req, res) => {
         }
 
         const backupDir = path.join(COMPOSE_BACKUP_ROOT, project);
-        const targetDir = path.join(COMPOSE_CONFIG_ROOT, project);
-        if (!isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT) || !isPathInsideRoot(targetDir, COMPOSE_CONFIG_ROOT)) {
+        const composeRoot = getComposeConfigRoot();
+        const targetDir = path.join(composeRoot, project);
+        if (!isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT) || !isPathInsideRoot(targetDir, composeRoot)) {
           res.end(JSON.stringify({ ok: false, error: 'Invalid project path.' }));
           return;
         }
@@ -2502,7 +2755,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // POST /api/settings  — body: { logLevel, authenticationType, warnThresholdSeconds }
+  // POST /api/settings  — body: { logLevel, authenticationType, warnThresholdSeconds, pruneIntervalHours, composeInactivityTimeoutSeconds, dockerConfigFolder, dockerDataFolder }
   if (url.pathname === '/api/settings' && req.method === 'POST') {
     let body = '';
     req.on('data', d => body += d);
@@ -2517,11 +2770,28 @@ const server = http.createServer(async (req, res) => {
           logLevel: appSettings.logLevel,
           authenticationType: appSettings.authenticationType,
           warnThresholdSeconds: appSettings.warnThresholdSeconds,
+          pruneIntervalHours: appSettings.pruneIntervalHours,
+          composeInactivityTimeoutSeconds: appSettings.composeInactivityTimeoutSeconds,
+          dockerConfigFolder: appSettings.dockerConfigFolder,
+          dockerDataFolder: appSettings.dockerDataFolder,
         });
         if (previous.authenticationType !== appSettings.authenticationType) {
           logInfo('Authentication mode changed', {
             previous: previous.authenticationType,
             current: appSettings.authenticationType,
+          });
+        }
+        if (previous.pruneIntervalHours !== appSettings.pruneIntervalHours) {
+          scheduleAutoPrune();
+          logInfo('Auto-prune interval changed', {
+            previousHours: previous.pruneIntervalHours,
+            currentHours: appSettings.pruneIntervalHours,
+          });
+        }
+        if (previous.composeInactivityTimeoutSeconds !== appSettings.composeInactivityTimeoutSeconds) {
+          logInfo('Compose inactivity timeout changed', {
+            previousSeconds: previous.composeInactivityTimeoutSeconds,
+            currentSeconds: appSettings.composeInactivityTimeoutSeconds,
           });
         }
         res.end(JSON.stringify({ ok: true, settings: appSettings }));
@@ -2628,6 +2898,218 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ ok: true, assignments }));
       } catch (e) {
         res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ── Network Management Endpoints ────────────────────────────────────────────
+  // GET /api/network/list  — list all Docker networks (excluding system ones)
+  if (url.pathname === '/api/network/list' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    (async () => {
+      try {
+        const systemNetworks = new Set(['bridge', 'host', 'none']);
+        const shellQuote = (v) => `'${String(v ?? '').replace(/'/g, `'\\''`)}'`;
+        const output = await runDocker(`network ls --format '{{json .}}'`);
+        const listed = output
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => {
+            try { return JSON.parse(line); } catch { return null; }
+          })
+          .filter(n => n && !systemNetworks.has(n.Name));
+
+        if (!listed.length) {
+          res.end(JSON.stringify([]));
+          return;
+        }
+
+        const namesArg = listed.map(n => shellQuote(n.Name)).join(' ');
+        let inspectByName = {};
+        try {
+          const { stdout } = await execAsync(`"${DOCKER}" network inspect ${namesArg}`, { timeout: 10000 });
+          const inspected = JSON.parse(stdout || '[]');
+          inspectByName = Object.fromEntries((Array.isArray(inspected) ? inspected : []).map(n => [n.Name, n]));
+        } catch {}
+
+        const networks = listed.map(n => {
+          const inspected = inspectByName[n.Name] || {};
+          const ipamCfg = Array.isArray(inspected?.IPAM?.Config) ? inspected.IPAM.Config : [];
+          const subnet = (ipamCfg.find(cfg => cfg && cfg.Subnet) || {}).Subnet || '';
+          const containersObj = inspected.Containers || {};
+          const containers = Object.values(containersObj).map(c => c?.Name).filter(Boolean);
+          return {
+            name: n.Name,
+            id: n.ID,
+            driver: n.Driver || inspected.Driver || '',
+            scope: n.Scope || inspected.Scope || '',
+            subnet,
+            containers,
+          };
+        });
+        res.end(JSON.stringify(networks));
+      } catch (e) {
+        res.end(JSON.stringify([]));
+      }
+    })();
+    return;
+  }
+
+  // POST /api/network/create  — body: { name, driver, subnet }
+  if (url.pathname === '/api/network/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const shellQuote = (v) => `'${String(v ?? '').replace(/'/g, `'\\''`)}'`;
+        const { name, driver, subnet } = JSON.parse(body);
+        if (!name) {
+          res.end(JSON.stringify({ ok: false, error: 'Network name required' }));
+          return;
+        }
+        if (['bridge', 'host', 'none'].includes(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Cannot create network with system name' }));
+          return;
+        }
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid network name format' }));
+          return;
+        }
+        
+        let cmd = `"${DOCKER}" network create --driver ${shellQuote(driver || 'bridge')}`;
+        if (subnet) {
+          cmd += ` --subnet ${shellQuote(subnet)}`;
+        }
+        cmd += ` ${shellQuote(name)}`;
+        
+        try {
+          const { stdout } = await execAsync(cmd, { timeout: 15000 });
+          res.end(JSON.stringify({ 
+            ok: true, 
+            id: stdout.trim(),
+            message: `Network "${name}" created successfully` 
+          }));
+        } catch (e) {
+          res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: 'Invalid request: ' + e.message }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/network/update  — body: { name, driver, subnet }
+  // Docker networks cannot be updated in-place, so this recreates and reconnects containers.
+  if (url.pathname === '/api/network/update' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const shellQuote = (v) => `'${String(v ?? '').replace(/'/g, `'\\''`)}'`;
+        const { name, driver, subnet } = JSON.parse(body);
+        if (!name) {
+          res.end(JSON.stringify({ ok: false, error: 'Network name required' }));
+          return;
+        }
+        if (['bridge', 'host', 'none'].includes(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Cannot edit system network' }));
+          return;
+        }
+
+        let inspect;
+        try {
+          const { stdout } = await execAsync(`"${DOCKER}" network inspect ${shellQuote(name)}`, { timeout: 10000 });
+          const arr = JSON.parse(stdout || '[]');
+          inspect = Array.isArray(arr) ? arr[0] : null;
+        } catch {
+          inspect = null;
+        }
+        if (!inspect) {
+          res.end(JSON.stringify({ ok: false, error: `Network "${name}" not found` }));
+          return;
+        }
+
+        const targetDriver = driver || inspect.Driver || 'bridge';
+        const currentSubnet = (Array.isArray(inspect?.IPAM?.Config) ? inspect.IPAM.Config : []).find(cfg => cfg?.Subnet)?.Subnet || '';
+        const targetSubnet = subnet || '';
+        if ((inspect.Driver || '') === targetDriver && currentSubnet === targetSubnet) {
+          res.end(JSON.stringify({ ok: true, message: 'No changes detected' }));
+          return;
+        }
+
+        const containers = Object.values(inspect.Containers || {}).map(c => c?.Name).filter(Boolean);
+
+        for (const c of containers) {
+          try {
+            await execAsync(`"${DOCKER}" network disconnect -f ${shellQuote(name)} ${shellQuote(c)}`, { timeout: 10000 });
+          } catch {}
+        }
+
+        await execAsync(`"${DOCKER}" network rm ${shellQuote(name)}`, { timeout: 10000 });
+
+        let createCmd = `"${DOCKER}" network create --driver ${shellQuote(targetDriver)}`;
+        if (targetSubnet) {
+          createCmd += ` --subnet ${shellQuote(targetSubnet)}`;
+        }
+        createCmd += ` ${shellQuote(name)}`;
+        await execAsync(createCmd, { timeout: 15000 });
+
+        const reconnectErrors = [];
+        for (const c of containers) {
+          try {
+            await execAsync(`"${DOCKER}" network connect ${shellQuote(name)} ${shellQuote(c)}`, { timeout: 10000 });
+          } catch (e) {
+            reconnectErrors.push(`${c}: ${e.message}`);
+          }
+        }
+
+        res.end(JSON.stringify({
+          ok: true,
+          message: reconnectErrors.length
+            ? `Network "${name}" updated, but some containers failed to reconnect`
+            : `Network "${name}" updated successfully`,
+          reconnectErrors,
+        }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/network/delete  — body: { name }
+  if (url.pathname === '/api/network/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const shellQuote = (v) => `'${String(v ?? '').replace(/'/g, `'\\''`)}'`;
+        const { name } = JSON.parse(body);
+        if (!name) {
+          res.end(JSON.stringify({ ok: false, error: 'Network name required' }));
+          return;
+        }
+        if (['bridge', 'host', 'none'].includes(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Cannot delete system network' }));
+          return;
+        }
+        
+        try {
+          await execAsync(`"${DOCKER}" network rm ${shellQuote(name)}`, { timeout: 10000 });
+          res.end(JSON.stringify({ 
+            ok: true, 
+            message: `Network "${name}" deleted successfully` 
+          }));
+        } catch (e) {
+          res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: 'Invalid request: ' + e.message }));
       }
     });
     return;
@@ -2913,6 +3395,102 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // GET /api/docker/volumes/list — list docker volumes with metadata
+  if (url.pathname === '/api/docker/volumes/list' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    try {
+      const volumes = await collectDockerVolumes();
+      res.end(JSON.stringify({ ok: true, volumes }));
+    } catch (e) {
+      logError('Failed to list docker volumes', { user: reqUser, error: e.message || 'unknown error' });
+      res.end(JSON.stringify({ ok: false, error: e.message, volumes: [] }));
+    }
+    return;
+  }
+
+  // GET /api/docker/volumes/detail?name=<volumeName>
+  if (url.pathname === '/api/docker/volumes/detail' && req.method === 'GET') {
+    const name = String(url.searchParams.get('name') || '').trim();
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    if (!name) {
+      res.end(JSON.stringify({ ok: false, error: 'name is required' }));
+      return;
+    }
+    try {
+      const volumes = await collectDockerVolumes();
+      const volume = volumes.find(v => v.name === name);
+      if (!volume) {
+        res.end(JSON.stringify({ ok: false, error: 'Volume not found' }));
+        return;
+      }
+      res.end(JSON.stringify({ ok: true, volume }));
+    } catch (e) {
+      logError('Failed to load docker volume detail', { user: reqUser, name, error: e.message || 'unknown error' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
+    return;
+  }
+
+  // POST /api/docker/volumes/create — body: { name, driver, labels }
+  if (url.pathname === '/api/docker/volumes/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name, driver, labels } = JSON.parse(body || '{}');
+        const safeName = String(name || '').trim();
+        if (!safeName) {
+          res.end(JSON.stringify({ ok: false, error: 'Volume name required' }));
+          return;
+        }
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(safeName)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid volume name format' }));
+          return;
+        }
+        let cmd = `"${DOCKER}" volume create --driver ${shellQuote(driver || 'local')}`;
+        if (labels && typeof labels === 'object') {
+          for (const [k, v] of Object.entries(labels)) {
+            if (!k) continue;
+            cmd += ` --label ${shellQuote(`${k}=${String(v ?? '')}`)}`;
+          }
+        }
+        cmd += ` ${shellQuote(safeName)}`;
+        const { stdout } = await execAsync(cmd, { timeout: 15000 });
+        logInfo('Docker volume created', { user: reqUser, name: safeName, driver: driver || 'local' });
+        res.end(JSON.stringify({ ok: true, id: String(stdout || '').trim(), name: safeName }));
+      } catch (e) {
+        logError('Failed to create docker volume', { user: reqUser, error: e.message || 'unknown error' });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/docker/volumes/delete — body: { name }
+  if (url.pathname === '/api/docker/volumes/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', async () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name } = JSON.parse(body || '{}');
+        const safeName = String(name || '').trim();
+        if (!safeName) {
+          res.end(JSON.stringify({ ok: false, error: 'Volume name required' }));
+          return;
+        }
+        await execAsync(`"${DOCKER}" volume rm ${shellQuote(safeName)}`, { timeout: 15000 });
+        logInfo('Docker volume deleted', { user: reqUser, name: safeName });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        logError('Failed to delete docker volume', { user: reqUser, error: e.message || 'unknown error' });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(404);
   res.end('Not found');
 });
@@ -3174,17 +3752,23 @@ async function runPrune(selected) {
   return summary;
 }
 
-// ─── Daily auto-prune scheduler ───────────────────────────────────────────────
-function scheduleDailyPrune() {
-  function msUntilMidnight() {
-    const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
-    return midnight - now;
+// ─── Auto-prune scheduler ─────────────────────────────────────────────────────
+let autoPruneTimer = null;
+
+function getPruneIntervalMs() {
+  const hours = Number(appSettings.pruneIntervalHours || DEFAULT_SETTINGS.pruneIntervalHours);
+  return Math.max(1, hours) * 60 * 60 * 1000;
+}
+
+function scheduleAutoPrune() {
+  if (autoPruneTimer) {
+    clearTimeout(autoPruneTimer);
+    autoPruneTimer = null;
   }
-  setTimeout(async () => {
+  const intervalMs = getPruneIntervalMs();
+  autoPruneTimer = setTimeout(async () => {
     try {
-      appendPruneLog(['=== Daily auto-prune triggered ===']);
+      appendPruneLog(['=== Scheduled auto-prune triggered ===']);
       const found = await scanUnused();
       const total = found.images.length + found.networks.length + found.volumes.length;
       if (total > 0) {
@@ -3195,12 +3779,15 @@ function scheduleDailyPrune() {
     } catch (e) {
       appendPruneLog([`Auto-prune error: ${e.message}`]);
     }
-    // Schedule next day
-    scheduleDailyPrune();
-  }, msUntilMidnight());
-  logInfo('Auto-prune scheduled', { startsInHours: Math.round(msUntilMidnight() / 3600000) });
+    // Schedule next interval
+    scheduleAutoPrune();
+  }, intervalMs);
+  logInfo('Auto-prune scheduled', {
+    everyHours: Number((intervalMs / 3600000).toFixed(2)),
+    nextRunInMinutes: Math.round(intervalMs / 60000),
+  });
 }
-scheduleDailyPrune();
+scheduleAutoPrune();
 
 // ─── WebSocket console (docker exec PTY) ─────────────────────────────────────
 // Minimal WebSocket server using Node's built-in http upgrade — no external deps.
@@ -3336,6 +3923,10 @@ server.listen(PORT, '0.0.0.0', () => {
     logLevel: appSettings.logLevel,
     authenticationType: appSettings.authenticationType,
     warnThresholdSeconds: appSettings.warnThresholdSeconds,
+    pruneIntervalHours: appSettings.pruneIntervalHours,
+    composeInactivityTimeoutSeconds: appSettings.composeInactivityTimeoutSeconds,
+    dockerConfigFolder: appSettings.dockerConfigFolder,
+    dockerDataFolder: appSettings.dockerDataFolder,
   });
 });
 

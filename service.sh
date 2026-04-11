@@ -5,9 +5,44 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_FILE="${SCRIPT_DIR}/nas-monitor.pid"
 LOG_FILE="${SCRIPT_DIR}/nas-monitor.log"
+SERVER_SCRIPT="${SCRIPT_DIR}/server.js"
 
 SERVICE_NAME="NAS Monitor"
 SERVICE_ICON="🐋"
+
+# Verify whether a PID belongs to this NAS Monitor instance
+is_our_server_pid() {
+  local pid="$1"
+
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    return 1
+  fi
+
+  if [ ! -f "/proc/$pid/cmdline" ]; then
+    return 1
+  fi
+
+  local cmdline
+  cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)
+
+  # Preferred match: absolute script path
+  if echo "$cmdline" | grep -Fq " $SERVER_SCRIPT"; then
+    return 0
+  fi
+
+  # Backward compatibility: older starts used relative "server.js"
+  if echo "$cmdline" | grep -Eq '(^|[[:space:]])server\.js([[:space:]]|$)'; then
+    if [ -L "/proc/$pid/cwd" ]; then
+      local cwd
+      cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null)
+      if [ "$cwd" = "$SCRIPT_DIR" ]; then
+        return 0
+      fi
+    fi
+  fi
+
+  return 1
+}
 
 # Find Node.js on Synology
 find_node() {
@@ -44,23 +79,9 @@ get_pid() {
   # Check PID file first
   if [ -f "$PID_FILE" ]; then
     pid=$(cat "$PID_FILE")
-    if kill -0 "$pid" 2>/dev/null; then
-      # Verify it's actually our server.js process
-      if [ -f "/proc/$pid/cmdline" ]; then
-        local cmdline
-        cmdline=$(tr '\0' ' ' < /proc/$pid/cmdline 2>/dev/null)
-        if echo "$cmdline" | grep -q "server.js"; then
-          # Additional check: verify cwd matches
-          if [ -L "/proc/$pid/cwd" ]; then
-            local cwd
-            cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null)
-            if [ "$cwd" = "$SCRIPT_DIR" ]; then
-              echo "$pid"
-              return
-            fi
-          fi
-        fi
-      fi
+    if is_our_server_pid "$pid"; then
+      echo "$pid"
+      return
     fi
     # Stale PID file - remove it
     rm -f "$PID_FILE"
@@ -68,22 +89,11 @@ get_pid() {
 
   # Search for running server.js process in this directory
   for pid in $(pgrep -f "node" 2>/dev/null); do
-    if [ -L "/proc/$pid/cwd" ]; then
-      local cwd
-      cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null)
-      if [ "$cwd" = "$SCRIPT_DIR" ]; then
-        # Check if cmdline contains server.js
-        if [ -f "/proc/$pid/cmdline" ]; then
-          local cmdline
-          cmdline=$(tr '\0' ' ' < /proc/$pid/cmdline 2>/dev/null)
-          if echo "$cmdline" | grep -q "server.js"; then
-            # Found it - save PID for future
-            echo "$pid" > "$PID_FILE"
-            echo "$pid"
-            return
-          fi
-        fi
-      fi
+    if is_our_server_pid "$pid"; then
+      # Found it - save PID for future
+      echo "$pid" > "$PID_FILE"
+      echo "$pid"
+      return
     fi
   done
 
@@ -115,7 +125,7 @@ do_start() {
 
   # Start the server in background
   cd "$SCRIPT_DIR"
-  nohup $NODE server.js >> "$LOG_FILE" 2>&1 &
+  nohup "$NODE" "$SERVER_SCRIPT" >> "$LOG_FILE" 2>&1 &
   local SERVER_PID=$!
   echo $SERVER_PID > "$PID_FILE"
 
