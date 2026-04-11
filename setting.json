@@ -1,0 +1,5 @@
+{
+  "logLevel": "INFO",
+  "authenticationType": true,
+  "warnThresholdSeconds": 3
+}

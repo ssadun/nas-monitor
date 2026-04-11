@@ -15,6 +15,77 @@ const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const PORT = process.env.PORT || 3232;
 
+// ─── App settings + logging ─────────────────────────────────────────────────
+const SETTINGS_FILE = path.join(__dirname, 'setting.json');
+const LOG_LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
+const DEFAULT_SETTINGS = {
+  logLevel: 'INFO',
+  authenticationType: true,
+  warnThresholdSeconds: 3,
+};
+
+function normalizeSettings(raw = {}) {
+  const level = String(raw.logLevel || DEFAULT_SETTINGS.logLevel).toUpperCase();
+  const safeLevel = Object.prototype.hasOwnProperty.call(LOG_LEVELS, level) ? level : DEFAULT_SETTINGS.logLevel;
+  const auth = raw.authenticationType;
+  const thresholdRaw = raw.warnThresholdSeconds ?? raw.thresholdSeconds ?? DEFAULT_SETTINGS.warnThresholdSeconds;
+  const thresholdNum = Number(thresholdRaw);
+  return {
+    logLevel: safeLevel,
+    authenticationType: typeof auth === 'boolean' ? auth : DEFAULT_SETTINGS.authenticationType,
+    warnThresholdSeconds: Number.isFinite(thresholdNum) && thresholdNum >= 0 ? thresholdNum : DEFAULT_SETTINGS.warnThresholdSeconds,
+  };
+}
+
+function loadSettings() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    return normalizeSettings(data);
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettingsFile(nextSettings) {
+  const normalized = normalizeSettings(nextSettings);
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(normalized, null, 2), 'utf8');
+  return normalized;
+}
+
+let appSettings = loadSettings();
+if (!fs.existsSync(SETTINGS_FILE)) {
+  try { appSettings = saveSettingsFile(appSettings); } catch {}
+}
+
+function shouldLog(level) {
+  const current = LOG_LEVELS[String(appSettings.logLevel || 'INFO').toUpperCase()] ?? LOG_LEVELS.INFO;
+  const incoming = LOG_LEVELS[level] ?? LOG_LEVELS.INFO;
+  return incoming >= current;
+}
+
+function formatMeta(meta) {
+  const entries = Object.entries(meta || {}).filter(([, v]) => v !== undefined && v !== null && v !== '');
+  if (!entries.length) return '';
+  return ' ' + entries.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ');
+}
+
+function writeLog(level, message, meta = {}) {
+  if (!shouldLog(level)) return;
+  const ts = new Date().toISOString();
+  const line = `[${ts}] [${level}] ${message}${formatMeta(meta)}`;
+  if (level === 'ERROR') console.error(line);
+  else console.log(line);
+}
+
+function logDebug(message, meta) { writeLog('DEBUG', message, meta); }
+function logInfo(message, meta) { writeLog('INFO', message, meta); }
+function logWarn(message, meta) { writeLog('WARN', message, meta); }
+function logError(message, meta) { writeLog('ERROR', message, meta); }
+
+function warnThresholdMs() {
+  return Math.max(0, Number(appSettings.warnThresholdSeconds || 3) * 1000);
+}
+
 // ─── Credentials file (PBKDF2-hashed) ────────────────────────────────────────
 const CREDENTIALS_FILE = path.join(__dirname, 'credentials.json');
 const PBKDF2_ITER  = 100_000;
@@ -59,10 +130,13 @@ function checkCredentials(username, password) {
   );
 }
 
-const AUTH_ENABLED = Boolean(loadCredentials());
 const SESSION_COOKIE = 'nas-monitor-session';
 const SESSION_TTL = 1000 * 60 * 60 * 4; // 4h
 const sessions = new Map();
+
+function isAuthEnabled() {
+  return Boolean(appSettings.authenticationType) && Boolean(loadCredentials());
+}
 
 function parseCookies(req) {
   const header = req.headers.cookie || '';
@@ -78,32 +152,55 @@ function getSessionId(req) {
   return parseCookies(req)[SESSION_COOKIE] || '';
 }
 
-function createSession() {
+function createSession(username = '') {
   const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, Date.now() + SESSION_TTL);
+  sessions.set(token, {
+    expiresAt: Date.now() + SESSION_TTL,
+    username: String(username || '').trim() || 'unknown',
+  });
   return token;
 }
 
 function validateSessionId(token) {
   if (!token) return false;
-  const expiry = sessions.get(token);
-  if (!expiry || expiry < Date.now()) {
+  const data = sessions.get(token);
+  if (!data) {
     sessions.delete(token);
     return false;
   }
-  sessions.set(token, Date.now() + SESSION_TTL);
+  const expiresAt = typeof data === 'number' ? data : Number(data.expiresAt || 0);
+  if (!expiresAt || expiresAt < Date.now()) {
+    sessions.delete(token);
+    return false;
+  }
+  const username = typeof data === 'number' ? 'unknown' : (data.username || 'unknown');
+  sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, username });
   return true;
 }
 
+function getSessionUser(req) {
+  const token = getSessionId(req);
+  if (!validateSessionId(token)) return '';
+  const data = sessions.get(token);
+  if (data && typeof data === 'object' && data.username) return data.username;
+  return 'unknown';
+}
+
 function isAuthenticated(req) {
-  if (!AUTH_ENABLED) return true;
+  if (!isAuthEnabled()) return true;
   return validateSessionId(getSessionId(req));
+}
+
+function requestUser(req) {
+  if (!isAuthEnabled()) return 'auth-disabled';
+  return getSessionUser(req) || 'anonymous';
 }
 
 // periodic cleanup for expired sessions
 setInterval(() => {
   const now = Date.now();
-  for (const [token, expiry] of sessions.entries()) {
+  for (const [token, data] of sessions.entries()) {
+    const expiry = typeof data === 'number' ? data : Number(data.expiresAt || 0);
     if (expiry < now) sessions.delete(token);
   }
 }, 60 * 60 * 1000);
@@ -743,6 +840,30 @@ function isPathInsideRoot(filePath, rootPath) {
   const resolvedFile = path.resolve(filePath);
   const resolvedRoot = path.resolve(rootPath);
   return resolvedFile === resolvedRoot || resolvedFile.startsWith(resolvedRoot + path.sep);
+}
+
+function isValidContainerFolderName(name) {
+  return /^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/.test(String(name || ''));
+}
+
+function normalizeContainerSubPath(subPath = '') {
+  const raw = String(subPath || '').trim().replace(/\\/g, '/');
+  const cleaned = raw.replace(/^\/+/, '').replace(/\/+/g, '/');
+  if (!cleaned) return '';
+  const parts = cleaned.split('/').filter(Boolean);
+  if (parts.some(seg => seg === '.' || seg === '..')) return null;
+  return parts.join('/');
+}
+
+function resolveContainerDataPath(containerName, subPath = '') {
+  if (!isValidContainerFolderName(containerName)) return null;
+  const basePath = path.join(CONTAINER_DATA_ROOT, containerName);
+  if (!isPathInsideRoot(basePath, CONTAINER_DATA_ROOT)) return null;
+  const normalizedSubPath = normalizeContainerSubPath(subPath);
+  if (normalizedSubPath === null) return null;
+  const targetPath = normalizedSubPath ? path.join(basePath, normalizedSubPath) : basePath;
+  if (!isPathInsideRoot(targetPath, basePath)) return null;
+  return { basePath, targetPath, subPath: normalizedSubPath || '' };
 }
 
 function getSafeComposeFilePath(projectName, explicitComposeFile = '') {
@@ -1399,7 +1520,7 @@ function saveCatDefs(data) {
   try {
     fs.writeFileSync(CAT_DEFS_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
-    console.error('Failed to save category defs:', e.message);
+    logError('Failed to save category definitions file', { error: e.message });
   }
 }
 
@@ -1413,7 +1534,7 @@ function saveCatAssignments(data) {
   try {
     fs.writeFileSync(CAT_ASSIGNMENTS_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
-    console.error('Failed to save category assignments:', e.message);
+    logError('Failed to save category assignments file', { error: e.message });
   }
 }
 
@@ -1430,12 +1551,12 @@ function saveDiskHistory(history) {
   try {
     fs.writeFileSync(DISK_HISTORY_FILE, JSON.stringify(history), 'utf8');
   } catch (e) {
-    console.error('Failed to save disk history:', e.message);
+    logError('Failed to save disk history file', { error: e.message });
   }
 }
 
 let diskScanHistory = loadDiskHistory();
-console.log(`   Disk history: ${diskScanHistory.length} saved scan(s) loaded from disk`);
+logInfo('Disk history loaded from disk', { scans: diskScanHistory.length });
 
 let cache = {
   processes: [],
@@ -1457,7 +1578,7 @@ async function refreshCache() {
     ]);
     cache = { processes, containers, summary, lastUpdate: Date.now() };
   } catch (e) {
-    console.error('Refresh error:', e.message);
+    logError('Cache refresh failed', { error: e.message });
   } finally {
     collecting = false;
   }
@@ -1556,14 +1677,44 @@ async function collectDiskUsage(scanPath, maxDepth = 4) {
 const HTML = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
 const server = http.createServer(async (req, res) => {
+  const startedAt = Date.now();
+  let requestPath = '(invalid-url)';
+  const method = req.method || 'GET';
+  let reqUser = 'unknown';
+
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    const meta = {
+      method,
+      path: requestPath,
+      status: res.statusCode,
+      durationMs,
+      user: reqUser,
+    };
+    if (requestPath.startsWith('/api/')) {
+      logDebug('REST API call', meta);
+    }
+    if (durationMs >= warnThresholdMs()) {
+      logWarn('Slow request detected', meta);
+    }
+  });
+
   let url;
   try {
     url = new URL(req.url, `http://localhost`);
   } catch {
+    logError('Malformed request URL', { method, rawUrl: req.url || '', remoteIp: req.socket?.remoteAddress || '' });
     res.writeHead(400); res.end('Bad request'); return;
   }
+  requestPath = url.pathname;
+  reqUser = requestUser(req);
 
   if (url.pathname === '/login') {
+    if (!isAuthEnabled()) {
+      res.writeHead(302, { Location: '/' });
+      res.end();
+      return;
+    }
     if (req.method === 'GET') {
       sendLoginPage(res);
       return;
@@ -1576,11 +1727,13 @@ const server = http.createServer(async (req, res) => {
         const user = params.user || '';
         const pass = params.pass || '';
         if (checkCredentials(user, pass)) {
-          const token = createSession();
+          const token = createSession(user);
           setAuthCookie(res, token);
+          logInfo('User login succeeded', { user, remoteIp: req.socket?.remoteAddress || '' });
           res.writeHead(302, { Location: '/' });
           res.end();
         } else {
+          logWarn('User login failed', { user, remoteIp: req.socket?.remoteAddress || '' });
           sendLoginPage(res, 'Invalid username or password.');
         }
       });
@@ -1592,6 +1745,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/logout') {
+    logInfo('User logout', { user: reqUser, remoteIp: req.socket?.remoteAddress || '' });
     clearAuthCookie(res);
     res.writeHead(302, { Location: '/login' });
     res.end();
@@ -1599,6 +1753,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (!isAuthenticated(req)) {
+    logInfo('Authentication required for request', {
+      method,
+      path: url.pathname,
+      remoteIp: req.socket?.remoteAddress || '',
+    });
     if (url.pathname.startsWith('/api/') || url.pathname === '/api/stream') {
       res.writeHead(401, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify({ error: 'Authentication required' }));
@@ -1644,6 +1803,7 @@ const server = http.createServer(async (req, res) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       });
+      logError('API refresh failed', { error: e.message || 'refresh failed', user: reqUser });
       res.end(JSON.stringify({ error: e.message || 'refresh failed' }));
     }
     return;
@@ -1679,17 +1839,24 @@ const server = http.createServer(async (req, res) => {
       try {
         const { project, service } = JSON.parse(body || '{}');
         if (!project || !service) {
+          logError('Compose up rejected: missing project or service', { user: reqUser, project, service });
           res.end(JSON.stringify({ ok: false, error: 'project and service are required' }));
           return;
         }
 
         const target = findComposeServiceTarget(project, service);
         if (!target) {
+          logError('Compose up target not found', { user: reqUser, project, service });
           res.end(JSON.stringify({ ok: false, error: 'Compose service not found under configured compose root.' }));
           return;
         }
 
         const { stdout, stderr } = await runComposeProject(target.project.composeFile, ['up', '-d', target.service.service], 60000);
+        logInfo('Compose up completed', {
+          user: reqUser,
+          project: target.project.project,
+          service: target.service.service,
+        });
         res.end(JSON.stringify({
           ok: true,
           output: `${stdout || ''}${stderr || ''}`.trim(),
@@ -1697,6 +1864,7 @@ const server = http.createServer(async (req, res) => {
           service: target.service.service,
         }));
       } catch (e) {
+        logError('Compose up failed', { user: reqUser, error: e.message || 'unknown error' });
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -1742,6 +1910,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const { project, service } = JSON.parse(body || '{}');
         if (!project || !service) {
+          logError('Compose stream rejected: missing project or service', { user: reqUser, project, service });
           send({ type: 'error', message: 'project and service are required' });
           send({ type: 'done', ok: false });
           res.end();
@@ -1750,6 +1919,7 @@ const server = http.createServer(async (req, res) => {
 
         const target = findComposeServiceTarget(project, service);
         if (!target) {
+          logError('Compose stream failed: target not found', { user: reqUser, project, service });
           send({ type: 'error', message: 'Compose service not found under configured compose root.' });
           send({ type: 'done', ok: false });
           res.end();
@@ -1762,16 +1932,25 @@ const server = http.createServer(async (req, res) => {
           isCancelled: () => clientClosed,
         });
         if (clientClosed) {
+          logInfo('Compose stream cancelled by client', { user: reqUser, project, service });
           if (!res.writableEnded && !res.destroyed) res.end();
           return;
         }
         if (result.ok) {
+          logInfo('Compose stream completed', { user: reqUser, project, service });
           send({ type: 'done', ok: true, message: 'Compose up completed successfully.' });
         } else {
+          logError('Compose stream failed', {
+            user: reqUser,
+            project,
+            service,
+            error: result.error || 'compose up failed',
+          });
           send({ type: 'error', message: result.error || 'compose up failed' });
           send({ type: 'done', ok: false });
         }
       } catch (e) {
+        logError('Compose stream failed with unexpected error', { user: reqUser, error: e.message || 'Unexpected error' });
         send({ type: 'error', message: e.message || 'Unexpected error' });
         send({ type: 'done', ok: false });
       }
@@ -2054,11 +2233,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname.startsWith('/api/disk/history/')) {
+  if (url.pathname.startsWith('/api/disk/history/') && req.method === 'GET') {
     const id = parseInt(url.pathname.split('/').pop());
     const scan = diskScanHistory.find(s => s.id === id);
     res.writeHead(scan ? 200 : 404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify(scan || { error: 'Not found' }));
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/disk/history/') && req.method === 'DELETE') {
+    const id = parseInt(url.pathname.split('/').pop());
+    if (!id) {
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'Invalid scan id' }));
+      return;
+    }
+    const before = diskScanHistory.length;
+    diskScanHistory = diskScanHistory.filter(s => s.id !== id);
+    if (diskScanHistory.length === before) {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'Scan not found' }));
+      return;
+    }
+    try {
+      saveDiskHistory(diskScanHistory);
+      logInfo('Disk scan history entry deleted', { user: reqUser, scanId: id, remaining: diskScanHistory.length });
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: true, remaining: diskScanHistory.length }));
+    } catch (e) {
+      logError('Failed to persist disk history delete', { user: reqUser, scanId: id, error: e.message });
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
     return;
   }
 
@@ -2077,12 +2283,15 @@ const server = http.createServer(async (req, res) => {
       if (action === 'delete') {
         try { await execAsync(`"${DOCKER}" stop ${id}`, { timeout: 15000 }); } catch {}
         const { stdout, stderr } = await execAsync(`"${DOCKER}" rm ${id}`, { timeout: 10000 });
+        logInfo('Container action completed', { user: reqUser, action, id });
         res.end(JSON.stringify({ ok: true, output: (stdout + stderr).trim() }));
       } else {
         const { stdout, stderr } = await execAsync(`"${DOCKER}" ${action} ${id}`, { timeout: 15000 });
+        logInfo('Container action completed', { user: reqUser, action, id });
         res.end(JSON.stringify({ ok: true, output: (stdout + stderr).trim() }));
       }
     } catch (e) {
+      logError('Container action failed', { user: reqUser, action, id, error: e.message });
       res.end(JSON.stringify({ ok: false, error: e.message }));
     }
     return;
@@ -2276,8 +2485,51 @@ const server = http.createServer(async (req, res) => {
       const raw = fs.existsSync(PRUNE_LOG_FILE) ? fs.readFileSync(PRUNE_LOG_FILE, 'utf8') : '';
       res.end(JSON.stringify({ log: raw }));
     } catch (e) {
+      logError('Failed to read prune log file', { error: e.message });
       res.end(JSON.stringify({ log: '' }));
     }
+    return;
+  }
+
+  // GET /api/settings  — return runtime settings
+  if (url.pathname === '/api/settings' && req.method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(JSON.stringify({ ok: true, settings: appSettings }));
+    return;
+  }
+
+  // POST /api/settings  — body: { logLevel, authenticationType, warnThresholdSeconds }
+  if (url.pathname === '/api/settings' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const input = JSON.parse(body || '{}');
+        const previous = { ...appSettings };
+        appSettings = saveSettingsFile({ ...appSettings, ...input });
+        logInfo('Application settings updated', {
+          user: reqUser,
+          logLevel: appSettings.logLevel,
+          authenticationType: appSettings.authenticationType,
+          warnThresholdSeconds: appSettings.warnThresholdSeconds,
+        });
+        if (previous.authenticationType !== appSettings.authenticationType) {
+          logInfo('Authentication mode changed', {
+            previous: previous.authenticationType,
+            current: appSettings.authenticationType,
+          });
+        }
+        res.end(JSON.stringify({ ok: true, settings: appSettings }));
+      } catch (e) {
+        logError('Failed to update settings', { error: e.message, user: reqUser });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
     return;
   }
 
@@ -2293,6 +2545,7 @@ const server = http.createServer(async (req, res) => {
         // Verify current password first
         const currentUser = creds ? creds.username : '';
         if (creds && !checkCredentials(currentUser, currentPassword || '')) {
+          logWarn('Credential change failed due to invalid current password', { user: reqUser });
           res.end(JSON.stringify({ ok: false, error: 'Current password is incorrect.' }));
           return;
         }
@@ -2305,8 +2558,10 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         saveCredentials(newUsername.trim(), newPassword);
+        logInfo('Credentials updated', { user: reqUser, newUsername: newUsername.trim() });
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {
+        logError('Failed to change credentials', { error: e.message, user: reqUser });
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -2406,56 +2661,88 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET /api/container/folders?name=<name>  — list data folder contents
+  // GET /api/container/folders?name=<name>&subpath=<relative-path>  — browse data folder
   if (url.pathname === '/api/container/folders' && req.method === 'GET') {
     const name = url.searchParams.get('name') || '';
-    if (!name || !/^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/.test(name)) {
+    const subpath = url.searchParams.get('subpath') || '';
+    const resolved = resolveContainerDataPath(name, subpath);
+    if (!resolved) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
-      return;
-    }
-    const folderPath = path.join(CONTAINER_DATA_ROOT, name);
-    if (!isPathInsideRoot(folderPath, CONTAINER_DATA_ROOT)) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+      res.end(JSON.stringify({ ok: false, error: 'Invalid container name or path' }));
       return;
     }
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-    const exists = fs.existsSync(folderPath);
+    const exists = fs.existsSync(resolved.basePath);
     let entries = [];
-    if (exists) {
+    const currentExists = fs.existsSync(resolved.targetPath);
+    if (exists && currentExists) {
       try {
-        entries = fs.readdirSync(folderPath, { withFileTypes: true })
-          .filter(e => e.isDirectory())
-          .map(e => ({ name: e.name }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-      } catch {}
+        entries = fs.readdirSync(resolved.targetPath, { withFileTypes: true })
+          .map(e => {
+            const fullPath = path.join(resolved.targetPath, e.name);
+            let sizeBytes = 0;
+            let modifiedAt = '';
+            try {
+              const st = fs.statSync(fullPath);
+              sizeBytes = st.size || 0;
+              modifiedAt = st.mtime ? st.mtime.toISOString() : '';
+            } catch {}
+            return {
+              name: e.name,
+              type: e.isDirectory() ? 'dir' : 'file',
+              sizeBytes,
+              modifiedAt,
+            };
+          })
+          .sort((a, b) => {
+            if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+      } catch (e) {
+        logError('Failed to browse container data folder', {
+          user: reqUser,
+          name,
+          subpath: resolved.subPath,
+          path: resolved.targetPath,
+          error: e.message,
+        });
+      }
     }
-    res.end(JSON.stringify({ ok: true, path: folderPath, exists, entries }));
+    res.end(JSON.stringify({
+      ok: true,
+      path: resolved.targetPath,
+      basePath: resolved.basePath,
+      subpath: resolved.subPath,
+      exists,
+      currentExists,
+      entries,
+    }));
     return;
   }
 
-  // POST /api/container/folders  — create base data folder + optional subfolders
+  // POST /api/container/folders  — create base data folder + optional subfolders at parentPath
   if (url.pathname === '/api/container/folders' && req.method === 'POST') {
     let body = '';
     req.on('data', d => body += d);
     req.on('end', () => {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       try {
-        const { name, subfolders } = JSON.parse(body || '{}');
-        if (!name || !/^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/.test(name)) {
-          res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+        const { name, subfolders, parentPath } = JSON.parse(body || '{}');
+        const resolvedBase = resolveContainerDataPath(name, '');
+        const resolvedParent = resolveContainerDataPath(name, parentPath || '');
+        if (!resolvedBase || !resolvedParent) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid container name or parent path' }));
           return;
         }
-        const basePath = path.join(CONTAINER_DATA_ROOT, name);
-        if (!isPathInsideRoot(basePath, CONTAINER_DATA_ROOT)) {
-          res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
-          return;
-        }
+        const basePath = resolvedBase.basePath;
+        const parentDir = resolvedParent.targetPath;
         const created = [];
         if (!fs.existsSync(basePath)) {
           fs.mkdirSync(basePath, { recursive: true });
           created.push(name);
+        }
+        if (!fs.existsSync(parentDir)) {
+          fs.mkdirSync(parentDir, { recursive: true });
         }
         if (Array.isArray(subfolders)) {
           for (const sub of subfolders) {
@@ -2463,9 +2750,9 @@ const server = http.createServer(async (req, res) => {
             if (!subName || path.isAbsolute(subName)) continue;
             // Reject path traversal: no segment may be '.' or '..'
             if (subName.split('/').some(seg => seg === '..' || seg === '.')) continue;
-            // Allow only safe characters
+            // Allow only safe folder characters
             if (!/^[a-zA-Z0-9_.\-][a-zA-Z0-9_.\-\/]*$/.test(subName)) continue;
-            const subPath = path.join(basePath, subName);
+            const subPath = path.join(parentDir, subName);
             if (!isPathInsideRoot(subPath, basePath)) continue;
             if (!fs.existsSync(subPath)) {
               fs.mkdirSync(subPath, { recursive: true });
@@ -2473,8 +2760,153 @@ const server = http.createServer(async (req, res) => {
             }
           }
         }
+        logInfo('Container data folder ensured', {
+          user: reqUser,
+          container: name,
+          createdCount: created.length,
+          created,
+        });
         res.end(JSON.stringify({ ok: true, path: basePath, created }));
       } catch (e) {
+        logError('Failed to create container data folder', { user: reqUser, error: e.message });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // GET /api/container/folders/download?name=<container>&filePath=<relative-path>
+  if (url.pathname === '/api/container/folders/download' && req.method === 'GET') {
+    const name = url.searchParams.get('name') || '';
+    const filePath = url.searchParams.get('filePath') || '';
+    const resolved = resolveContainerDataPath(name, filePath);
+    if (!resolved) {
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'Invalid container name or file path' }));
+      return;
+    }
+
+    let st = null;
+    try { st = fs.statSync(resolved.targetPath); } catch {}
+    if (!st) {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'File not found' }));
+      return;
+    }
+    if (!st.isFile()) {
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'Only files can be downloaded' }));
+      return;
+    }
+
+    const filename = path.basename(resolved.targetPath);
+    const encodedFilename = encodeURIComponent(filename);
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': st.size,
+      'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`,
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*',
+    });
+
+    const stream = fs.createReadStream(resolved.targetPath);
+    stream.on('error', e => {
+      logError('Container file download stream failed', {
+        user: reqUser,
+        container: name,
+        filePath: resolved.subPath,
+        error: e.message,
+      });
+      try {
+        if (!res.writableEnded) {
+          res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ ok: false, error: 'Failed to read file' }));
+        }
+      } catch {}
+    });
+    stream.pipe(res);
+    logInfo('Container file download started', { user: reqUser, container: name, filePath: resolved.subPath, sizeBytes: st.size });
+    return;
+  }
+
+  // POST /api/container/folders/rename — rename folder within container data root
+  if (url.pathname === '/api/container/folders/rename' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name, folderPath, newName } = JSON.parse(body || '{}');
+        const resolved = resolveContainerDataPath(name, folderPath || '');
+        if (!resolved) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid container name or folder path' }));
+          return;
+        }
+        const cleanNewName = String(newName || '').trim();
+        if (!/^[a-zA-Z0-9_.\-]+$/.test(cleanNewName)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid folder name' }));
+          return;
+        }
+        const fromPath = resolved.targetPath;
+        if (fromPath === resolved.basePath) {
+          res.end(JSON.stringify({ ok: false, error: 'Root folder cannot be renamed' }));
+          return;
+        }
+        let fromStat = null;
+        try { fromStat = fs.statSync(fromPath); } catch {}
+        if (!fromStat || !fromStat.isDirectory()) {
+          res.end(JSON.stringify({ ok: false, error: 'Only folders can be renamed' }));
+          return;
+        }
+        const toPath = path.join(path.dirname(fromPath), cleanNewName);
+        if (!isPathInsideRoot(toPath, resolved.basePath)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid target folder path' }));
+          return;
+        }
+        if (fs.existsSync(toPath)) {
+          res.end(JSON.stringify({ ok: false, error: 'A file or folder with the target name already exists' }));
+          return;
+        }
+        fs.renameSync(fromPath, toPath);
+        logInfo('Container folder renamed', { user: reqUser, container: name, from: resolved.subPath, to: cleanNewName });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        logError('Failed to rename container folder', { user: reqUser, error: e.message });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/container/folders/delete — delete folder (recursive) within container data root
+  if (url.pathname === '/api/container/folders/delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name, folderPath } = JSON.parse(body || '{}');
+        const resolved = resolveContainerDataPath(name, folderPath || '');
+        if (!resolved) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid container name or folder path' }));
+          return;
+        }
+        const targetPath = resolved.targetPath;
+        if (targetPath === resolved.basePath) {
+          res.end(JSON.stringify({ ok: false, error: 'Root folder cannot be deleted' }));
+          return;
+        }
+        let st = null;
+        try { st = fs.statSync(targetPath); } catch {}
+        if (!st || !st.isDirectory()) {
+          res.end(JSON.stringify({ ok: false, error: 'Only folders can be deleted' }));
+          return;
+        }
+        fs.rmSync(targetPath, { recursive: true, force: false });
+        logInfo('Container folder deleted', { user: reqUser, container: name, folderPath: resolved.subPath });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        logError('Failed to delete container folder', { user: reqUser, error: e.message });
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -2561,7 +2993,7 @@ function appendPruneLog(lines) {
     });
     fs.writeFileSync(PRUNE_LOG_FILE, kept.join('\n') + (kept.length ? '\n' : ''), 'utf8');
   } catch (e) {
-    console.error('Prune log error:', e.message);
+    logError('Failed to append prune log', { error: e.message });
   }
 }
 
@@ -2766,7 +3198,7 @@ function scheduleDailyPrune() {
     // Schedule next day
     scheduleDailyPrune();
   }, msUntilMidnight());
-  console.log(`   Auto-prune scheduled in ${Math.round(msUntilMidnight()/3600000)}h`);
+  logInfo('Auto-prune scheduled', { startsInHours: Math.round(msUntilMidnight() / 3600000) });
 }
 scheduleDailyPrune();
 
@@ -2895,7 +3327,27 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🐋 NAS Monitor running at http://0.0.0.0:${PORT}`);
-  console.log(`   Docker binary: ${DOCKER}`);
-  console.log(`   Total RAM: ${(TOTAL_MEM_KB / 1024 / 1024).toFixed(1)} GB`);
+  logInfo('NAS Monitor backend started', {
+    bind: `http://0.0.0.0:${PORT}`,
+    dockerBinary: DOCKER,
+    totalRamGb: Number((TOTAL_MEM_KB / 1024 / 1024).toFixed(1)),
+  });
+  logInfo('Runtime settings loaded', {
+    logLevel: appSettings.logLevel,
+    authenticationType: appSettings.authenticationType,
+    warnThresholdSeconds: appSettings.warnThresholdSeconds,
+  });
+});
+
+process.on('uncaughtException', err => {
+  logError('Uncaught exception in backend process', {
+    error: err?.message || String(err),
+    stack: err?.stack || '',
+  });
+});
+
+process.on('unhandledRejection', reason => {
+  const message = reason && reason.message ? reason.message : String(reason);
+  const stack = reason && reason.stack ? reason.stack : '';
+  logError('Unhandled promise rejection in backend process', { error: message, stack });
 });

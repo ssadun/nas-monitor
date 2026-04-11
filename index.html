@@ -386,8 +386,8 @@
   .action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.14); border-color: var(--accent); }
   .action-btn.console { color: var(--green); }
   .action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12);  border-color: var(--green); }
-  .action-btn.delete  { color: var(--red); opacity: .6; }
-  .action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.15);   border-color: var(--red); opacity:1; }
+  .action-btn.delete  { color: var(--red); }
+  .action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.15);   border-color: var(--red); }
   .action-btn:disabled { opacity: .25 !important; cursor: not-allowed; pointer-events: none; }
 
   /* ─── Console Modal ──────────────────────────────────────── */
@@ -586,9 +586,68 @@
   .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.12); border-color: var(--accent); }
   .cdetail-action-btn.console { color: var(--green); }
   .cdetail-action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12); border-color: var(--green); }
-  .cdetail-action-btn.delete  { color: var(--red); opacity: .7; }
+  .cdetail-action-btn.delete  { color: var(--red); }
   .cdetail-action-btn.delete:disabled { opacity: .25; }
-  .cdetail-action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.12);  border-color: var(--red); opacity:1; }
+  .cdetail-action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.12);  border-color: var(--red); }
+  .folder-nav-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 4px 9px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cyan);
+    transition: all .15s;
+    line-height: 1.2;
+  }
+  .folder-nav-btn:hover:not(:disabled) {
+    background: rgba(6,182,212,.12);
+    border-color: var(--cyan);
+  }
+  .folder-nav-btn.delete {
+    color: var(--red);
+  }
+  .folder-nav-btn.delete:hover:not(:disabled) {
+    background: rgba(239,68,68,.12);
+    border-color: var(--red);
+  }
+  .folder-nav-btn:disabled {
+    opacity: .25;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .folder-breadcrumb-link {
+    color: #08a2bd;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .folder-breadcrumb-link:hover {
+    color: #11b9d6;
+  }
+  .folder-new-input::placeholder {
+    color: #545156 !important;
+    opacity: 1;
+  }
+  .folder-new-input::-webkit-input-placeholder {
+    color: #545156 !important;
+    opacity: 1;
+  }
+  .folder-new-input::-moz-placeholder {
+    color: #545156 !important;
+    opacity: 1;
+  }
+  .folder-new-input:-ms-input-placeholder {
+    color: #545156 !important;
+    opacity: 1;
+  }
   .cdetail-body { padding: 0; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .cdetail-tabs {
     display: flex; border-bottom: 1px solid var(--border);
@@ -1006,6 +1065,18 @@
     color: var(--cyan);
   }
   .expand-all-btn:hover { background: rgba(6,182,212,.15); border-color: var(--cyan); }
+  .expand-all-btn.danger-btn {
+    color: var(--red);
+    border-color: rgba(239,68,68,.35);
+  }
+  .expand-all-btn.danger-btn:hover:not(:disabled) {
+    background: rgba(239,68,68,.15);
+    border-color: var(--red);
+  }
+  .expand-all-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
 
   /* ─── Sort indicator ────────────────────────────────────── */
   .pid-col { width: 70px; }
@@ -1622,12 +1693,12 @@
       <div class="metric-sub" id="s-cpu-sub">–</div>
     </div>
     <div class="metric-card" style="min-width:140px;">
-      <div class="metric-label">System Mem</div>
+      <div class="metric-label">SYSTEM MEM</div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
         <canvas id="s-sysmem-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
         <div style="display:flex;flex-direction:column;gap:1px;">
           <div class="metric-value green" id="s-sysmem" style="font-size:14px;">–</div>
-          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">available</div>
+          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
         </div>
       </div>
     </div>
@@ -1787,6 +1858,7 @@
           <option value="6">6</option>
         </select>
         <button class="expand-all-btn" id="disk-scan-btn" onclick="scanDisk()">⟳ Scan</button>
+        <button class="expand-all-btn danger-btn" id="disk-delete-btn" onclick="deleteSelectedDiskScan()">🗑 Delete</button>
       </div>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-info" id="disk-scan-info">–</div>
@@ -2159,9 +2231,11 @@ function renderSummary() {
     const usedPct = (s.memUsed / s.memTotal * 100);
     const avPct   = (s.memAvail / s.memTotal * 100);
     const memColor = usedPct >= 90 ? 'red' : usedPct >= 70 ? 'orange' : 'green';
-    el('s-sysmem').textContent = fmtBytes(s.memAvail);
+    const usedGb = (s.memUsed / (1024 ** 3)).toFixed(1);
+    const totalGb = (s.memTotal / (1024 ** 3)).toFixed(1);
+    el('s-sysmem').textContent = `${usedGb} GB`;
     el('s-sysmem').className = 'metric-value ' + memColor;
-    el('s-sysmem-sub').textContent = avPct.toFixed(1) + '% free';
+    el('s-sysmem-sub').textContent = `${totalGb} GB · ${usedPct.toFixed(1)}%`;
     drawMemPie(usedPct / 100, memColor);
   }
 
@@ -2444,7 +2518,9 @@ function renderContainers() {
           <button class="action-btn console" title="Console" style="display:none;"
             ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
             onclick="openConsoleModal('${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></button>
-          <button class="action-btn delete"  title="Delete (disabled)" disabled><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          <button class="action-btn delete"  title="${(stateClass === 'running' || isComposeOnly(c)) ? 'Delete (stop container first)' : 'Delete'}"
+            ${(stateClass === 'running' || isComposeOnly(c)) ? 'disabled' : ''}
+            onclick="openActionModal('delete','${c.id}','${esc(c.name)}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
       </td>
       <td onclick="event.stopPropagation()">
@@ -3352,6 +3428,7 @@ let diskCollapsed = new Set();
 let diskScanning = false;
 let diskAllExpanded = false;
 let diskHistory = []; // stored locally too
+let diskActiveHistoryIdx = 0;
 
 async function scanDisk() {
   if (diskScanning) return;
@@ -3384,6 +3461,7 @@ async function scanDisk() {
       // Add to local history
       diskHistory.unshift({ id: data.scannedAt || Date.now(), path, scannedAt: data.scannedAt, data });
       if (diskHistory.length > 20) diskHistory.pop();
+      diskActiveHistoryIdx = 0;
       renderDiskHistory();
       renderDiskTree();
       renderDiskFiles();
@@ -3401,6 +3479,7 @@ async function scanDisk() {
 async function loadHistoryScan(idx) {
   const entry = diskHistory[idx];
   if (!entry) return;
+  diskActiveHistoryIdx = idx;
 
   // If we only have summary, fetch full data from server
   if (!entry.data) {
@@ -3438,13 +3517,21 @@ async function loadHistoryScan(idx) {
 }
 
 function renderDiskHistory(activeIdx = 0) {
+  if (typeof activeIdx === 'number') {
+    diskActiveHistoryIdx = activeIdx;
+  }
+  if (diskActiveHistoryIdx < 0) diskActiveHistoryIdx = 0;
+  if (diskHistory.length && diskActiveHistoryIdx >= diskHistory.length) {
+    diskActiveHistoryIdx = diskHistory.length - 1;
+  }
+  const selectedIdx = diskHistory.length ? diskActiveHistoryIdx : -1;
   const list = el('disk-history-list');
   if (!diskHistory.length) {
     list.innerHTML = `<div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
     return;
   }
   list.innerHTML = diskHistory.map((h, i) => {
-    const active = i === activeIdx;
+    const active = i === selectedIdx;
     const dt = new Date(h.scannedAt);
     const now = new Date();
     const isToday = dt.toDateString() === now.toDateString();
@@ -3462,6 +3549,51 @@ function renderDiskHistory(activeIdx = 0) {
       <div style="font-size:11px;color:var(--cyan);margin-top:1px;font-family:var(--mono)">${size}</div>
     </div>`;
   }).join('');
+}
+
+async function deleteSelectedDiskScan() {
+  if (!diskHistory.length) {
+    el('disk-scan-info').textContent = '⚠ No scan history to delete';
+    return;
+  }
+  const idx = Math.max(0, Math.min(diskActiveHistoryIdx, diskHistory.length - 1));
+  const target = diskHistory[idx];
+  if (!target || !target.id) {
+    el('disk-scan-info').textContent = '⚠ No selected scan to delete';
+    return;
+  }
+  const deleteBtn = el('disk-delete-btn');
+  const oldText = deleteBtn ? deleteBtn.textContent : '';
+  if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = '🗑 Deleting…'; }
+  try {
+    const res = await fetch(`/api/disk/history/${encodeURIComponent(target.id)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      el('disk-scan-info').textContent = '⚠ ' + (data.error || `Delete failed (${res.status})`);
+      return;
+    }
+    diskHistory.splice(idx, 1);
+    if (!diskHistory.length) {
+      diskActiveHistoryIdx = 0;
+      diskCurrentData = null;
+      el('disk-scan-info').textContent = 'Scan deleted';
+      el('disk-tree-root').textContent = '';
+      el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>`;
+      el('disk-file-count').textContent = '';
+      el('disk-file-tbody').innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="emoji">📄</div>Click Scan to start</div></td></tr>`;
+      const expandBtn = el('disk-expand-all-btn');
+      if (expandBtn) expandBtn.style.display = 'none';
+      renderDiskHistory();
+      return;
+    }
+    const nextIdx = Math.min(idx, diskHistory.length - 1);
+    await loadHistoryScan(nextIdx);
+    el('disk-scan-info').textContent = '✓ Scan deleted';
+  } catch (e) {
+    el('disk-scan-info').textContent = '⚠ ' + e.message;
+  } finally {
+    if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.textContent = oldText || '🗑 Delete'; }
+  }
 }
 
 function toggleDiskNode(nodePath) {
@@ -4312,34 +4444,100 @@ async function openCDetailModal(id, name, stateClass) {
 }
 
 // ─── Data Folder Management ───────────────────────────────────────────────────
-async function loadFoldersTab(containerName, containerId) {
+const folderBrowserState = {};
+
+function getFolderBrowserState(containerId) {
+  if (!folderBrowserState[containerId]) {
+    folderBrowserState[containerId] = { currentPath: '' };
+  }
+  return folderBrowserState[containerId];
+}
+
+function decodeFolderArg(value) {
+  try { return decodeURIComponent(String(value || '')); } catch { return String(value || ''); }
+}
+
+function getFolderParentPath(subpath) {
+  const parts = String(subpath || '').split('/').filter(Boolean);
+  parts.pop();
+  return parts.join('/');
+}
+
+function joinFolderPath(base, next) {
+  const a = String(base || '').trim();
+  const b = String(next || '').trim();
+  if (!a) return b;
+  if (!b) return a;
+  return `${a}/${b}`;
+}
+
+async function loadFoldersTab(containerName, containerId, subpath = null) {
   const content = document.getElementById(`folders-content-${containerId}`);
   if (!content) return;
+  const state = getFolderBrowserState(containerId);
+  const wantedPath = subpath === null ? (state.currentPath || '') : String(subpath || '');
+  state.currentPath = wantedPath;
   content.innerHTML = `<span style="font-family:var(--mono);font-size:13px;">⟳ Loading…</span>`;
   try {
-    const res = await fetch(`/api/container/folders?name=${encodeURIComponent(containerName)}`);
+    const params = new URLSearchParams({ name: containerName });
+    if (wantedPath) params.set('subpath', wantedPath);
+    const res = await fetch('/api/container/folders?' + params.toString());
     const data = await res.json();
     if (!data.ok) {
       content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(data.error)}</div>`;
       return;
     }
+    state.currentPath = data.subpath || '';
     renderFoldersTab(containerName, containerId, data);
   } catch (e) {
     content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(e.message)}</div>`;
   }
 }
 
+function openFolderPath(encodedName, containerId, encodedSubpath) {
+  loadFoldersTab(decodeFolderArg(encodedName), containerId, decodeFolderArg(encodedSubpath));
+}
+
+function downloadContainerFile(encodedName, encodedFilePath) {
+  const containerName = decodeFolderArg(encodedName);
+  const filePath = decodeFolderArg(encodedFilePath);
+  const params = new URLSearchParams({ name: containerName, filePath });
+  const a = document.createElement('a');
+  a.href = '/api/container/folders/download?' + params.toString();
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 function renderFoldersTab(containerName, containerId, data) {
   const content = document.getElementById(`folders-content-${containerId}`);
   if (!content) return;
+  const state = getFolderBrowserState(containerId);
+  const currentPath = String(data.subpath || '');
+  state.currentPath = currentPath;
+  const encodedName = encodeURIComponent(containerName);
+
+  const parts = currentPath ? currentPath.split('/').filter(Boolean) : [];
+  let breadcrumbBuild = '';
+  const breadcrumbItems = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    breadcrumbBuild = breadcrumbBuild ? `${breadcrumbBuild}/${part}` : part;
+    if (i > 0) breadcrumbItems.push(`<span style="color:var(--text3);">/</span>`);
+    breadcrumbItems.push(`<a href="#" class="folder-breadcrumb-link" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(breadcrumbBuild)}');return false;">${esc(part)}</a>`);
+  }
 
   const pathRow = `
-    <div style="margin-bottom:14px;">
-      <div class="cdetail-key" style="margin-bottom:4px;">DATA FOLDER</div>
-      <code style="font-family:var(--mono);font-size:12px;color:var(--cyan);">${esc(data.path)}</code>
+    <div style="margin-bottom:12px;">
+      <div class="cdetail-key" style="margin-bottom:4px;">DATA FOLDER BROWSER</div>
+      <code style="font-family:var(--mono);font-size:11px;color:#505775;">${esc(data.path)}</code>
       <span class="status-dot ${data.exists ? 'running' : 'exited'}"
         style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
       <span style="font-family:var(--mono);font-size:11px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text2);">
+        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--text3);">/</span>'}
+      </div>
     </div>`;
 
   if (!data.exists) {
@@ -4348,36 +4546,80 @@ function renderFoldersTab(containerName, containerId, data) {
         <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
           No data folder found. Create it to resolve missing-volume errors during Compose Up.
         </div>
-        <button class="restart-policy-save" style="font-size:13px;padding:8px 20px;"
-          onclick="createDataFolder('${esc(containerName)}','${containerId}',[])">＋ Create Data Folder</button>
+        <button class="folder-nav-btn" style="font-size:13px;padding:8px 20px;"
+          onclick="createDataFolderAt('${encodedName}','${containerId}','',[])">＋ Create Data Folder</button>
         <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>
       </div>`;
     return;
   }
 
-  const entriesHtml = data.entries.length > 0
-    ? data.entries.map(e => `
-      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;
-                  border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text2);">
-        <span style="color:var(--accent);">📁</span>
-        <span>${esc(e.name)}</span>
-      </div>`).join('')
-    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:6px 0;">No subfolders</div>`;
+  if (!data.currentExists) {
+    const parentPath = getFolderParentPath(currentPath);
+    content.innerHTML = pathRow + `
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+        Current folder does not exist anymore.
+        <div style="margin-top:8px;">
+          <button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')">↩ Go Up</button>
+        </div>
+      </div>
+      <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
+    return;
+  }
+
+  const parentPath = getFolderParentPath(currentPath);
+  const controls = `
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 12px;">
+      <button class="folder-nav-btn" ${currentPath ? '' : 'disabled'} onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')">↩ Up</button>
+      <button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}')">⟳ Refresh</button>
+                  <input id="new-subfolder-${containerId}" class="filter-input" type="text" placeholder="new folder name"
+        style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;
+               padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none;"
+        onkeydown="if(event.key==='Enter')createDataFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[this.value])"/>
+      <button class="folder-nav-btn"
+        onclick="createDataFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[document.getElementById('new-subfolder-${containerId}').value])">＋ Add Folder</button>
+    </div>`;
+
+  const rows = (data.entries || []).map(entry => {
+    const isDir = entry.type === 'dir';
+    const targetPath = joinFolderPath(currentPath, entry.name);
+    const nameCellHtml = isDir
+      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder">📁 ${esc(entry.name)}</button>`
+      : `📄 ${esc(entry.name)}`;
+    const openBtn = isDir
+      ? `<button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Open</button>`
+      : '';
+    const renameBtn = isDir
+      ? `<button class="folder-nav-btn" onclick="renameDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Rename</button>`
+      : '';
+    const deleteBtn = isDir
+      ? `<button class="folder-nav-btn delete" onclick="deleteDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Delete</button>`
+      : '';
+    const downloadBtn = !isDir
+      ? `<button class="folder-nav-btn" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')">Download</button>`
+      : '';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${nameCellHtml}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${isDir ? 'Folder' : 'File'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
+      <td style="white-space:nowrap;display:flex;gap:6px;justify-content:flex-end;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</td>
+    </tr>`;
+  }).join('');
+
+  const tableHtml = data.entries && data.entries.length
+    ? `<table class="cdetail-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Modified</th><th style="text-align:right;">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
 
   content.innerHTML = pathRow
-    + `<div style="margin-bottom:14px;">${entriesHtml}</div>`
-    + `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-        <input id="new-subfolder-${containerId}" type="text" placeholder="new subfolder name (e.g. config)"
-          style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;
-                 padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none;"
-          onkeydown="if(event.key==='Enter')createDataFolder('${esc(containerName)}','${containerId}',[this.value])"/>
-        <button class="restart-policy-save"
-          onclick="createDataFolder('${esc(containerName)}','${containerId}',[document.getElementById('new-subfolder-${containerId}').value])">＋ Add Subfolder</button>
-      </div>
-      <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:6px;"></div>`;
+    + `<div style="color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Read-only file browser. Create/Rename/Delete operations apply to folders only.</div>`
+    + controls
+    + tableHtml
+    + `<div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
 }
 
-async function createDataFolder(containerName, containerId, subfolders) {
+async function createDataFolderAt(encodedName, containerId, encodedParentPath, subfolders) {
+  const containerName = decodeFolderArg(encodedName);
+  const parentPath = decodeFolderArg(encodedParentPath);
   const subNames = (subfolders || []).map(s => String(s || '').trim()).filter(Boolean);
   const statusEl = document.getElementById(`folders-status-${containerId}`);
   if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Creating…'; }
@@ -4385,21 +4627,75 @@ async function createDataFolder(containerName, containerId, subfolders) {
     const res = await fetch('/api/container/folders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: containerName, subfolders: subNames }),
+      body: JSON.stringify({ name: containerName, parentPath, subfolders: subNames }),
     });
     const data = await res.json();
     if (data.ok) {
       const msg = data.created.length > 0 ? `✓ Created: ${data.created.join(', ')}` : '✓ Already exists';
-      await loadFoldersTab(containerName, containerId);
+      await loadFoldersTab(containerName, containerId, parentPath);
       const fresh = document.getElementById(`folders-status-${containerId}`);
       if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = msg; }
     } else {
-      const s = document.getElementById(`folders-status-${containerId}`);
-      if (s) { s.style.color = 'var(--red)'; s.textContent = '✗ ' + (data.error || 'Failed'); }
+      if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + (data.error || 'Failed'); }
     }
   } catch (e) {
-    const s = document.getElementById(`folders-status-${containerId}`);
-    if (s) { s.style.color = 'var(--red)'; s.textContent = '✗ ' + e.message; }
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
+  }
+}
+
+async function renameDataFolder(encodedName, containerId, encodedFolderPath) {
+  const containerName = decodeFolderArg(encodedName);
+  const folderPath = decodeFolderArg(encodedFolderPath);
+  const currentName = folderPath.split('/').filter(Boolean).pop() || '';
+  const nextName = prompt('Rename folder to:', currentName);
+  if (!nextName || String(nextName).trim() === currentName) return;
+  const statusEl = document.getElementById(`folders-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Renaming…'; }
+  try {
+    const res = await fetch('/api/container/folders/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, folderPath, newName: String(nextName).trim() }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const refreshPath = getFolderParentPath(folderPath);
+      await loadFoldersTab(containerName, containerId, refreshPath);
+      const fresh = document.getElementById(`folders-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = '✓ Folder renamed'; }
+    } else if (statusEl) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '✗ ' + (data.error || 'Rename failed');
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
+  }
+}
+
+async function deleteDataFolder(encodedName, containerId, encodedFolderPath) {
+  const containerName = decodeFolderArg(encodedName);
+  const folderPath = decodeFolderArg(encodedFolderPath);
+  const folderName = folderPath.split('/').filter(Boolean).pop() || folderPath;
+  if (!confirm(`Delete folder "${folderName}" and all nested content?`)) return;
+  const statusEl = document.getElementById(`folders-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Deleting…'; }
+  try {
+    const res = await fetch('/api/container/folders/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, folderPath }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      await loadFoldersTab(containerName, containerId, getFolderParentPath(folderPath));
+      const fresh = document.getElementById(`folders-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = '✓ Folder deleted'; }
+    } else if (statusEl) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '✗ ' + (data.error || 'Delete failed');
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
   }
 }
 

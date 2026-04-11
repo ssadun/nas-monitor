@@ -149,17 +149,16 @@ do_stop() {
     kill "$PID" 2>/dev/null && echo "✅ Stopped PID $PID" || echo "❌ Failed to stop PID $PID"
   done
 
-  # Verify they're gone
+  # Verify this service is gone without matching unrelated node/server.js processes
   sleep 1
-  local STILL_RUNNING=$(pgrep -f "node.*server.js" 2>/dev/null)
+  local STILL_RUNNING=$(get_pid)
   if [ -z "$STILL_RUNNING" ]; then
     rm -f "$PID_FILE"
     echo ""
     echo "✅ ${SERVICE_NAME} stopped."
   else
     echo ""
-    echo "⚠️  Some processes still running: $STILL_RUNNING"
-    echo "   Try: sudo kill -9 $STILL_RUNNING"
+    echo "⚠️  ${SERVICE_NAME} may still be running."
     return 1
   fi
 }
