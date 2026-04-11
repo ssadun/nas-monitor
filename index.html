@@ -680,6 +680,44 @@
   .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);  border-color: var(--cyan); }
   .cdetail-action-btn.archive { color: var(--accent); }
   .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.12); border-color: var(--accent); }
+  .compose-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .compose-editor-up-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--green);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 400;
+    cursor: pointer;
+    line-height: 1;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .15s;
+  }
+  .compose-editor-up-btn:hover {
+    background: rgba(34,197,94,.12);
+    border-color: var(--green);
+  }
+  .compose-editor-up-btn span {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .compose-editor-up-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
   .cdetail-action-btn.console { color: var(--green); }
   .cdetail-action-btn.console:hover:not(:disabled) { background: rgba(34,197,94,.12); border-color: var(--green); }
   .cdetail-action-btn.delete  { color: var(--red); }
@@ -2746,10 +2784,8 @@ function renderContainers() {
     const isExpanded = expandedContainers.has(c.id);
     const stateClass = getContainerStateClass(c);
     const rowClick = ` onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')"`;
-    const startAction = isComposeBacked(c)
-      ? `openComposeUpAction('${esc(c.composeProject)}','${esc(c.composeService)}','${esc(c.name)}')`
-      : `openActionModal('start','${c.id}','${esc(c.name)}')`;
-    const startTitle = isComposeBacked(c) ? 'Compose Up' : 'Start';
+    const startAction = `openActionModal('start','${c.id}','${esc(c.name)}')`;
+    const startTitle = 'Start';
     const canArchiveFromList = stateClass === 'configured' && Boolean(c.composeProject);
 
     html += `<tr id="${rowId}"${rowClick}>
@@ -4754,8 +4790,15 @@ async function openCDetailModal(id, name, stateClass) {
         if (!fd.ok) {
           wrap.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:8px 0;">⚠ ${esc(fd.error||'Failed to load compose file')}</div>`;
         } else {
+          const composeUpInlineBtn = isRunning
+            ? `<button class="compose-editor-up-btn" title="Compose Up"
+                onclick="${composeStartOnclick}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Compose Up</span></button>`
+            : '';
           wrap.innerHTML = `
-            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);">${esc(fd.composeFile)}</div>
+            <div class="compose-editor-head">
+              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${esc(fd.composeFile)}</div>
+              ${composeUpInlineBtn}
+            </div>
             <textarea id="${editorId}"
               spellcheck="false"
               style="width:100%;flex:1;min-height:120px;resize:none;
