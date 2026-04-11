@@ -8,17 +8,28 @@ A real-time system monitoring dashboard for **Synology NAS** (and other Linux-ba
 
 ## ✨ Features
 
+### Core Monitoring
 - **Live system metrics** — CPU, memory, load average, uptime, disk usage, and network I/O, streamed via Server-Sent Events every 3 seconds
-- **Container monitoring** — per-container CPU %, memory, network in/out, image size, ports, status, and sub-processes
-- **Container actions** — start, stop, restart, delete containers; view logs; open an interactive terminal (xterm.js)
-- **Container categories** — organise containers into custom labelled groups with icons and colours; collapsible accordion view with aggregate stats
-- **System processes** — full process tree with flat/tree view toggle, sortable columns, and per-process detail modal
-- **Disk usage** — mounted volume breakdown with a history chart and filesystem tree browser
-- **Docker volumes** — view and manage Docker volumes with detailed metadata, ownership, labels, and container usage
-- **Docker networks** — view and manage Docker networks with driver info and connected containers
-- **Network utilisation** — per-interface real-time rx/tx rates with a live sparkline chart
-- **Secure login** — session-based authentication with PBKDF2-SHA512 hashed credentials stored in a local file
-- **Dark UI** — polished dark theme using Space Grotesk + JetBrains Mono; fully responsive
+- **Container monitoring** — per-container CPU %, memory, network in/out, image size, ports, status, and sub-processes with sortable columns
+- **System processes** — full process tree with flat/tree view toggle, sortable columns, and per-process detail modal (PID, PPID, user, CPU, memory, command, start time)
+- **Disk usage** — mounted volume breakdown with used/free/total bars, expandable filesystem tree browser, and historical usage chart (20-snapshot history)
+- **Network utilisation** — per-interface live rx/tx rates with sparkline charts showing Docker bridge networks
+
+### Container Management
+- **Container actions** — start, stop, restart, delete containers; view live logs (last 200 lines); open interactive WebSocket terminal with xterm.js
+- **Container categories** — organise containers into custom labelled groups with emoji icons and colours; collapsible accordion view with aggregated stats
+- **Restart policies** — configure container restart policies (no, always, unless-stopped, on-failure)
+- **Sub-process view** — expand containers to see child host processes with full process tree hierarchy
+
+### Docker Infrastructure Management
+- **Docker volumes** — full CRUD management with three-section detail view (Volume details, Access control, Containers using volume); create volumes with custom labels; view container mount paths
+- **Docker networks** — manage networks with driver info, scope, subnets; view connected containers; create networks with custom drivers and subnets
+- **Resource pruning** — scan and remove unused images, stopped containers, dangling volumes with confirmation and progress tracking
+
+### Security & UI
+- **Secure login** — session-based authentication with PBKDF2-SHA512 hashed credentials (100,000 iterations, 32-byte salt); 4-hour session expiry; in-memory sessions
+- **Credential management** — change username and password from within the UI with strength indicator and 8-character minimum
+- **Dark UI** — polished dark theme using Space Grotesk font + JetBrains Mono monospace; fully responsive design; works on desktop and mobile
 
 ---
 
@@ -114,71 +125,114 @@ nas-monitor/
 
 ---
 
-## 🖥️ UI Tabs
+## 🖥️ UI Tabs & Controls
 
-### 🐋 Container Monitoring
-The main view. Shows all Docker containers as a sortable table with live metrics:
+### 🐋 Container Monitoring (Main Tab)
+The primary dashboard view showing all Docker containers as a real-time sortable table:
 
 | Column | Description |
 |---|---|
-| Name | Container name with status indicator dot |
-| %CPU | Real-time CPU usage percentage |
-| %MEM | Memory usage as % of total system RAM |
-| MEM USAGE | Absolute memory used |
-| NET IN / OUT | Per-container network rx/tx via `/proc/<pid>/net/dev` |
-| DISK R/W | Container disk read/write activity |
-| IMG SIZE | Docker image size on disk |
-| NETWORKS | Docker network(s) the container is attached to |
-| PORTS | Exposed port mappings (clickable links) |
-| ACTIONS | Start / Restart / Stop / Logs / Console / Delete |
-| SUB-PROCESSES | Expand to see host processes belonging to the container |
-| CATEGORY | Assign or change the container's category |
+| **Name** | Container name with status indicator dot (green=running, yellow=restarting, red=stopped) |
+| **%CPU** | Real-time CPU usage percentage (aggregate of all processes) |
+| **%MEM** | Memory usage as percentage of total system RAM |
+| **MEM USAGE** | Absolute memory used in bytes |
+| **NET IN / OUT** | Per-container network rx/tx via `/proc/<pid>/net/dev` updated every 3s |
+| **DISK R/W** | Container disk read/write activity in bytes |
+| **IMG SIZE** | Docker image size on disk |
+| **NETWORKS** | Docker bridge network(s) the container is attached to |
+| **PORTS** | Exposed port mappings; hover or click to view; direct URL links if HTTP |
+| **ACTIONS** | Start / Restart / Stop / Logs / Console / Delete buttons with modal dialogs |
+| **SUB-PROCESSES** | Expand row to see child host processes with tree hierarchy |
+| **CATEGORY** | Current category assignment; click to change |
 
 **Toolbar controls:**
-- **Expand All / Collapse All** — toggle sub-process rows for all containers
-- **Prune** — scan for and remove unused images, stopped containers, and dangling volumes
-- **Filter** — live text filter across container names
+- **🐋 Container Monitoring** — Main monitoring tab (always active)
+- **🗃️ Categories** — Switch to category view
+- **⚙️ System Processes** — View host process tree
+- **💾 Disk Usage** — Disk mounts and filesystem browser
+- **🌐 Network Utilization** — Per-interface network stats
+- **＋ New Compose** — Create a new docker-compose project
+- **🗄 Archive** — View archived (stopped) compose projects
+- **🧹 Prune** — Scan and remove unused Docker resources with confirmation modal
+- **↻ Refresh** — Force immediate refresh of data (normally streams every 3s)
+- **Filter…** — Live text filter across all visible container names
 
 ### 🗃️ Categories
-Organise containers into custom groups. Each category shows aggregated CPU, memory, network, and image size stats. Sections are collapsible; containers appear as a table when expanded.
+Organize containers into custom groups with aggregated statistics:
 
-- Click **⚙ Manage Categories** to add, edit, or delete categories
-- Each category has a custom label, emoji icon, and colour (choose from palette or enter any hex code)
-- Assign containers via the category badge in the Container Monitoring tab
-- Categories and assignments persist across restarts in `category-defs.json` and `category-assignments.json`
+**Features:**
+- **Custom groups** — Create categories with custom label, emoji icon, and hex color (pick from palette or enter custom code)
+- **Aggregated stats** — Each category shows aggregate CPU %, memory, network I/O, and total image size
+- **Collapsible accordion** — Categories are collapsible; click to expand and see containers as a table
+- **Assignment shortcuts** — Click container category badge in main tab to quickly change assignment
+- **Persistence** — Category definitions and assignments persist to `category-defs.json` and `category-assignments.json`
+- **Batch management** — Click **⚙ Manage Categories** to add, edit (label/icon/color), or delete categories
 
 ### ⚙️ System Processes
-All running host processes with:
-- **Flat view** — sortable table of all processes
-- **Tree view** — parent/child hierarchy with collapsible branches
-- Click any row for a full detail modal (PID, PPID, user, CPU, memory, command, start time, etc.)
+Complete host process monitoring with dual views:
+
+**Features:**
+- **Flat view** — Sortable table of all running processes with columns: PID, PPID, User, CPU %, Memory %, Memory (MB), Command, Start Time
+- **Tree view** — Parent/child process hierarchy with expandable/collapsible branches showing process relationships
+- **Detail modal** — Click any row to open full process details including environment variables, file descriptors, and I/O stats
+- **Search/filter** — Live search across process names and PIDs
+- **Sorting** — Click column headers to sort by any field (CPU, memory, start time, etc.)
 
 ### 💾 Disk Usage
-- All mounted volumes with used/free/total breakdown and usage bar
-- Expandable filesystem tree browser per mount point
-- Historical usage chart (last 20 snapshots, sampled every poll cycle)
+Disk analysis and filesystem browser:
+
+**Features:**
+- **Mount list** — All mounted volumes with size bars showing used/free/total breakdown in GB/TB
+- **Filesystem tree** — Expandable directory tree browser per mount point to drill down into directories
+- **Size breakdown** — Visual percentage bar for each mount
+- **Historical chart** — Line chart of disk usage over time (last 20 snapshots, updates every poll cycle)
+- **Scan history** — Click previous scans in Scan History panel to view disk state at different times
+- **Custom paths** — Configure scan path and depth (1-6 levels) for focused analysis
 
 ### 💽 Docker Volumes
-Manage and view Docker volumes with full CRUD operations:
-- **List view** — Shows all volumes with Stack, Driver, Mount Point, Ownership, Created Date, and Container Count columns
-- **Detail view** — Three-section layout:
-  - **Volume details** — ID, created date, mount path, driver type, and labels
-  - **Access control** — Ownership information (UID:GID format)
-  - **Containers using volume** — Table of connected containers with mount points and read-only status
-- **Create volumes** — Form to create new volumes with name, driver, and custom labels
-- **Delete volumes** — Remove volumes with confirmation
+Manage Docker volumes with full CRUD:
+
+**List view:**
+- **Columns** — Stack, Driver, Mount Point, Ownership (UID:GID), Created Date, Container Count
+- **Actions** — Edit (detail view) or Delete buttons per volume
+- **Create button** — Launch form to create new volumes
+
+**Detail view (Three sections):**
+- **📋 Volume details** — Volume ID, created date, mount path, driver type, and labels table with key-value pairs
+- **👁 Access control** — Ownership information in UID:GID format
+- **📦 Containers using volume** — Table showing all connected containers, their mount paths, and read-only status
+
+**Operations:**
+- **Create** — Form to create new volumes with name, driver selection, and optional custom labels
+- **Delete** — Remove volumes with confirmation dialog
+- **View metadata** — Full access to volume labels, driver options, and container relationships
 
 ### 🔌 Docker Networks
-Manage and view Docker networks:
-- **List view** — Shows all networks with driver, scope, IPv4 subnet, and connected container count
-- **Detail view** — Network metadata, driver info, and list of connected containers
-- **Create networks** — Form to create new networks with name, driver, and optional subnet
-- **Delete networks** — Remove networks with confirmation
+Manage Docker networks with driver configuration:
+
+**List view:**
+- **Columns** — Network name, Driver (bridge/overlay/host/macvlan), Scope (local/swarm), IPv4 Subnet, Container Count
+- **Actions** — Edit (detail view) or Delete buttons per network
+- **Create button** — Launch form to create new networks
+
+**Detail view:**
+- **Network metadata** — Name, driver type, scope (local/swarm)
+- **Configuration** — Subnet CIDR, gateway, IPv6 support
+- **Connected containers** — Table showing all containers attached to the network with their IP address
+
+**Operations:**
+- **Create** — Form to create networks with name, driver, optional subnet specification
+- **Delete** — Remove networks (must be unused) with confirmation
+- **Connection info** — View all attached containers and their assigned IPs
 
 ### 🌐 Network Utilisation
-- Per-interface live rx/tx rates
-- Sparkline chart for each interface
-- Shows Docker bridge network names alongside host interface names
+Per-interface network statistics:
+
+**Features:**
+- **Live rx/tx rates** — Real-time bytes/sec received and transmitted per interface
+- **Sparkline charts** — Mini charts showing recent network activity trends
+- **Interface list** — All physical + Docker bridge/overlay networks
+- **Docker networks** — Displays both interface names and Docker network names
 
 ---
 
@@ -276,7 +330,27 @@ The interactive container console uses **WebSockets** (`/ws/console/:id`) on the
 
 ---
 
-## 🔧 Troubleshooting
+## � Recent Updates
+
+### Latest Changes
+- ✅ **Docker Volumes Manager** — Full CRUD with list and three-section detail view (volume details, access control, containers)
+- ✅ **Docker Networks Manager** — Manage networks with driver info and container connections
+- ✅ **Process Tree View** — Parent/child process hierarchy with expand/collapse functionality
+- ✅ **Container Categories** — Group containers with custom labels, icons, and colors with aggregated stats
+- ✅ **Disk History Chart** — 20-snapshot historical usage tracking with timeline selection
+- ✅ **Real-time Metrics** — SSE stream of live CPU, memory, network, and disk data every 3 seconds
+- ✅ **Interactive Terminal** — WebSocket-based xterm.js terminal for container console access
+
+### Technology Stack
+- **Backend** — Node.js (no external dependencies, built-in modules only)
+- **Frontend** — Vanilla JavaScript, HTML5, CSS3 (no frameworks)
+- **Data Transport** — Server-Sent Events (SSE) for live streaming, WebSockets for terminal
+- **Storage** — JSON files for persistence (credentials, categories, disk history)
+- **Authentication** — PBKDF2-SHA512 with 100K iterations and 32-byte salt
+
+---
+
+## �🔧 Troubleshooting
 
 **Nothing shows up / containers tab is empty**
 - Make sure the process runs as a user with access to the Docker socket (`/var/run/docker.sock`)
