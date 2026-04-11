@@ -35,5 +35,12 @@
   "transmute": "utilities",
   "uptime-kuma": "performance",
   "watchtower": "utilities",
-  "zerobyte": "utilities"
+  "zerobyte": "utilities",
+  "npm": "networking_mni16j1o",
+  "nocodb": "utilities",
+  "capacitarr": "media",
+  "changedetection.io": "utilities",
+  "czkawka": "utilities",
+  "dispatcharr": "media",
+  "apprise": "utilities"
 }

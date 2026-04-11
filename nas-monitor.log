@@ -1,0 +1,345 @@
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 1h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 1h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 1h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 1h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 1h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 0h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 0h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 0h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Auto-prune scheduled in 24h
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 24h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 24h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 24h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 24h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 24h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+node:events:502
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 0.0.0.0:3232
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at doListen (node:net:2139:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1944:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3232
+}
+
+Node.js v20.19.5
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+node:events:502
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 0.0.0.0:3232
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at doListen (node:net:2139:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1944:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3232
+}
+
+Node.js v20.19.5
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 23h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 22h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 21h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
+   Disk history: 2 saved scan(s) loaded from disk
+   Auto-prune scheduled in 20h
+🐋 NAS Monitor running at http://0.0.0.0:3232
+   Docker binary: /usr/local/bin/docker
+   Total RAM: 31.3 GB
