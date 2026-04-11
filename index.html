@@ -4250,7 +4250,8 @@ async function openCDetailModal(id, name, stateClass) {
 
     const tabBar = `<div class="cdetail-tabs">
       <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')">Container Status</button>
-      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')">compose.yaml</button>` : ''}
+      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')">Compose File</button>` : ''}
+      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')">Folders</button>
     </div>`;
 
     el('cdetail-body').innerHTML = tabBar
@@ -4262,7 +4263,13 @@ async function openCDetailModal(id, name, stateClass) {
             + `<div id="${editorId}-wrap" style="padding:20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;">`
             + `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">⟳ Loading compose file…</div>`
             + `</div></div>`
-          : '');
+          : '')
+      + `<div class="cdetail-tab-panel" id="cdetail-panel-folders" style="display:none">`
+      + `<div id="folders-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `</div>`;
+
+    // ── Folders tab ──
+    loadFoldersTab(d.name, cid);
 
     // ── compose.yaml editor (compose-managed containers only) ──
     if (composeBacked) {
@@ -4301,6 +4308,98 @@ async function openCDetailModal(id, name, stateClass) {
 
   } catch (e) {
     el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+// ─── Data Folder Management ───────────────────────────────────────────────────
+async function loadFoldersTab(containerName, containerId) {
+  const content = document.getElementById(`folders-content-${containerId}`);
+  if (!content) return;
+  content.innerHTML = `<span style="font-family:var(--mono);font-size:13px;">⟳ Loading…</span>`;
+  try {
+    const res = await fetch(`/api/container/folders?name=${encodeURIComponent(containerName)}`);
+    const data = await res.json();
+    if (!data.ok) {
+      content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(data.error)}</div>`;
+      return;
+    }
+    renderFoldersTab(containerName, containerId, data);
+  } catch (e) {
+    content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+function renderFoldersTab(containerName, containerId, data) {
+  const content = document.getElementById(`folders-content-${containerId}`);
+  if (!content) return;
+
+  const pathRow = `
+    <div style="margin-bottom:14px;">
+      <div class="cdetail-key" style="margin-bottom:4px;">DATA FOLDER</div>
+      <code style="font-family:var(--mono);font-size:12px;color:var(--cyan);">${esc(data.path)}</code>
+      <span class="status-dot ${data.exists ? 'running' : 'exited'}"
+        style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
+      <span style="font-family:var(--mono);font-size:11px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
+    </div>`;
+
+  if (!data.exists) {
+    content.innerHTML = pathRow + `
+      <div style="text-align:center;padding:16px 0;">
+        <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
+          No data folder found. Create it to resolve missing-volume errors during Compose Up.
+        </div>
+        <button class="restart-policy-save" style="font-size:13px;padding:8px 20px;"
+          onclick="createDataFolder('${esc(containerName)}','${containerId}',[])">＋ Create Data Folder</button>
+        <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>
+      </div>`;
+    return;
+  }
+
+  const entriesHtml = data.entries.length > 0
+    ? data.entries.map(e => `
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;
+                  border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text2);">
+        <span style="color:var(--accent);">📁</span>
+        <span>${esc(e.name)}</span>
+      </div>`).join('')
+    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:6px 0;">No subfolders</div>`;
+
+  content.innerHTML = pathRow
+    + `<div style="margin-bottom:14px;">${entriesHtml}</div>`
+    + `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <input id="new-subfolder-${containerId}" type="text" placeholder="new subfolder name (e.g. config)"
+          style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;
+                 padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none;"
+          onkeydown="if(event.key==='Enter')createDataFolder('${esc(containerName)}','${containerId}',[this.value])"/>
+        <button class="restart-policy-save"
+          onclick="createDataFolder('${esc(containerName)}','${containerId}',[document.getElementById('new-subfolder-${containerId}').value])">＋ Add Subfolder</button>
+      </div>
+      <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:6px;"></div>`;
+}
+
+async function createDataFolder(containerName, containerId, subfolders) {
+  const subNames = (subfolders || []).map(s => String(s || '').trim()).filter(Boolean);
+  const statusEl = document.getElementById(`folders-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Creating…'; }
+  try {
+    const res = await fetch('/api/container/folders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, subfolders: subNames }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const msg = data.created.length > 0 ? `✓ Created: ${data.created.join(', ')}` : '✓ Already exists';
+      await loadFoldersTab(containerName, containerId);
+      const fresh = document.getElementById(`folders-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = msg; }
+    } else {
+      const s = document.getElementById(`folders-status-${containerId}`);
+      if (s) { s.style.color = 'var(--red)'; s.textContent = '✗ ' + (data.error || 'Failed'); }
+    }
+  } catch (e) {
+    const s = document.getElementById(`folders-status-${containerId}`);
+    if (s) { s.style.color = 'var(--red)'; s.textContent = '✗ ' + e.message; }
   }
 }
 

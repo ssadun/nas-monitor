@@ -542,6 +542,7 @@ const DOCKER_COMPOSE_PATHS = [
 ];
 const COMPOSE_CONFIG_ROOT = process.env.COMPOSE_CONFIG_ROOT || '/volume1/docker/_config';
 const COMPOSE_BACKUP_ROOT = process.env.COMPOSE_BACKUP_ROOT || '/volume1/docker/_backups';
+const CONTAINER_DATA_ROOT = process.env.CONTAINER_DATA_ROOT || '/volume1/docker/_data';
 const COMPOSE_FILE_CANDIDATES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml'];
 const COMPOSE_DISCOVERY_TTL_MS = 30 * 1000;
 
@@ -2061,7 +2062,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (!url.pathname.startsWith('/api/container/detail/') && !url.pathname.startsWith('/api/container/restart-policy/') && url.pathname.startsWith('/api/container/')) {
+  if (!url.pathname.startsWith('/api/container/detail/') && !url.pathname.startsWith('/api/container/restart-policy/') && !url.pathname.startsWith('/api/container/folders') && url.pathname.startsWith('/api/container/')) {
     // /api/container/:action?id=xxx  (start|stop|restart|delete)
     const action = url.pathname.split('/')[3];
     const id = url.searchParams.get('id');
@@ -2398,6 +2399,81 @@ const server = http.createServer(async (req, res) => {
           : policy;
         const { stdout, stderr } = await execAsync(`"${DOCKER}" update --restart=${restartFlag} ${id}`, { timeout: 10000 });
         res.end(JSON.stringify({ ok: true, output: (stdout + stderr).trim(), policy, maxRetries: maxRetries || 0 }));
+      } catch (e) {
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // GET /api/container/folders?name=<name>  — list data folder contents
+  if (url.pathname === '/api/container/folders' && req.method === 'GET') {
+    const name = url.searchParams.get('name') || '';
+    if (!name || !/^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/.test(name)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+      return;
+    }
+    const folderPath = path.join(CONTAINER_DATA_ROOT, name);
+    if (!isPathInsideRoot(folderPath, CONTAINER_DATA_ROOT)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    const exists = fs.existsSync(folderPath);
+    let entries = [];
+    if (exists) {
+      try {
+        entries = fs.readdirSync(folderPath, { withFileTypes: true })
+          .filter(e => e.isDirectory())
+          .map(e => ({ name: e.name }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      } catch {}
+    }
+    res.end(JSON.stringify({ ok: true, path: folderPath, exists, entries }));
+    return;
+  }
+
+  // POST /api/container/folders  — create base data folder + optional subfolders
+  if (url.pathname === '/api/container/folders' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { name, subfolders } = JSON.parse(body || '{}');
+        if (!name || !/^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$/.test(name)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+          return;
+        }
+        const basePath = path.join(CONTAINER_DATA_ROOT, name);
+        if (!isPathInsideRoot(basePath, CONTAINER_DATA_ROOT)) {
+          res.end(JSON.stringify({ ok: false, error: 'Invalid container name' }));
+          return;
+        }
+        const created = [];
+        if (!fs.existsSync(basePath)) {
+          fs.mkdirSync(basePath, { recursive: true });
+          created.push(name);
+        }
+        if (Array.isArray(subfolders)) {
+          for (const sub of subfolders) {
+            const subName = String(sub || '').trim();
+            if (!subName || path.isAbsolute(subName)) continue;
+            // Reject path traversal: no segment may be '.' or '..'
+            if (subName.split('/').some(seg => seg === '..' || seg === '.')) continue;
+            // Allow only safe characters
+            if (!/^[a-zA-Z0-9_.\-][a-zA-Z0-9_.\-\/]*$/.test(subName)) continue;
+            const subPath = path.join(basePath, subName);
+            if (!isPathInsideRoot(subPath, basePath)) continue;
+            if (!fs.existsSync(subPath)) {
+              fs.mkdirSync(subPath, { recursive: true });
+              created.push(subName);
+            }
+          }
+        }
+        res.end(JSON.stringify({ ok: true, path: basePath, created }));
       } catch (e) {
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }

@@ -7,7 +7,7 @@ PID_FILE="${SCRIPT_DIR}/nas-monitor.pid"
 LOG_FILE="${SCRIPT_DIR}/nas-monitor.log"
 
 SERVICE_NAME="NAS Monitor"
-SERVICE_ICON="\U1F40B"
+SERVICE_ICON="🐋"
 
 # Find Node.js on Synology
 find_node() {
