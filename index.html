@@ -4,7 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NAS Monitor</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐋</text></svg>"/>
+<link rel="icon" href="/favicon.ico"/>
+<link rel="manifest" href="/manifest.webmanifest?v=2"/>
+<meta name="theme-color" content="#0d0f14"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
@@ -855,7 +857,7 @@
   .newcompose-backdrop.open { display: flex; }
   .newcompose-modal {
     background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 16px; width: 640px; max-width: 98vw;
+    border-radius: 16px; width: 920px; max-width: 96vw;
     box-shadow: 0 24px 60px rgba(0,0,0,.7);
     display: flex; flex-direction: column; overflow: hidden;
     animation: modalIn .15s ease;
@@ -891,6 +893,30 @@
     line-height: 1.6; outline: none; transition: border-color .15s;
   }
   .newcompose-editor:focus { border-color: var(--accent); }
+  .newcompose-run-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+    min-height: 88px;
+    box-sizing: border-box;
+    resize: vertical;
+    line-height: 1.45;
+    transition: border-color .15s;
+  }
+  .newcompose-run-input:focus { border-color: var(--cyan); }
+  .newcompose-run-input::placeholder { color: var(--text3); }
+  .newcompose-run-help {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
   .newcompose-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 20px; border-top: 1px solid var(--border);
@@ -1585,6 +1611,13 @@
     padding: 7px 16px; cursor: pointer; transition: all .15s;
   }
   .catedit-cancel:hover { border-color: var(--text3); color: var(--text); }
+  .creds-input {
+    width: 100%;
+    border-color: var(--border2);
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .creds-input:focus { border-color: var(--accent); }
 
   .restart-policy-widget {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -1882,6 +1915,18 @@
           onkeydown="if(event.key==='Enter')document.getElementById('newcompose-editor').focus()"/>
         <div class="newcompose-path-preview" id="newcompose-path-preview"></div>
       </div>
+      <div>
+        <div class="newcompose-field-label">Docker Run Command (Optional)</div>
+        <textarea id="newcompose-run" class="newcompose-run-input" spellcheck="false"
+          placeholder="Paste full docker run command here, then click Apply Docker Run"></textarea>
+        <div class="newcompose-run-help">Parses flags: --name, -e, -p, -v, --restart, --shm-size, --hostname, --network, --cap-add, --device, --dns, --user, --health-*</div>
+      </div>
+      <div>
+        <div class="newcompose-field-label">Compose File / Snippet (Optional)</div>
+        <textarea id="newcompose-import" class="newcompose-run-input" spellcheck="false"
+          placeholder="Paste compose.yaml content here, then click Apply Compose"></textarea>
+        <div class="newcompose-run-help">Reads the first service and applies fields like image, environment, volumes, ports, shm_size, restart and other supported options</div>
+      </div>
       <div style="flex:1;min-height:0;display:flex;flex-direction:column;">
         <div class="newcompose-field-label">compose.yaml</div>
         <textarea id="newcompose-editor" class="newcompose-editor" spellcheck="false"></textarea>
@@ -1889,6 +1934,8 @@
     </div>
     <div class="newcompose-footer">
       <div class="newcompose-footer-left">
+        <button id="newcompose-compose-apply-btn" class="newcompose-btn template" onclick="applyComposeImportToTemplate()">Apply Compose</button>
+        <button id="newcompose-run-apply-btn" class="newcompose-btn template" onclick="applyDockerRunToTemplate()">Apply Docker Run</button>
         <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()">Save Template</button>
         <span id="newcompose-status" class="newcompose-status"></span>
       </div>
@@ -2215,17 +2262,17 @@
     <div class="catmgr-body" style="padding:20px 24px;gap:14px;">
       <div class="catedit-row">
         <div class="catedit-label">Current Password</div>
-        <input class="catedit-input" type="password" id="creds-current" placeholder="Enter current password" autocomplete="current-password"/>
+        <input class="filter-input creds-input" type="password" id="creds-current" placeholder="Enter current password" autocomplete="current-password"/>
       </div>
       <div style="height:1px;background:var(--border);margin:2px 0;"></div>
       <div class="catedit-row">
         <div class="catedit-label">New Username</div>
-        <input class="filter-input catedit-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
+        <input class="filter-input creds-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
       </div>
       <div class="catedit-row">
         <div class="catedit-label">New Password</div>
         <div style="position:relative;">
-          <input class="catedit-input" type="password" id="creds-pass" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkCredsStrength(this.value)"/>
+          <input class="filter-input creds-input" type="password" id="creds-pass" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkCredsStrength(this.value)"/>
         </div>
         <div id="creds-strength-bar" style="height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden;">
           <div id="creds-strength-fill" style="height:100%;width:0;border-radius:2px;transition:width .3s,background .3s;"></div>
@@ -2234,14 +2281,14 @@
       </div>
       <div class="catedit-row">
         <div class="catedit-label">Confirm New Password</div>
-        <input class="catedit-input" type="password" id="creds-confirm" placeholder="Repeat new password" autocomplete="new-password"/>
+        <input class="filter-input creds-input" type="password" id="creds-confirm" placeholder="Repeat new password" autocomplete="new-password"/>
       </div>
       <div id="creds-error" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:#fca5a5;"></div>
       <div id="creds-success" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--green);">✓ Credentials updated successfully.</div>
     </div>
     <div class="catmgr-footer" style="justify-content:flex-end;">
-      <button class="catedit-cancel" onclick="closeCredentialsModal()">Cancel</button>
-      <button class="catedit-save" onclick="submitCredentials()">Save Credentials</button>
+      <button class="cdetail-action-btn delete" onclick="closeCredentialsModal()"><span>Cancel</span></button>
+      <button id="creds-save-btn" class="cdetail-action-btn start" onclick="submitCredentials()"><span>Save Credentials</span></button>
     </div>
   </div>
 </div>
@@ -2734,15 +2781,10 @@ function getContainerStateClass(container) {
 }
 
 function renderContainerTitle(container) {
-  const subline = isComposeBacked(container)
-    ? `<div class="compose-subline">${esc(container.composeProject)}/${esc(container.composeService)}</div>`
-    : '';
-
   return `<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
     <div class="container-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <span style="font-weight:500">${esc(container.name)}</span>
     </div>
-    ${subline}
   </div>`;
 }
 
@@ -3390,28 +3432,42 @@ async function executeAction() {
         let buffer = '';
         let failedMsg = '';
         let doneOk = false;
+        let streamReadError = null;
 
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
 
-          let idx;
-          while ((idx = buffer.indexOf('\n')) >= 0) {
-            const line = buffer.slice(0, idx).trim();
-            buffer = buffer.slice(idx + 1);
-            if (!line) continue;
+            let idx;
+            while ((idx = buffer.indexOf('\n')) >= 0) {
+              const line = buffer.slice(0, idx).trim();
+              buffer = buffer.slice(idx + 1);
+              if (!line) continue;
 
-            let evt;
-            try { evt = JSON.parse(line); } catch { continue; }
-            if (evt.message) appendLog(evt.message, evt.type);
+              let evt;
+              try { evt = JSON.parse(line); } catch { continue; }
+              if (evt.message) appendLog(evt.message, evt.type);
 
-            if (evt.type === 'error') {
-              failedMsg = evt.message || 'compose up failed';
+              if (evt.type === 'error') {
+                failedMsg = evt.message || 'compose up failed';
+              }
+              if (evt.type === 'done') {
+                doneOk = !!evt.ok;
+              }
             }
-            if (evt.type === 'done') {
-              doneOk = !!evt.ok;
-            }
+          }
+        } catch (readErr) {
+          streamReadError = readErr;
+        }
+
+        if (streamReadError) {
+          const msg = String(streamReadError.message || '');
+          const benignAbort = /aborted/i.test(msg);
+          const isUserAbort = composeCancelled || streamReadError.name === 'AbortError';
+          if (!(doneOk && benignAbort) && !isUserAbort) {
+            throw streamReadError;
           }
         }
 
@@ -3521,7 +3577,7 @@ async function executeAction() {
     el('action-modal-confirm').textContent = '✕ Error';
     el('action-modal-confirm').style.background = 'var(--red)';
     if (action === 'composeUp') {
-      if (e && e.name === 'AbortError') {
+      if (composeCancelled || (e && e.name === 'AbortError')) {
         addProgressStep('Compose up cancelled by user.', 'error');
         showToast('Compose up cancelled.', 'err', 2600);
       } else {
@@ -3631,9 +3687,49 @@ function closeLogModal() {
   if (logEventSource) { logEventSource.close(); logEventSource = null; }
 }
 
+function handleComposeSaveShortcut(e) {
+  const key = String(e.key || '').toLowerCase();
+  if (!(e.ctrlKey || e.metaKey) || key !== 's') return;
+
+  const active = document.activeElement;
+  const newComposeModal = el('newcompose-modal');
+  const newComposeOpen = newComposeModal.classList.contains('open');
+  if (newComposeOpen && active && newComposeModal.contains(active)) {
+    e.preventDefault();
+    const saveBtn = el('newcompose-save-btn');
+    if (!saveBtn || saveBtn.disabled) return;
+    saveNewCompose();
+    return;
+  }
+
+  const composePanel = el('cdetail-panel-compose');
+  const composeVisible = composePanel && composePanel.style.display !== 'none';
+  if (!composeVisible) return;
+
+  let editor = null;
+  if (active && active.id && active.id.startsWith('compose-editor-')) {
+    editor = active;
+  } else {
+    editor = document.querySelector('#cdetail-panel-compose textarea[id^="compose-editor-"]');
+  }
+  if (!editor) return;
+
+  const project = editor.dataset.project || '';
+  const composeFile = editor.dataset.composeFile || '';
+  const saveId = editor.dataset.saveId || '';
+  const statusId = editor.dataset.statusId || '';
+  if (!project || !saveId || !statusId) return;
+
+  e.preventDefault();
+  const saveBtn = document.getElementById(saveId);
+  if (saveBtn && saveBtn.disabled) return;
+  saveComposeFile(project, composeFile, editor.id, saveId, statusId);
+}
+
 el('log-modal').addEventListener('click', e => { if (e.target === el('log-modal')) closeLogModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); closeNewComposeModal(); } });
-el('newcompose-modal').addEventListener('click', e => { if (e.target === el('newcompose-modal')) closeNewComposeModal(); });
+document.addEventListener('keydown', handleComposeSaveShortcut);
+el('newcompose-modal').addEventListener('click', e => { if (e.target === el('newcompose-modal')) return; });
 
 
 // ─── Main render ──────────────────────────────────────────────────────────────
@@ -4500,7 +4596,12 @@ function closePruneLogModal() {
 
 el('prune-modal').addEventListener('click', e => { if (e.target === el('prune-modal')) closePruneModal(); });
 el('prune-log-modal').addEventListener('click', e => { if (e.target === el('prune-log-modal')) closePruneLogModal(); });
-el('cdetail-modal').addEventListener('click', e => { if (e.target === el('cdetail-modal')) closeCDetailModal(); });
+el('cdetail-modal').addEventListener('click', e => {
+  if (e.target !== el('cdetail-modal')) return;
+  const composePanel = el('cdetail-panel-compose');
+  if (composePanel && composePanel.style.display !== 'none') return;
+  closeCDetailModal();
+});
 
 let _composeEditorState = { editorId: '', originalValue: '' };
 let _composeDismissResolver = null;
@@ -4800,6 +4901,11 @@ async function openCDetailModal(id, name, stateClass) {
               ${composeUpInlineBtn}
             </div>
             <textarea id="${editorId}"
+              class="compose-editor-textarea"
+              data-project="${esc(d.composeProject)}"
+              data-compose-file="${esc(fd.composeFile)}"
+              data-save-id="${saveId}"
+              data-status-id="${statusId}"
               spellcheck="false"
               style="width:100%;flex:1;min-height:120px;resize:none;
                      background:var(--bg3);color:var(--text);border:1px solid var(--border);
@@ -5311,9 +5417,734 @@ function defaultComposeTemplate() {
   return `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
 }
 
+function leadingSpacesCount(line) {
+  const m = String(line || '').match(/^ */);
+  return m ? m[0].length : 0;
+}
+
+function quoteYamlScalar(value) {
+  const raw = String(value ?? '');
+  if (!raw.length) return '""';
+  if (raw.trim() !== raw) return JSON.stringify(raw);
+  if (/^(true|false|null|~)$/i.test(raw)) return JSON.stringify(raw);
+  if (/^[\[{]|[\]}]$/.test(raw)) return JSON.stringify(raw);
+  if (/^[-?:,@`!&*|>%#'"]/.test(raw)) return JSON.stringify(raw);
+  if (/:\s/.test(raw) || /\s#/.test(raw) || /,/.test(raw)) return JSON.stringify(raw);
+  return raw;
+}
+
+function quoteYamlFlowScalar(value) {
+  return JSON.stringify(String(value ?? ''));
+}
+
+function stripInlineYamlComment(value) {
+  return String(value || '').replace(/\s+#.*$/, '').trim();
+}
+
+function parseYamlScalar(value) {
+  const cleaned = stripInlineYamlComment(value);
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    return cleaned.slice(1, -1);
+  }
+  return cleaned;
+}
+
+function parseYamlInlineList(value) {
+  const raw = stripInlineYamlComment(value);
+  if (!raw.startsWith('[') || !raw.endsWith(']')) return [];
+  const inner = raw.slice(1, -1).trim();
+  if (!inner) return [];
+
+  const items = [];
+  let current = '';
+  let quote = '';
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (quote) {
+      if (ch === quote) {
+        quote = '';
+      } else {
+        current += ch;
+      }
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch === ',') {
+      items.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  if (current.trim()) items.push(current.trim());
+  return items.map(item => parseYamlScalar(item)).filter(Boolean);
+}
+
+function normalizeComposeImportInput(raw) {
+  return String(raw || '')
+    .replace(/^```[A-Za-z0-9_-]*\s*/m, '')
+    .replace(/\n```\s*$/m, '')
+    .trim();
+}
+
+function normalizeDockerRunInput(raw) {
+  return String(raw || '')
+    .replace(/`#.*?`/g, ' ')
+    .replace(/\\\r?\n/g, ' ')
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
+}
+
+function tokenizeShellLike(input) {
+  const tokens = [];
+  let buf = '';
+  let quote = '';
+
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    const next = input[i + 1];
+
+    if (quote) {
+      if (ch === quote) {
+        quote = '';
+        continue;
+      }
+      if (ch === '\\' && quote === '"' && next) {
+        buf += next;
+        i++;
+        continue;
+      }
+      buf += ch;
+      continue;
+    }
+
+    if (ch === '\'' || ch === '"') {
+      quote = ch;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      if (buf) {
+        tokens.push(buf);
+        buf = '';
+      }
+      continue;
+    }
+    if (ch === '\\' && next) {
+      buf += next;
+      i++;
+      continue;
+    }
+    buf += ch;
+  }
+  if (buf) tokens.push(buf);
+  return tokens;
+}
+
+function parseDockerRunCommand(rawCommand) {
+  const normalized = normalizeDockerRunInput(rawCommand);
+  if (!normalized) return { ok: false, error: 'Docker run command is empty.' };
+
+  const tokens = tokenizeShellLike(normalized);
+  if (!tokens.length) return { ok: false, error: 'Docker run command is empty.' };
+
+  let i = 0;
+  if (tokens[i] === 'docker') i++;
+  if (tokens[i] === 'container') i++;
+  if (tokens[i] !== 'run') return { ok: false, error: 'Command must start with docker run.' };
+  i++;
+
+  const spec = {
+    name: '',
+    hostname: '',
+    image: '',
+    restart: '',
+    shmSize: '',
+    network: '',
+    user: '',
+    env: [],
+    ports: [],
+    volumes: [],
+    capAdd: [],
+    devices: [],
+    dns: [],
+    health: {
+      disabled: false,
+      cmd: '',
+      interval: '',
+      timeout: '',
+      retries: '',
+      startPeriod: '',
+    },
+  };
+
+  const readOptionValue = (token, nextIndex) => {
+    const eqPos = token.indexOf('=');
+    if (eqPos >= 0) return { value: token.slice(eqPos + 1), nextIndex };
+    if (nextIndex >= tokens.length) return { error: `Missing value for ${token}` };
+    return { value: tokens[nextIndex], nextIndex: nextIndex + 1 };
+  };
+
+  while (i < tokens.length) {
+    const token = tokens[i];
+    if (!token.startsWith('-')) {
+      spec.image = token;
+      break;
+    }
+
+    if (token === '--') {
+      i++;
+      if (i < tokens.length) spec.image = tokens[i];
+      break;
+    }
+
+    if (token === '-d' || token === '--detach' || token === '--rm' || token === '-it' || token === '-i' || token === '-t') {
+      i++;
+      continue;
+    }
+
+    if (token === '--name' || token.startsWith('--name=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.name = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--hostname' || token.startsWith('--hostname=') || token === '-h') {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.hostname = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--restart' || token.startsWith('--restart=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.restart = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--network' || token.startsWith('--network=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.network = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--user' || token.startsWith('--user=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.user = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--shm-size' || token.startsWith('--shm-size=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.shmSize = String(out.value || '').replace(/^"|"$/g, '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '-e' || token === '--env' || token.startsWith('--env=') || token.startsWith('-e')) {
+      let value = '';
+      if (token === '-e' || token === '--env' || token.startsWith('--env=')) {
+        const out = readOptionValue(token, i + 1);
+        if (out.error) return { ok: false, error: out.error };
+        value = String(out.value || '').trim();
+        i = out.nextIndex;
+      } else {
+        value = token.slice(2).trim();
+        i++;
+      }
+      const eq = value.indexOf('=');
+      if (eq > 0) {
+        spec.env.push({ key: value.slice(0, eq).trim(), value: value.slice(eq + 1) });
+      }
+      continue;
+    }
+
+    if (token === '--cap-add' || token.startsWith('--cap-add=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      const value = String(out.value || '').trim();
+      if (value) spec.capAdd.push(value);
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--device' || token.startsWith('--device=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      const value = String(out.value || '').trim();
+      if (value) spec.devices.push(value);
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--dns' || token.startsWith('--dns=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      const value = String(out.value || '').trim();
+      if (value) spec.dns.push(value);
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '-p' || token === '--publish' || token.startsWith('--publish=') || token.startsWith('-p')) {
+      let value = '';
+      if (token === '-p' || token === '--publish' || token.startsWith('--publish=')) {
+        const out = readOptionValue(token, i + 1);
+        if (out.error) return { ok: false, error: out.error };
+        value = String(out.value || '').trim();
+        i = out.nextIndex;
+      } else {
+        value = token.slice(2).trim();
+        i++;
+      }
+      if (value) spec.ports.push(value);
+      continue;
+    }
+
+    if (token === '-v' || token === '--volume' || token.startsWith('--volume=') || token.startsWith('-v')) {
+      let value = '';
+      if (token === '-v' || token === '--volume' || token.startsWith('--volume=')) {
+        const out = readOptionValue(token, i + 1);
+        if (out.error) return { ok: false, error: out.error };
+        value = String(out.value || '').trim();
+        i = out.nextIndex;
+      } else {
+        value = token.slice(2).trim();
+        i++;
+      }
+      if (value) spec.volumes.push(value);
+      continue;
+    }
+
+    if (token === '--no-healthcheck') {
+      spec.health.disabled = true;
+      i++;
+      continue;
+    }
+
+    if (token === '--health-cmd' || token.startsWith('--health-cmd=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.health.cmd = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--health-interval' || token.startsWith('--health-interval=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.health.interval = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--health-timeout' || token.startsWith('--health-timeout=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.health.timeout = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--health-retries' || token.startsWith('--health-retries=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.health.retries = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    if (token === '--health-start-period' || token.startsWith('--health-start-period=')) {
+      const out = readOptionValue(token, i + 1);
+      if (out.error) return { ok: false, error: out.error };
+      spec.health.startPeriod = String(out.value || '').trim();
+      i = out.nextIndex;
+      continue;
+    }
+
+    // Unknown flag: skip it and continue parsing recognized flags.
+    i++;
+  }
+
+  if (!spec.image) {
+    return { ok: false, error: 'Could not detect image name in docker run command.' };
+  }
+
+  return { ok: true, spec };
+}
+
+function parseComposeImport(rawCompose) {
+  const normalized = normalizeComposeImportInput(rawCompose);
+  if (!normalized) return { ok: false, error: 'Compose content is empty.' };
+
+  const lines = normalized.split('\n');
+  const servicesIdx = lines.findIndex(line => line.trim() === 'services:');
+  if (servicesIdx === -1) return { ok: false, error: 'Could not find services: block.' };
+
+  let serviceStart = -1;
+  let serviceName = '';
+  for (let i = servicesIdx + 1; i < lines.length; i++) {
+    if (/^  [A-Za-z0-9_.-]+:\s*$/.test(lines[i])) {
+      serviceStart = i;
+      serviceName = lines[i].trim().slice(0, -1);
+      break;
+    }
+  }
+  if (serviceStart === -1) return { ok: false, error: 'Could not find a service entry under services:.' };
+
+  let serviceEnd = lines.length;
+  for (let i = serviceStart + 1; i < lines.length; i++) {
+    if (/^  [A-Za-z0-9_.-]+:\s*$/.test(lines[i])) {
+      serviceEnd = i;
+      break;
+    }
+  }
+
+  const spec = {
+    serviceName,
+    name: '',
+    hostname: '',
+    image: '',
+    restart: '',
+    shmSize: '',
+    network: '',
+    user: '',
+    env: [],
+    ports: [],
+    volumes: [],
+    capAdd: [],
+    devices: [],
+    dns: [],
+    health: {
+      disabled: false,
+      cmd: '',
+      interval: '',
+      timeout: '',
+      retries: '',
+      startPeriod: '',
+    },
+  };
+
+  let currentSection = '';
+  for (let i = serviceStart + 1; i < serviceEnd; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const indent = leadingSpacesCount(line);
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    if (indent === 4) {
+      currentSection = '';
+      const match = trimmed.match(/^([A-Za-z0-9_.-]+):\s*(.*)$/);
+      if (!match) continue;
+      const [, key, rawValue] = match;
+      const value = parseYamlScalar(rawValue);
+
+      if (key === 'image') spec.image = value;
+      else if (key === 'container_name') spec.name = value;
+      else if (key === 'hostname') spec.hostname = value;
+      else if (key === 'restart') spec.restart = value;
+      else if (key === 'shm_size') spec.shmSize = value;
+      else if (key === 'network_mode') spec.network = value;
+      else if (key === 'user') spec.user = value;
+      else if (['environment', 'volumes', 'ports', 'cap_add', 'devices', 'dns', 'healthcheck'].includes(key)) {
+        currentSection = key;
+        if (rawValue.trim().startsWith('[')) {
+          const inlineItems = parseYamlInlineList(rawValue);
+          if (key === 'environment') {
+            for (const item of inlineItems) {
+              const eq = item.indexOf('=');
+              if (eq > 0) spec.env.push({ key: item.slice(0, eq).trim(), value: item.slice(eq + 1) });
+            }
+          } else if (key === 'healthcheck') {
+            // ignore inline object form for now
+          } else {
+            const targetKey = key === 'cap_add' ? 'capAdd' : key;
+            if (Array.isArray(spec[targetKey])) spec[targetKey].push(...inlineItems);
+          }
+        }
+      }
+      continue;
+    }
+
+    if (indent <= 4 || !currentSection) continue;
+
+    if (currentSection === 'environment') {
+      if (trimmed.startsWith('- ')) {
+        const item = parseYamlScalar(trimmed.slice(2));
+        const eq = item.indexOf('=');
+        if (eq > 0) spec.env.push({ key: item.slice(0, eq).trim(), value: item.slice(eq + 1) });
+      } else {
+        const match = trimmed.match(/^([A-Za-z0-9_.-]+):\s*(.*)$/);
+        if (match) spec.env.push({ key: match[1].trim(), value: parseYamlScalar(match[2]) });
+      }
+      continue;
+    }
+
+    if (currentSection === 'healthcheck') {
+      const match = trimmed.match(/^([A-Za-z0-9_.-]+):\s*(.*)$/);
+      if (!match) continue;
+      const [, key, rawValue] = match;
+      if (key === 'test') {
+        if (/NONE/.test(rawValue)) {
+          spec.health.disabled = true;
+        } else {
+          const items = parseYamlInlineList(rawValue);
+          if (items.length >= 2 && items[0] === 'CMD-SHELL') spec.health.cmd = items[1];
+          else spec.health.cmd = parseYamlScalar(rawValue);
+        }
+      } else if (key === 'interval') {
+        spec.health.interval = parseYamlScalar(rawValue);
+      } else if (key === 'timeout') {
+        spec.health.timeout = parseYamlScalar(rawValue);
+      } else if (key === 'retries') {
+        spec.health.retries = parseYamlScalar(rawValue);
+      } else if (key === 'start_period') {
+        spec.health.startPeriod = parseYamlScalar(rawValue);
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith('- ')) {
+      const item = parseYamlScalar(trimmed.slice(2));
+      if (!item) continue;
+      if (currentSection === 'volumes') spec.volumes.push(item);
+      else if (currentSection === 'ports') spec.ports.push(item);
+      else if (currentSection === 'cap_add') spec.capAdd.push(item);
+      else if (currentSection === 'devices') spec.devices.push(item);
+      else if (currentSection === 'dns') spec.dns.push(item);
+    }
+  }
+
+  if (!spec.image && !spec.name && !spec.serviceName) {
+    return { ok: false, error: 'Could not parse a usable service from the pasted compose content.' };
+  }
+
+  return { ok: true, spec };
+}
+
+function withPrimaryServiceLines(yaml, mutator) {
+  const lines = String(yaml || '').split('\n');
+  let servicesIdx = lines.findIndex(line => line.trim() === 'services:');
+  if (servicesIdx === -1) {
+    lines.unshift('services:', '  my-service:');
+    servicesIdx = 0;
+  }
+
+  let start = -1;
+  for (let i = servicesIdx + 1; i < lines.length; i++) {
+    if (/^  [A-Za-z0-9_.-]+:\s*$/.test(lines[i])) {
+      start = i;
+      break;
+    }
+  }
+  if (start === -1) {
+    lines.splice(servicesIdx + 1, 0, '  my-service:');
+    start = servicesIdx + 1;
+  }
+
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^  [A-Za-z0-9_.-]+:\s*$/.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+
+  mutator(lines, { start, end });
+  return lines.join('\n');
+}
+
+function findServiceInsertIndex(lines, block) {
+  const { start, end } = block;
+  for (let i = start + 1; i < end; i++) {
+    if (/^    (restart|image):/.test(lines[i])) return i;
+  }
+  return end;
+}
+
+function upsertServiceScalar(yaml, key, value) {
+  if (value === undefined || value === null || String(value).trim() === '') return String(yaml || '');
+  return withPrimaryServiceLines(yaml, (lines, block) => {
+    const target = `    ${key}:`;
+    for (let i = block.start + 1; i < block.end; i++) {
+      if (lines[i].startsWith(target)) {
+        lines[i] = `${target} ${quoteYamlScalar(String(value).trim())}`;
+        return;
+      }
+    }
+    const idx = findServiceInsertIndex(lines, block);
+    lines.splice(idx, 0, `${target} ${quoteYamlScalar(String(value).trim())}`);
+  });
+}
+
+function replaceServiceSection(yaml, sectionName, itemLines) {
+  if (!Array.isArray(itemLines) || !itemLines.length) return String(yaml || '');
+  return withPrimaryServiceLines(yaml, (lines, block) => {
+    const header = `    ${sectionName}:`;
+    let sectionStart = -1;
+    for (let i = block.start + 1; i < block.end; i++) {
+      if (lines[i].trim() === `${sectionName}:` && leadingSpacesCount(lines[i]) === 4) {
+        sectionStart = i;
+        break;
+      }
+    }
+
+    if (sectionStart >= 0) {
+      let sectionEnd = sectionStart + 1;
+      while (sectionEnd < block.end) {
+        const line = lines[sectionEnd];
+        if (line.trim() && leadingSpacesCount(line) <= 4) break;
+        sectionEnd++;
+      }
+      lines.splice(sectionStart, sectionEnd - sectionStart, header, ...itemLines);
+      return;
+    }
+
+    const idx = findServiceInsertIndex(lines, block);
+    lines.splice(idx, 0, header, ...itemLines);
+  });
+}
+
+function applyDockerRunSpecToTemplate(template, spec, projectName = '') {
+  const targetName = (spec.name || spec.serviceName || projectName || 'my-service').trim();
+  let yaml = String(template || defaultComposeTemplate());
+
+  yaml = withPrimaryServiceLines(yaml, (lines, block) => {
+    lines[block.start] = `  ${targetName}:`;
+  });
+
+  yaml = upsertServiceScalar(yaml, 'container_name', spec.name || targetName);
+  yaml = upsertServiceScalar(yaml, 'hostname', spec.hostname || spec.name || spec.serviceName || targetName);
+  yaml = upsertServiceScalar(yaml, 'image', spec.image || '');
+  yaml = upsertServiceScalar(yaml, 'restart', spec.restart || '');
+  yaml = upsertServiceScalar(yaml, 'shm_size', spec.shmSize || '');
+  yaml = upsertServiceScalar(yaml, 'network_mode', spec.network || '');
+  yaml = upsertServiceScalar(yaml, 'user', spec.user || '');
+
+  if (spec.env && spec.env.length) {
+    const envMap = new Map();
+    for (const item of spec.env) {
+      const k = String(item && item.key || '').trim();
+      if (!k) continue;
+      envMap.set(k, String(item.value ?? ''));
+    }
+    const envLines = Array.from(envMap.entries()).map(([k, v]) => `      ${k}: ${quoteYamlScalar(v)}`);
+    yaml = replaceServiceSection(yaml, 'environment', envLines);
+  }
+
+  if (spec.ports && spec.ports.length) {
+    const portLines = spec.ports.map(p => `      - ${quoteYamlScalar(p)}`);
+    yaml = replaceServiceSection(yaml, 'ports', portLines);
+  }
+
+  if (spec.volumes && spec.volumes.length) {
+    const volumeLines = spec.volumes.map(v => `      - ${quoteYamlScalar(v)}`);
+    yaml = replaceServiceSection(yaml, 'volumes', volumeLines);
+  }
+
+  if (spec.capAdd && spec.capAdd.length) {
+    const capLines = Array.from(new Set(spec.capAdd)).map(v => `      - ${quoteYamlScalar(v)}`);
+    yaml = replaceServiceSection(yaml, 'cap_add', capLines);
+  }
+
+  if (spec.devices && spec.devices.length) {
+    const deviceLines = Array.from(new Set(spec.devices)).map(v => `      - ${quoteYamlScalar(v)}`);
+    yaml = replaceServiceSection(yaml, 'devices', deviceLines);
+  }
+
+  if (spec.dns && spec.dns.length) {
+    const dnsLines = Array.from(new Set(spec.dns)).map(v => `      - ${quoteYamlScalar(v)}`);
+    yaml = replaceServiceSection(yaml, 'dns', dnsLines);
+  }
+
+  if (spec.health && (spec.health.disabled || spec.health.cmd || spec.health.interval || spec.health.timeout || spec.health.retries || spec.health.startPeriod)) {
+    const healthLines = [];
+    if (spec.health.disabled) {
+      healthLines.push('      test: ["NONE"]');
+    } else if (spec.health.cmd) {
+      healthLines.push(`      test: ["CMD-SHELL", ${quoteYamlFlowScalar(spec.health.cmd)}]`);
+    }
+    if (spec.health.interval) healthLines.push(`      interval: ${quoteYamlScalar(spec.health.interval)}`);
+    if (spec.health.timeout) healthLines.push(`      timeout: ${quoteYamlScalar(spec.health.timeout)}`);
+    if (spec.health.retries) {
+      const retries = String(spec.health.retries).trim();
+      healthLines.push(`      retries: ${/^\d+$/.test(retries) ? retries : quoteYamlScalar(retries)}`);
+    }
+    if (spec.health.startPeriod) healthLines.push(`      start_period: ${quoteYamlScalar(spec.health.startPeriod)}`);
+    if (healthLines.length) yaml = replaceServiceSection(yaml, 'healthcheck', healthLines);
+  }
+
+  return yaml;
+}
+
+function applyDockerRunToTemplate() {
+  const runInput = el('newcompose-run');
+  const editor = el('newcompose-editor');
+  const nameInput = el('newcompose-name');
+  const status = el('newcompose-status');
+
+  const parsed = parseDockerRunCommand(runInput.value);
+  if (!parsed.ok) {
+    status.style.color = 'var(--red)';
+    status.textContent = `✗ ${parsed.error}`;
+    runInput.focus();
+    return;
+  }
+
+  if (!nameInput.value.trim() && parsed.spec.name) {
+    nameInput.value = parsed.spec.name;
+    updateNewComposePath();
+  }
+
+  editor.value = applyDockerRunSpecToTemplate(editor.value, parsed.spec, nameInput.value.trim());
+  status.style.color = 'var(--green)';
+  status.textContent = '✓ Docker run values applied to template';
+}
+
+function applyComposeImportToTemplate() {
+  const composeInput = el('newcompose-import');
+  const editor = el('newcompose-editor');
+  const nameInput = el('newcompose-name');
+  const status = el('newcompose-status');
+
+  const parsed = parseComposeImport(composeInput.value);
+  if (!parsed.ok) {
+    status.style.color = 'var(--red)';
+    status.textContent = `✗ ${parsed.error}`;
+    composeInput.focus();
+    return;
+  }
+
+  if (!nameInput.value.trim()) {
+    const derivedName = parsed.spec.name || parsed.spec.serviceName || '';
+    if (derivedName) {
+      nameInput.value = derivedName;
+      updateNewComposePath();
+    }
+  }
+
+  editor.value = applyDockerRunSpecToTemplate(editor.value, parsed.spec, nameInput.value.trim());
+  status.style.color = 'var(--green)';
+  status.textContent = '✓ Compose values applied to template';
+}
+
 async function openNewComposeModal() {
   const modal = el('newcompose-modal');
   el('newcompose-name').value = '';
+  el('newcompose-run').value = '';
+  el('newcompose-import').value = '';
   el('newcompose-editor').value = defaultComposeTemplate();
   el('newcompose-path-preview').textContent = '';
   el('newcompose-status').textContent = 'Loading template…';
@@ -5433,7 +6264,7 @@ async function saveNewCompose() {
         refreshContainerMonitoring();
       }
     } else {
-      status.style.color = 'var(--red)';
+      status.style.color = data.warning ? 'var(--yellow)' : 'var(--red)';
       status.textContent = '✗ ' + (data.error || 'Failed');
       saveBtn.disabled = false;
     }
@@ -5618,7 +6449,7 @@ async function submitCredentials() {
   if (pass.length < 8){ showCredsError('Password must be at least 8 characters.'); return; }
   if (pass !== confirm){ showCredsError('Passwords do not match.'); return; }
 
-  const btn = document.querySelector('#creds-backdrop .catedit-save');
+  const btn = document.getElementById('creds-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
@@ -6590,6 +7421,15 @@ async function confirmDeleteNetwork() {
 
 
 
+
+
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
 
 </script>
 </body>

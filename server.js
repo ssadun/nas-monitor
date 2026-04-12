@@ -246,7 +246,7 @@ function sendLoginPage(res, message = '') {
 <meta charset="utf-8"/>
 <title>NAS Monitor — Sign In</title>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐋</text></svg>"/>
+<link rel="icon" href="/favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -662,14 +662,33 @@ const DOCKER_COMPOSE_PATHS = [
   '/usr/local/bin/docker-compose',
   '/bin/docker-compose',
 ];
+const FAVICON_FILE = path.join(__dirname, 'favicon.ico');
+const MANIFEST_FILE = path.join(__dirname, 'manifest.webmanifest');
+const SERVICE_WORKER_FILE = path.join(__dirname, 'sw.js');
+const PWA_ICON_FILE = path.join(__dirname, 'pwa-icon.svg');
+const PWA_ICON_WHALE_FILE = path.join(__dirname, 'pwa-icon-whale.svg');
 const COMPOSE_BACKUP_ROOT = process.env.COMPOSE_BACKUP_ROOT || '/volume1/docker/_backups';
 const COMPOSE_FILE_CANDIDATES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml'];
 const COMPOSE_DISCOVERY_TTL_MS = 30 * 1000;
+const COMPOSE_BOOT_LOG_SECONDS = Math.max(5, Number(process.env.COMPOSE_BOOT_LOG_SECONDS || 20) || 20);
 const NEW_COMPOSE_TEMPLATE_FILE = path.join(__dirname, 'compose.yaml');
 const DEFAULT_NEW_COMPOSE_TEMPLATE = `services:\n  my-service:\n    container_name: my-service\n    hostname: my-service\n    environment:\n      TZ: Europe/Istanbul\n    volumes:\n      - ../../_data:/data\n    restart: unless-stopped\n    image: my-service:latest\n`;
 
 function getComposeConfigRoot() {
   return process.env.COMPOSE_CONFIG_ROOT || appSettings.dockerConfigFolder || DEFAULT_SETTINGS.dockerConfigFolder;
+}
+
+function getComposeRelativePath(projectDir = '') {
+  const root = getComposeConfigRoot();
+  const target = String(projectDir || '').trim();
+  if (!target) return '';
+  try {
+    if (!isPathInsideRoot(target, root)) return path.basename(target);
+    const rel = path.relative(root, target).split(path.sep).join('/');
+    return rel || path.basename(target);
+  } catch {
+    return path.basename(target);
+  }
 }
 
 function getContainerDataRoot() {
@@ -843,6 +862,53 @@ function parseComposeServices(raw) {
 
 let composeDiscoveryCache = { ts: 0, projects: [] };
 
+function findComposeProjectDirectories(rootDir) {
+  const found = [];
+  const seen = new Set();
+  const stack = [rootDir];
+
+  while (stack.length) {
+    const currentDir = stack.pop();
+    if (!currentDir) continue;
+
+    let realDir = '';
+    try {
+      realDir = fs.realpathSync(currentDir);
+    } catch {
+      continue;
+    }
+
+    if (seen.has(realDir)) continue;
+    seen.add(realDir);
+
+    let entries = [];
+    try {
+      entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    const composeFileName = COMPOSE_FILE_CANDIDATES.find(name =>
+      entries.some(entry => entry.isFile() && entry.name === name)
+    );
+    if (composeFileName) {
+      found.push({
+        projectDir: currentDir,
+        composeFile: path.join(currentDir, composeFileName),
+      });
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name === '.' || entry.name === '..') continue;
+      stack.push(path.join(currentDir, entry.name));
+    }
+  }
+
+  found.sort((a, b) => a.projectDir.localeCompare(b.projectDir));
+  return found;
+}
+
 function discoverComposeProjects(force = false) {
   const now = Date.now();
   if (!force && now - composeDiscoveryCache.ts < COMPOSE_DISCOVERY_TTL_MS) {
@@ -852,21 +918,17 @@ function discoverComposeProjects(force = false) {
   const projects = [];
   const composeRoot = getComposeConfigRoot();
   try {
-    const entries = fs.readdirSync(composeRoot, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const projectDir = path.join(composeRoot, entry.name);
-      const composeFileName = COMPOSE_FILE_CANDIDATES.find(name => fs.existsSync(path.join(projectDir, name)));
-      if (!composeFileName) continue;
-
-      const composeFile = path.join(projectDir, composeFileName);
+    const discoveredDirs = findComposeProjectDirectories(composeRoot);
+    for (const discovered of discoveredDirs) {
+      const { projectDir, composeFile } = discovered;
       let services = [];
       try {
         services = parseComposeServices(fs.readFileSync(composeFile, 'utf8'));
       } catch {}
 
       projects.push({
-        project: entry.name,
+        project: path.basename(projectDir),
+        pathLabel: getComposeRelativePath(projectDir),
         dir: projectDir,
         composeFile,
         services,
@@ -876,6 +938,25 @@ function discoverComposeProjects(force = false) {
 
   composeDiscoveryCache = { ts: now, projects };
   return projects;
+}
+
+function findExistingContainerConflicts(services = []) {
+  const existingNames = new Set(
+    (cache.containers || [])
+      .map(container => String(container && container.name || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const conflicts = [];
+  for (const service of services) {
+    const candidates = [service.containerName, service.displayName, service.service]
+      .map(value => String(value || '').trim())
+      .filter(Boolean);
+    const conflict = candidates.find(value => existingNames.has(value.toLowerCase()));
+    if (conflict) conflicts.push(conflict);
+  }
+
+  return Array.from(new Set(conflicts));
 }
 
 function buildComposeSyntheticId(project, service) {
@@ -903,6 +984,17 @@ function findComposeServiceTarget(projectName, serviceName) {
 
 function findComposeProject(projectName) {
   return discoverComposeProjects().find(p => p.project === projectName) || null;
+}
+
+function pathsEqual(a = '', b = '') {
+  const aa = String(a || '').trim();
+  const bb = String(b || '').trim();
+  if (!aa || !bb) return false;
+  try {
+    return path.resolve(aa) === path.resolve(bb);
+  } catch {
+    return aa === bb;
+  }
 }
 
 function isPathInsideRoot(filePath, rootPath) {
@@ -1067,6 +1159,82 @@ async function runComposeUpStream(composeFile, service, onChunk, options = {}) {
   return await spawnComposeCommand(DOCKER_COMPOSE, fallbackArgs, cwd, onChunk, inactivityTimeoutMs, onSpawn, isCancelled);
 }
 
+function spawnComposeFollowWindow(command, args, cwd, onChunk, followMs = 20000, onSpawn = null, isCancelled = null) {
+  return new Promise(resolve => {
+    let settled = false;
+    let stoppedByWindow = false;
+    const child = spawn(command, args, { cwd, env: process.env });
+    if (typeof onSpawn === 'function') {
+      try { onSpawn(child); } catch {}
+    }
+
+    const stopChild = () => {
+      try { if (!child.killed) child.kill('SIGTERM'); } catch {}
+      setTimeout(() => {
+        try { if (!child.killed) child.kill('SIGKILL'); } catch {}
+      }, 1200);
+    };
+
+    const followTimer = setTimeout(() => {
+      stoppedByWindow = true;
+      onChunk('status', `Startup log window (${Math.round(followMs / 1000)}s) reached; stopping log follow.`);
+      stopChild();
+    }, followMs);
+
+    child.stdout.on('data', buf => onChunk('stdout', String(buf || '')));
+    child.stderr.on('data', buf => onChunk('stderr', String(buf || '')));
+
+    child.on('error', err => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(followTimer);
+      resolve({ ok: false, code: null, error: err.message || 'Failed to spawn compose log process' });
+    });
+
+    child.on('close', code => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(followTimer);
+
+      if (typeof isCancelled === 'function' && isCancelled()) {
+        resolve({ ok: false, code: null, error: 'Compose run cancelled by user' });
+        return;
+      }
+
+      if (stoppedByWindow || code === 0) {
+        resolve({ ok: true, code, error: '' });
+        return;
+      }
+
+      logError('Compose log follow exited with non-zero code', {
+        command,
+        args: args.join(' '),
+        cwd,
+        code,
+      });
+      resolve({ ok: false, code, error: `compose logs exited with code ${code}` });
+    });
+  });
+}
+
+async function runComposeBootLogStream(composeFile, service, onChunk, options = {}) {
+  const { onSpawn = null, isCancelled = null } = options;
+  const cwd = path.dirname(composeFile);
+  const followMs = COMPOSE_BOOT_LOG_SECONDS * 1000;
+  const primaryArgs = ['compose', '-f', composeFile, 'logs', '--no-color', '--tail', '120', '-f', service];
+  const fallbackArgs = ['-f', composeFile, 'logs', '--no-color', '--tail', '120', '-f', service];
+
+  onChunk('status', `Following startup logs for up to ${COMPOSE_BOOT_LOG_SECONDS}s…`);
+  let result = await spawnComposeFollowWindow(DOCKER, primaryArgs, cwd, onChunk, followMs, onSpawn, isCancelled);
+  if (result.ok) return result;
+
+  const dockerMissing = /ENOENT|not found|spawn/i.test(result.error || '');
+  if (!dockerMissing) return result;
+
+  onChunk('status', `Falling back: docker-compose -f ${composeFile} logs --tail 120 -f ${service}`);
+  return await spawnComposeFollowWindow(DOCKER_COMPOSE, fallbackArgs, cwd, onChunk, followMs, onSpawn, isCancelled);
+}
+
 function getComposeSyntheticDetail(id) {
   const synthetic = parseComposeSyntheticId(id);
   if (!synthetic) return null;
@@ -1111,6 +1279,7 @@ function getComposeSyntheticDetail(id) {
     ],
     composeProject: project.project,
     composeService: service.service,
+    composePath: '',
     composeManaged: true,
     composeOnly: true,
     composeFile: composeFilePayload.ok ? composeFilePayload.composeFile : project.composeFile,
@@ -1489,6 +1658,7 @@ async function collectContainers() {
       composeProject: inspectMeta.composeProject || '',
       composeService: inspectMeta.composeService || '',
       composeDir: inspectMeta.composeWorkingDir || '',
+      composePath: '',
       composeFile: (inspectMeta.composeConfigFiles || '').split(',').map(s => s.trim()).find(Boolean) || '',
       composeManaged: Boolean(
         inspectMeta.composeProject ||
@@ -1501,12 +1671,21 @@ async function collectContainers() {
   }
 
   const composeProjects = discoverComposeProjects(true);
-  const composeProjectMap = new Map(composeProjects.map(project => [project.project, project]));
+  const composeProjectMap = new Map();
+  for (const project of composeProjects) {
+    const group = composeProjectMap.get(project.project) || [];
+    group.push(project);
+    composeProjectMap.set(project.project, group);
+  }
   const matchedComposeKeys = new Set();
   const matchedContainerNames = new Set(result.map(container => container.name));
 
   for (const container of result) {
-    const project = container.composeProject ? composeProjectMap.get(container.composeProject) : null;
+    const candidates = container.composeProject ? (composeProjectMap.get(container.composeProject) || []) : [];
+    if (!candidates.length) continue;
+    const project = candidates.find(p => pathsEqual(p.dir, container.composeDir))
+      || candidates.find(p => pathsEqual(p.composeFile, container.composeFile))
+      || candidates[0];
     if (!project) continue;
     const service = project.services.find(s =>
       s.service === container.composeService ||
@@ -1515,9 +1694,10 @@ async function collectContainers() {
     );
     if (!service) continue;
 
-    matchedComposeKeys.add(`${project.project}/${service.service}`);
+    matchedComposeKeys.add(`${project.dir}/${service.service}`);
     container.composeProject = project.project;
     container.composeService = service.service;
+    container.composePath = '';
     container.composeFile = container.composeFile || project.composeFile;
     container.composeDir = container.composeDir || project.dir;
     container.composeManaged = true;
@@ -1528,7 +1708,7 @@ async function collectContainers() {
 
   for (const project of composeProjects) {
     for (const service of project.services) {
-      const composeKey = `${project.project}/${service.service}`;
+      const composeKey = `${project.dir}/${service.service}`;
       if (matchedComposeKeys.has(composeKey) || matchedContainerNames.has(service.displayName)) continue;
 
       result.push({
@@ -1558,6 +1738,7 @@ async function collectContainers() {
         composeProject: project.project,
         composeService: service.service,
         composeDir: project.dir,
+        composePath: '',
         composeFile: project.composeFile,
         composeManaged: true,
         composeOnly: true,
@@ -1972,6 +2153,90 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/favicon.ico') {
+    try {
+      if (fs.existsSync(FAVICON_FILE)) {
+        res.writeHead(200, {
+          'Content-Type': 'image/x-icon',
+          'Cache-Control': 'no-cache',
+        });
+        res.end(fs.readFileSync(FAVICON_FILE));
+        return;
+      }
+    } catch {}
+
+    res.writeHead(200, {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐋</text></svg>`);
+    return;
+  }
+
+  if (url.pathname === '/manifest.webmanifest') {
+    try {
+      if (fs.existsSync(MANIFEST_FILE)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/manifest+json; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        });
+        res.end(fs.readFileSync(MANIFEST_FILE, 'utf8'));
+        return;
+      }
+    } catch {}
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('manifest not found');
+    return;
+  }
+
+  if (url.pathname === '/sw.js') {
+    try {
+      if (fs.existsSync(SERVICE_WORKER_FILE)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        });
+        res.end(fs.readFileSync(SERVICE_WORKER_FILE, 'utf8'));
+        return;
+      }
+    } catch {}
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('service worker not found');
+    return;
+  }
+
+  if (url.pathname === '/pwa-icon.svg') {
+    try {
+      if (fs.existsSync(PWA_ICON_FILE)) {
+        res.writeHead(200, {
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        });
+        res.end(fs.readFileSync(PWA_ICON_FILE, 'utf8'));
+        return;
+      }
+    } catch {}
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('icon not found');
+    return;
+  }
+
+  if (url.pathname === '/pwa-icon-whale.svg') {
+    try {
+      if (fs.existsSync(PWA_ICON_WHALE_FILE)) {
+        res.writeHead(200, {
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        });
+        res.end(fs.readFileSync(PWA_ICON_WHALE_FILE, 'utf8'));
+        return;
+      }
+    } catch {}
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('icon not found');
+    return;
+  }
+
   if (!isAuthenticated(req)) {
     logInfo('Authentication required for request', {
       method,
@@ -2157,6 +2422,18 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         if (result.ok) {
+          const bootLogs = await runComposeBootLogStream(target.project.composeFile, target.service.service, sendChunk, {
+            onSpawn: child => { activeChild = child; },
+            isCancelled: () => clientClosed,
+          });
+          if (clientClosed) {
+            logInfo('Compose stream cancelled by client during startup logs', { user: reqUser, project, service });
+            if (!res.writableEnded && !res.destroyed) res.end();
+            return;
+          }
+          if (!bootLogs.ok) {
+            send({ type: 'status', message: `Startup log follow ended early: ${bootLogs.error || 'unknown reason'}` });
+          }
           logInfo('Compose stream completed', { user: reqUser, project, service });
           send({ type: 'done', ok: true, message: 'Compose up completed successfully.' });
         } else {
@@ -2216,6 +2493,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       try {
         const { name, content } = JSON.parse(body || '{}');
+        const parsedServices = parseComposeServices(content);
 
         // Validate name: alphanumeric, hyphens, underscores only
         if (!name || !/^[a-zA-Z0-9_-]+$/.test(name)) {
@@ -2224,6 +2502,17 @@ const server = http.createServer(async (req, res) => {
         }
         if (typeof content !== 'string' || !content.trim()) {
           res.end(JSON.stringify({ ok: false, error: 'compose.yaml content is required.' }));
+          return;
+        }
+
+        const containerConflicts = findExistingContainerConflicts(parsedServices);
+        if (containerConflicts.length) {
+          const quoted = containerConflicts.map(value => `"${value}"`).join(', ');
+          res.end(JSON.stringify({
+            ok: false,
+            warning: true,
+            error: `Container already exists: ${quoted}. Creation stopped; no files were changed.`,
+          }));
           return;
         }
 
@@ -2245,7 +2534,6 @@ const server = http.createServer(async (req, res) => {
         fs.writeFileSync(composeFile, content, 'utf8');
 
         // Build an open target so UI can jump straight into the created compose file.
-        const parsedServices = parseComposeServices(content);
         const firstService = parsedServices[0] || null;
         const openTarget = firstService
           ? {

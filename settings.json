@@ -1,0 +1,9 @@
+{
+  "logLevel": "INFO",
+  "authenticationType": true,
+  "warnThresholdSeconds": 3,
+  "pruneIntervalHours": 24,
+  "composeInactivityTimeoutSeconds": 120,
+  "dockerConfigFolder": "/volume1/docker/_config",
+  "dockerDataFolder": "/volume1/docker/_data"
+}

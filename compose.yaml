@@ -1,0 +1,10 @@
+services:
+  my-service:
+    container_name: my-service
+    hostname: my-service
+    environment:
+      TZ: Europe/Istanbul
+    volumes:
+      - ../../_data:/data
+    restart: unless-stopped
+    image: my-service:latest

@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "NAS Monitor",
+  "short_name": "NAS Monitor",
+  "description": "Installable monitoring dashboard for Docker hosts and Synology NAS systems.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "icons": [
+    {
+      "src": "/pwa-icon-whale.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}
