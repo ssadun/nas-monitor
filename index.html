@@ -372,7 +372,7 @@
   .container-expand-btn.open { color: var(--cyan); border-color: var(--cyan); }
 
   /* ─── Container action buttons ──────────────────────────── */
-  .container-actions { display: inline-flex; gap: 3px; align-items: center; }
+  .container-actions { display: inline-flex; flex-wrap: wrap; gap: 3px; align-items: center; }
   .action-btn {
     background: none; border: 1px solid var(--border);
     border-radius: 4px; padding: 0; cursor: pointer;
@@ -2091,12 +2091,11 @@
             <th style="width:100px" onclick="sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span></th>
             <th style="width:110px" onclick="sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span></th>
             <th style="width:110px" onclick="sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span></th>
-            <th style="width:90px">DISK R/W</th>
             <th style="width:90px" onclick="sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span></th>
-            <th style="width:160px">NETWORKS</th>
+            <th style="width:220px">NETWORKS</th>
             <th style="width:130px">PORTS</th>
             <th style="width:130px">ACTIONS</th>
-            <th style="width:110px">SUB-PROCESS</th>
+            <th style="width:110px">PROCESS</th>
             <th style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
           </tr>
         </thead>
@@ -2802,20 +2801,30 @@ function renderContainers() {
     memNum: parseFloat(c.memPercent)||0,
     vethRxKBs: c.vethRxKBs || 0,
     vethTxKBs: c.vethTxKBs || 0,
+    ip: (c.networks || []).map(n => n.ip || '').filter(Boolean).join(', '),
   }));
 
   if (filterText) {
-    list = list.filter(c =>
-      c.name.toLowerCase().includes(filterText) ||
-      (c.composeProject || '').toLowerCase().includes(filterText) ||
-      (c.composeDir || '').toLowerCase().includes(filterText) ||
-      (c.composeFile || '').toLowerCase().includes(filterText) ||
-      (c.ports || []).some(p =>
-        String(p.host).includes(filterText) ||
-        String(p.container).includes(filterText) ||
-        (p.proto || '').includes(filterText)
-      )
-    );
+    list = list.filter(c => {
+      const categoryId = getCatForContainer(c.name);
+      const categoryLabel = categoryId ? (CATEGORIES.find(cat => cat.id === categoryId) || {}).label : '';
+      return c.name.toLowerCase().includes(filterText) ||
+        (c.composeProject || '').toLowerCase().includes(filterText) ||
+        (c.composeDir || '').toLowerCase().includes(filterText) ||
+        (c.composeFile || '').toLowerCase().includes(filterText) ||
+        (categoryLabel || '').toLowerCase().includes(filterText) ||
+        (c.networks || []).some(n =>
+          (n.name || '').toLowerCase().includes(filterText) ||
+          (n.driver || '').toLowerCase().includes(filterText) ||
+          (n.ip || '').toLowerCase().includes(filterText)
+        ) ||
+        (c.ports || []).some(p =>
+          String(p.host).includes(filterText) ||
+          String(p.container).includes(filterText) ||
+          (p.hostIp || '').toLowerCase().includes(filterText) ||
+          (p.proto || '').includes(filterText)
+        );
+    });
   }
 
   list = getSorted(list, containerSort);
@@ -2842,7 +2851,6 @@ function renderContainers() {
       <td>${esc(c.memUsage)}</td>
       <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
       <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
-      <td class="muted">${esc(c.blockIO)}</td>
       <td class="muted">${esc(c.imageSize||'–')}</td>
       <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
@@ -2873,7 +2881,7 @@ function renderContainers() {
       </td>
       <td onclick="event.stopPropagation()">
         <button class="container-expand-btn ${isExpanded?'open':''}" ${isComposeOnly(c) ? 'disabled' : ''} onclick="toggleContainerRow('${c.id}', event)">
-          ${isExpanded ? `▼ ${c.pids.length || c.processCount} SUB-PROCESSES` : `▶ ${c.pids.length || c.processCount} SUB-PROCESSES`}
+          ${isExpanded ? `▼ ${c.pids.length || c.processCount} PROCESSES` : `▶ ${c.pids.length || c.processCount} PROCESSES`}
         </button>
       </td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap;">
@@ -2892,7 +2900,7 @@ function renderContainers() {
     }
   }
 
-  if (!html) html = `<tr><td colspan="14"><div class="empty-state"><div class="emoji">🐋</div>No containers found</div></td></tr>`;
+  if (!html) html = `<tr><td colspan="13"><div class="empty-state"><div class="emoji">🐋</div>No containers found</div></td></tr>`;
   tbody.innerHTML = html;
 }
 
@@ -2914,7 +2922,6 @@ function renderNetworks(networks) {
       n.gateway? 'gw: '     + n.gateway: '',
       n.macAddr? 'mac: '    + n.macAddr: '',
     ].filter(Boolean).join('\n');
-    // colour-code by driver
     const color = n.driver === 'host'    ? 'var(--orange)'
                 : n.driver === 'none'    ? 'var(--text3)'
                 : n.driver === 'overlay' ? 'var(--pink)'
@@ -2924,7 +2931,7 @@ function renderNetworks(networks) {
              padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
              border:1px solid ${color}33;color:${color};
              background:${color}11;white-space:nowrap;cursor:default;"
-    >${esc(n.name)}${n.driver ? '<span style="opacity:.55;margin-left:3px;">'+esc(n.driver)+'</span>' : ''}</span>`;
+    >${esc(n.name)}${n.driver ? ' ' + '<span style="opacity:.55;">'+esc(n.driver)+'</span>' : ''}${n.ip ? ': '+esc(n.ip) : ''}</span>`;
   }).join('');
 }
 

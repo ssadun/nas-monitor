@@ -2,6 +2,12 @@
 # NAS Monitor - Service Manager
 # Usage: bash service.sh {start|stop|status|restart}
 
+# --- Root Check ---
+if [[ $(whoami) != "root" ]]; then
+    echo "ERROR: This script must be run as root! Aborting."
+    exit 255
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_FILE="${SCRIPT_DIR}/nas-monitor.pid"
 LOG_FILE="${SCRIPT_DIR}/nas-monitor.log"
