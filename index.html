@@ -90,6 +90,7 @@
     flex: 1;
     min-width: 0;
     transition: background .15s;
+    cursor: pointer;
   }
   .metric-card:hover { background: var(--bg4); }
   .metric-label { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 3px; }
@@ -2077,23 +2078,23 @@
   </div>
 
   <div class="metrics-strip">
-    <div class="metric-card">
+    <div class="metric-card" onclick="switchTab('containers')">
       <div class="metric-label">Containers</div>
       <div class="metric-value cyan" id="s-containers">–</div>
       <div class="metric-sub" id="s-containers-sub">–</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card" onclick="switchTab('processes')">
       <div class="metric-label">Processes</div>
       <div class="metric-value accent" id="s-procs">–</div>
       <div class="metric-sub" id="s-procs-sub">–</div>
     </div>
-    <div class="metric-card">
+    <div class="metric-card" onclick="switchTab('processes')">
       <div class="metric-label">Avg CPU</div>
       <div class="metric-value" id="s-cpu">–</div>
       <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
       <div class="metric-sub" id="s-cpu-sub">–</div>
     </div>
-    <div class="metric-card" style="min-width:140px;">
+    <div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
       <div class="metric-label">SYSTEM MEM</div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
         <canvas id="s-sysmem-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
@@ -2103,7 +2104,7 @@
         </div>
       </div>
     </div>
-    <div class="metric-card" style="min-width:140px;">
+    <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
       <div class="metric-label">Disk Usage</div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
         <canvas id="s-disk-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
@@ -2118,7 +2119,7 @@
       <div class="metric-value green" id="s-uptime">–</div>
       <div class="metric-sub" id="s-load">load –</div>
     </div>
-    <div class="metric-card" style="min-width:160px;">
+    <div class="metric-card" style="min-width:160px;" onclick="switchTab('network')">
       <div class="metric-label">Network</div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
         <canvas id="s-nw-canvas" width="90" height="28" style="flex-shrink:0;"></canvas>
