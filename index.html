@@ -2986,7 +2986,7 @@ function renderContainers() {
       </td>
       <td onclick="event.stopPropagation()">
         <button class="container-expand-btn ${isExpanded?'open':''}" ${isComposeOnly(c) ? 'disabled' : ''} onclick="toggleContainerRow('${c.id}', event)">
-          ${isExpanded ? `▼ ${c.pids.length || c.processCount} PROCESSES` : `▶ ${c.pids.length || c.processCount} PROCESSES`}
+          ${isExpanded ? `▼ ${c.pids.length || c.processCount} ⚙ ` : `▶ ${c.pids.length || c.processCount} ⚙ `}
         </button>
       </td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap;">
