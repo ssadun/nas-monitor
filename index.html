@@ -3391,6 +3391,7 @@ function closeActionMenus(event) {
 }
 
 let resizingColIndex = null;
+let resizingThElement = null;
 let resizingStartX = 0;
 let resizingStartWidth = 0;
 
@@ -3398,22 +3399,23 @@ function startResize(e, colIndex) {
   if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
+  const table = document.getElementById('container-table');
+  const th = table.querySelector(`th[data-col-index="${colIndex}"]`);
+  if (!th) return;
+
   resizingColIndex = colIndex;
+  resizingThElement = th;
   resizingStartX = e.clientX;
-  const th = document.querySelector(`#container-table th[data-col-index="${colIndex}"]`) ||
-             document.querySelector(`#container-table th:nth-child(${colIndex + 1})`);
   resizingStartWidth = th.offsetWidth;
   document.addEventListener('mousemove', onResizeMove);
   document.addEventListener('mouseup', endResize);
 }
 
 function onResizeMove(e) {
-  if (resizingColIndex === null) return;
+  if (resizingColIndex === null || !resizingThElement) return;
   const delta = e.clientX - resizingStartX;
   const newWidth = Math.max(30, resizingStartWidth + delta);
-  const table = document.getElementById('container-table');
-  const ths = table.querySelectorAll('th');
-  ths[resizingColIndex].style.width = newWidth + 'px';
+  resizingThElement.style.width = newWidth + 'px';
 }
 
 function endResize() {
@@ -3426,6 +3428,7 @@ function endResize() {
     localStorage.setItem('container-table-widths', JSON.stringify(widths));
   }
   resizingColIndex = null;
+  resizingThElement = null;
 }
 
 function restoreColumnWidths() {
