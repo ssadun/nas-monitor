@@ -2211,17 +2211,17 @@
         <thead>
           <tr>
             <th style="width:30px"></th>
-            <th style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1" onmousedown="startResize(event, 1)"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2" onmousedown="startResize(event, 2)"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="3" onmousedown="startResize(event, 3)"></div></th>
-            <th style="width:100px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="4" onmousedown="startResize(event, 4)"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="5" onmousedown="startResize(event, 5)"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="6" onmousedown="startResize(event, 6)"></div></th>
-            <th style="width:90px" onclick="event.target.closest('.col-resizer') || sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="7" onmousedown="startResize(event, 7)"></div></th>
-            <th style="width:220px">NETWORKS<div class="col-resizer" data-col-index="8" onmousedown="startResize(event, 8)"></div></th>
-            <th style="width:130px">PORTS<div class="col-resizer" data-col-index="9" onmousedown="startResize(event, 9)"></div></th>
-            <th style="width:50px">ACTIONS<div class="col-resizer" data-col-index="10" onmousedown="startResize(event, 10)"></div></th>
-            <th style="width:110px">PROCESS<div class="col-resizer" data-col-index="11" onmousedown="startResize(event, 11)"></div></th>
+            <th style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="3"></div></th>
+            <th style="width:100px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="4"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="5"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="6"></div></th>
+            <th style="width:90px" onclick="event.target.closest('.col-resizer') || sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="7"></div></th>
+            <th style="width:220px">NETWORKS<div class="col-resizer" data-col-index="8"></div></th>
+            <th style="width:130px">PORTS<div class="col-resizer" data-col-index="9"></div></th>
+            <th style="width:50px">ACTIONS<div class="col-resizer" data-col-index="10"></div></th>
+            <th style="width:110px">PROCESS<div class="col-resizer" data-col-index="11"></div></th>
             <th style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
           </tr>
         </thead>
@@ -3459,7 +3459,20 @@ function restoreColumnWidths() {
 function initTableResize() {
   const table = document.getElementById('container-table');
   if (!table) return;
+
   restoreColumnWidths();
+
+  // Attach mousedown listeners to all col-resizers
+  const resizers = table.querySelectorAll('.col-resizer');
+  console.log('Found', resizers.length, 'resizers');
+
+  resizers.forEach((resizer) => {
+    resizer.addEventListener('mousedown', (e) => {
+      const colIndex = parseInt(resizer.dataset.colIndex);
+      console.log('Resizer clicked, col:', colIndex);
+      startResize(e, colIndex);
+    });
+  });
 }
 
 function openActionModal(action, id, name, extra = {}) {
