@@ -3,6 +3,11 @@
 Thumbs.db
 category-assignments.json
 credentials.json
+credentials*.json
+*.log
+*.bak
+*.disabled
 disk-history.json
 IMPROVEMENT.md
 nas-monitor.pid
+pwa-icon-whale.svg
