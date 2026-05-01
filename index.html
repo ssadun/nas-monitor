@@ -3396,18 +3396,22 @@ let resizingStartX = 0;
 let resizingStartWidth = 0;
 
 function startResize(e, colIndex) {
-  if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
 
-  const th = e.target.closest('th');
+  // Get the th element - col-resizer's parent
+  let th = e.target;
+  while (th && th.tagName !== 'TH') {
+    th = th.parentElement;
+  }
   if (!th) return;
 
   resizingColIndex = colIndex;
   resizingThElement = th;
   resizingStartX = e.clientX;
-  resizingStartWidth = parseInt(th.style.width || th.offsetWidth);
-  th.style.opacity = '0.8';
+  resizingStartWidth = parseInt(window.getComputedStyle(th).width);
+
+  console.log('Resize started:', { colIndex, startX: e.clientX, startWidth: resizingStartWidth });
   document.addEventListener('mousemove', onResizeMove, true);
   document.addEventListener('mouseup', endResize, true);
 }
@@ -3417,9 +3421,11 @@ function onResizeMove(e) {
   const delta = e.clientX - resizingStartX;
   const newWidth = Math.max(30, resizingStartWidth + delta);
   resizingThElement.style.width = newWidth + 'px';
+  console.log('Moving:', { delta, newWidth });
 }
 
 function endResize() {
+  console.log('Resize ended');
   document.removeEventListener('mousemove', onResizeMove, true);
   document.removeEventListener('mouseup', endResize, true);
   if (resizingThElement) {
@@ -3428,7 +3434,7 @@ function endResize() {
   if (resizingColIndex !== null) {
     const table = document.getElementById('container-table');
     const ths = table.querySelectorAll('th');
-    const widths = Array.from(ths).map(th => parseInt(th.style.width || th.offsetWidth));
+    const widths = Array.from(ths).map(th => parseInt(window.getComputedStyle(th).width));
     localStorage.setItem('container-table-widths', JSON.stringify(widths));
   }
   resizingColIndex = null;
