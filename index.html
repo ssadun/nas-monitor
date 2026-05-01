@@ -224,17 +224,17 @@
   .col-resizer {
     position: absolute;
     right: 0; top: 0; bottom: 0;
-    width: 4px;
+    width: 6px;
     cursor: col-resize;
-    background: transparent;
-    opacity: 0;
+    background: var(--accent);
+    opacity: 0.5;
     transition: opacity .15s;
     user-select: none;
     z-index: 11;
+    pointer-events: auto;
   }
   th:hover .col-resizer {
     opacity: 1;
-    background: var(--accent);
   }
 
   tbody tr {
@@ -3399,8 +3399,8 @@ function startResize(e, colIndex) {
   if (e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
-  const table = document.getElementById('container-table');
-  const th = table.querySelector(`th[data-col-index="${colIndex}"]`);
+
+  const th = e.target.closest('th');
   if (!th) return;
 
   resizingColIndex = colIndex;
