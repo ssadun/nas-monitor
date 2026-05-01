@@ -224,17 +224,18 @@
   .col-resizer {
     position: absolute;
     right: 0; top: 0; bottom: 0;
-    width: 6px;
+    width: 1px;
     cursor: col-resize;
-    background: var(--accent);
-    opacity: 0.5;
-    transition: opacity .15s;
+    background: transparent;
+    opacity: 0;
+    transition: opacity .15s, background .15s;
     user-select: none;
     z-index: 11;
     pointer-events: auto;
   }
   th:hover .col-resizer {
     opacity: 1;
+    background: var(--border2);
   }
 
   tbody tr {
