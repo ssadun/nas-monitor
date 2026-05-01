@@ -2597,6 +2597,12 @@ function switchTab(name) {
 
 // ─── Sorting ──────────────────────────────────────────────────────────────────
 function sortTable(table, key) {
+  // Don't sort if we just finished dragging to resize
+  if (isDragging) {
+    console.log('Drag detected, skipping sort');
+    return;
+  }
+
   if (table === 'procs') {
     if (procSort.key === key) procSort.dir *= -1;
     else { procSort.key = key; procSort.dir = -1; }
@@ -3395,10 +3401,12 @@ let resizingColIndex = null;
 let resizingThElement = null;
 let resizingStartX = 0;
 let resizingStartWidth = 0;
+let isDragging = false;
 
 function startResize(e, colIndex) {
   e.preventDefault();
   e.stopPropagation();
+  isDragging = true;
 
   // Get the th element - col-resizer's parent
   let th = e.target;
@@ -3441,6 +3449,9 @@ function endResize() {
   }
   resizingColIndex = null;
   resizingThElement = null;
+
+  // Clear dragging flag after a small delay to prevent sort click
+  setTimeout(() => { isDragging = false; }, 50);
 }
 
 function restoreColumnWidths() {
