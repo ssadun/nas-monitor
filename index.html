@@ -3420,6 +3420,10 @@ function startResize(e, colIndex) {
   resizingStartX = e.clientX;
   resizingStartWidth = parseInt(window.getComputedStyle(th).width);
 
+  // Keep col-resize cursor while dragging
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+
   console.log('Resize started:', { colIndex, startX: e.clientX, startWidth: resizingStartWidth });
   document.addEventListener('mousemove', onResizeMove, true);
   document.addEventListener('mouseup', endResize, true);
@@ -3438,6 +3442,11 @@ function endResize() {
   console.log('Resize ended');
   document.removeEventListener('mousemove', onResizeMove, true);
   document.removeEventListener('mouseup', endResize, true);
+
+  // Reset cursor
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+
   if (resizingThElement) {
     resizingThElement.style.opacity = '';
   }
