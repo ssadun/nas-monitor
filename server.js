@@ -1560,8 +1560,11 @@ async function collectContainers() {
     const stats = statsMap[id] || {};
     const inspectMeta = inspectMetaMap[id] || {};
 
-    // docker top gives us PIDs on the host
-    const topOut = await runDocker(`top ${id} -eo pid,ppid`);
+    // docker top only works on running containers
+    let topOut = '';
+    if (c.State === 'running') {
+      topOut = await runDocker(`top ${id} -eo pid,ppid`);
+    }
     const pids = [];
     if (topOut) {
       const lines = topOut.split('\n').slice(1); // skip header
@@ -1583,9 +1586,13 @@ async function collectContainers() {
     try {
       const imgOut = await runDocker(`inspect --format '{{.Config.Image}}' ${id}`);
       if (imgOut) {
-        const imgSizeOut = await runDocker(`image inspect --format '{{.Size}}' ${imgOut.trim()}`);
-        if (imgSizeOut) {
-          imageSize = formatBytes(parseInt(imgSizeOut));
+        try {
+          const { stdout } = await execAsync(`"${DOCKER}" image inspect --format '{{.Size}}' ${imgOut.trim()}`, { timeout: 8000 });
+          if (stdout) {
+            imageSize = formatBytes(parseInt(stdout.trim()));
+          }
+        } catch {
+          // Image may not exist or be inaccessible; silently skip
         }
       }
     } catch {}
