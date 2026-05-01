@@ -46,7 +46,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: var(--sans);
+    font-family: var(--mono);
     font-size: 15px;
     line-height: 1.5;
     display: flex;
@@ -61,7 +61,7 @@
   /* ─── Header ────────────────────────────────────────────── */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 24px;
+    padding: 8px 24px;
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
@@ -85,7 +85,7 @@
   }
   .metric-card {
     background: var(--bg3);
-    padding: 10px 16px;
+    padding: 6px 12px;
     display: flex; flex-direction: column; justify-content: center;
     flex: 1;
     min-width: 0;
@@ -93,7 +93,7 @@
     cursor: pointer;
   }
   .metric-card:hover { background: var(--bg4); }
-  .metric-label { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 3px; }
+  .metric-label { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 2px; }
   .metric-value { font-size: 16px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; }
   .metric-value.green { color: var(--green); }
   .metric-value.yellow { color: var(--yellow); }
@@ -101,7 +101,7 @@
   .metric-value.cyan { color: var(--cyan); }
   .metric-value.accent { color: var(--accent); }
   .metric-value.orange { color: var(--orange); }
-  .metric-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 3px; }
+  .metric-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 2px; }
   .mini-bar { height: 2px; background: var(--bg); border-radius: 2px; margin-top: 4px; overflow: hidden; }
   .mini-bar-fill { height: 100%; border-radius: 2px; transition: width .5s; }
 
@@ -112,6 +112,8 @@
     background: var(--bg);
     border-bottom: 2px solid var(--border);
     flex-shrink: 0;
+    position: relative;
+    overflow: visible;
   }
   .live-badge {
     display: flex; align-items: center; gap: 5px;
@@ -135,7 +137,7 @@
     border: 1px solid var(--border2);
     border-radius: var(--radius);
     cursor: pointer;
-    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
     color: var(--text2);
     transition: all .15s;
     letter-spacing: 0.1px;
@@ -155,6 +157,117 @@
   }
   .tab-btn.active .tab-badge { background: rgba(0,0,0,.25); color: white; }
   .tab-btn:not(.active) .tab-badge { background: var(--bg4); color: var(--text3); }
+
+  /* ─── Sidebar ─────────────────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 52px;
+    width: 90px;
+    height: calc(100vh - 52px);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 98;
+    transition: width 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sidebar.expanded {
+    width: 240px;
+  }
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 50px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--text);
+    font-size: 24px;
+    font-weight: bold;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+    line-height: 1;
+  }
+  .sidebar-toggle:hover {
+    background: var(--bg4);
+    color: var(--accent);
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+  .sidebar-section {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section.bottom {
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sidebar-item:hover {
+    background: var(--bg3);
+    color: var(--text);
+  }
+  .sidebar-item.active {
+    background: rgba(79,142,247,.12);
+    color: var(--accent);
+  }
+  .sidebar-item-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 18px;
+  }
+  .sidebar-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  body:not(.sidebar-expanded) .sidebar-item-text {
+    display: none;
+  }
+  body:not(.sidebar-expanded) .sidebar-item {
+    justify-content: center;
+    padding: 10px 0;
+    gap: 0;
+  }
+  body.sidebar-expanded main {
+    margin-left: 240px;
+  }
+  body:not(.sidebar-expanded) main {
+    margin-left: 90px;
+  }
+  main {
+    transition: margin-left 0.3s ease;
+  }
+
+
 
   .tab-spacer { flex: 1; }
   .filter-box {
@@ -1875,12 +1988,12 @@
       <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="log-autoscroll-btn">☑ Select All</button>
       <button id="prune-confirm-btn" onclick="confirmPrune()"
         style="background:var(--red);border:none;border-radius:var(--radius);padding:7px 20px;
-               color:white;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">
+               color:white;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;">
         🗑 System Prune
       </button>
       <button id="prune-cancel-btn" onclick="closePruneModal()"
         style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 16px;
-               color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+               color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;">
         Cancel
       </button>
     </div>
@@ -1947,12 +2060,12 @@
     </div>
     <div class="action-modal-footer">
       <button id="restore-confirm-btn" onclick="confirmRestoreProject()"
-        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;background:var(--green);color:white;">
+        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;background:var(--green);color:white;">
         Restore
       </button>
       <button onclick="closeRestoreConfirmModal()"
         style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);
-               background:none;color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;">
+               background:none;color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;">
         Cancel
       </button>
     </div>
@@ -2162,23 +2275,6 @@
 
 <!-- TABS -->
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('containers')">
-    🐋 Container Monitoring
-    <span class="tab-badge" id="tb-containers">0</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('categories')">
-    🗃️ Categories
-  </button>
-  <button class="tab-btn" onclick="switchTab('processes')">
-    ⚙️ System Processes
-    <span class="tab-badge" id="tb-processes">0</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('disk')">
-    💾 Disk Usage
-  </button>
-  <button class="tab-btn" onclick="switchTab('network')">
-    🌐 Network Utilization
-  </button>
   <div class="tab-spacer"></div>
   <div class="last-update" id="last-update">–</div>
   <div class="tab-bar-sep"></div>
@@ -2188,9 +2284,48 @@
     <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
   </div>
   <div class="tab-bar-sep"></div>
-  <button onclick="openCredentialsModal()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">🔑 Credentials</button>
+  <button onclick="openCredentialsModal()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--mono);font-size:12px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">🔑 Credentials</button>
   <div class="tab-bar-sep"></div>
-  <button id="logout-btn" onclick="logout()" style="background:#ef4444;border:1px solid #dc2626;border-radius:var(--radius);color:white;font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;transition:opacity .15s;white-space:nowrap;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log out</button>
+  <button id="logout-btn" onclick="logout()" style="background:#ef4444;border:1px solid #dc2626;border-radius:var(--radius);color:white;font-family:var(--mono);font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;transition:opacity .15s;white-space:nowrap;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log out</button>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+  <div class="sidebar-nav">
+    <div class="sidebar-section">
+      <button class="sidebar-item active" onclick="switchTabFromSidebar('containers')">
+        <span class="sidebar-item-icon">🐋</span>
+        <span class="sidebar-item-text">Container Monitoring</span>
+      </button>
+      <button class="sidebar-item" onclick="switchTabFromSidebar('processes')">
+        <span class="sidebar-item-icon">⚙️</span>
+        <span class="sidebar-item-text">System Processes</span>
+      </button>
+      <button class="sidebar-item" onclick="switchTabFromSidebar('disk')">
+        <span class="sidebar-item-icon">💾</span>
+        <span class="sidebar-item-text">Disk Usage</span>
+      </button>
+      <button class="sidebar-item" onclick="switchTabFromSidebar('network')">
+        <span class="sidebar-item-icon">🌐</span>
+        <span class="sidebar-item-text">Network Utilization</span>
+      </button>
+    </div>
+    <div class="sidebar-section bottom">
+      <button class="sidebar-item" onclick="switchTabFromSidebar('categories')">
+        <span class="sidebar-item-icon">🗃️</span>
+        <span class="sidebar-item-text">Categories</span>
+      </button>
+      <button class="sidebar-item" onclick="openCredentialsModal(); closeSidebar();">
+        <span class="sidebar-item-icon">🔑</span>
+        <span class="sidebar-item-text">Credentials</span>
+      </button>
+      <button class="sidebar-item" onclick="logout()">
+        <span class="sidebar-item-icon">🚪</span>
+        <span class="sidebar-item-text">Logout</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <main>
@@ -2492,9 +2627,16 @@ let allData = { processes: [], containers: [], summary: {} };
 let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
 // Apply restored tab to DOM before first render
 (function initTab() {
-  const tabNames = ['containers', 'categories', 'processes', 'disk', 'network'];
-  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', tabNames[i] === currentTab));
+  const tabNames = ['containers', 'processes', 'disk', 'network', 'categories'];
+  document.querySelectorAll('.sidebar-item').forEach((b, i) => b.classList.toggle('active', tabNames[i] === currentTab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + currentTab));
+
+  // Restore sidebar state
+  const sidebarExpanded = sessionStorage.getItem('sidebar-expanded') === 'true';
+  if (sidebarExpanded) {
+    document.body.classList.add('sidebar-expanded');
+    document.getElementById('sidebar').classList.add('expanded');
+  }
 })();
 let procView = 'flat';
 let procSort = { key: 'cpu', dir: -1 };
@@ -2583,8 +2725,8 @@ function logout() {
 function switchTab(name) {
   currentTab = name;
   sessionStorage.setItem('nas-monitor-tab', name);
-  const tabNames = ['containers', 'categories', 'processes', 'disk', 'network'];
-  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+  const tabNames = ['containers', 'processes', 'disk', 'network', 'categories'];
+  document.querySelectorAll('.sidebar-item').forEach((b, i) => {
     b.classList.toggle('active', tabNames[i] === name);
   });
   document.querySelectorAll('.tab-panel').forEach(p => {
@@ -2593,6 +2735,24 @@ function switchTab(name) {
   document.getElementById('filter-input').value = '';
   filterText = '';
   render();
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  document.body.classList.toggle('sidebar-expanded');
+  sidebar.classList.toggle('expanded');
+  sessionStorage.setItem('sidebar-expanded', document.body.classList.contains('sidebar-expanded'));
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  document.body.classList.remove('sidebar-expanded');
+  sidebar.classList.remove('expanded');
+  sessionStorage.setItem('sidebar-expanded', false);
+}
+
+function switchTabFromSidebar(name) {
+  switchTab(name);
 }
 
 // ─── Sorting ──────────────────────────────────────────────────────────────────
@@ -2755,9 +2915,7 @@ function renderSummary() {
   el('s-nw-out').textContent = txKBs.toFixed(2) + ' KB/s';
   drawSummaryNwSparkline();
 
-  // Badges
-  el('tb-containers').textContent = containers.length;
-  el('tb-processes').textContent = processes.length;
+  // Badges (removed - no longer displayed in sidebar)
   el('container-count-info').textContent = composeDefined > 0
     ? `${containers.length} containers · ${composeDefined} from compose config`
     : containers.length + ' containers';
