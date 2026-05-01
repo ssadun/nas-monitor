@@ -195,6 +195,9 @@
     width: 100%; border-collapse: collapse;
     font-family: var(--mono); font-size: 13px;
   }
+  table#container-table {
+    table-layout: fixed;
+  }
   thead tr {
     background: var(--bg3);
     border-bottom: 1px solid var(--border2);
@@ -205,6 +208,7 @@
     font-size: 11px; font-weight: 600; letter-spacing: 1px;
     text-transform: uppercase; color: var(--text3);
     white-space: nowrap; cursor: pointer; user-select: none;
+    position: relative;
   }
   th:hover { color: var(--text); }
   th.sorted {
@@ -214,6 +218,22 @@
   }
   th .sort-arrow { margin-left: 5px; opacity: .3; font-size: 11px; }
   th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+  .col-resizer {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    opacity: 0;
+    transition: opacity .15s;
+    user-select: none;
+    z-index: 11;
+  }
+  th:hover .col-resizer {
+    opacity: 1;
+    background: var(--accent);
+  }
 
   tbody tr {
     border-bottom: 1px solid rgba(42,47,74,.5);
@@ -2187,17 +2207,17 @@
         <thead>
           <tr>
             <th style="width:30px"></th>
-            <th class="name-col" onclick="sortTable('containers','name')">NAME <span class="sort-arrow">↕</span></th>
-            <th class="cpu-col" onclick="sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span></th>
-            <th class="mem-col" onclick="sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span></th>
-            <th style="width:100px" onclick="sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span></th>
-            <th style="width:110px" onclick="sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span></th>
-            <th style="width:110px" onclick="sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span></th>
-            <th style="width:90px" onclick="sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span></th>
-            <th style="width:220px">NETWORKS</th>
-            <th style="width:130px">PORTS</th>
-            <th style="width:50px">ACTIONS</th>
-            <th style="width:110px">PROCESS</th>
+            <th style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="3"></div></th>
+            <th style="width:100px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="4"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="5"></div></th>
+            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="6"></div></th>
+            <th style="width:90px" onclick="event.target.closest('.col-resizer') || sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="7"></div></th>
+            <th style="width:220px">NETWORKS<div class="col-resizer" data-col-index="8"></div></th>
+            <th style="width:130px">PORTS<div class="col-resizer" data-col-index="9"></div></th>
+            <th style="width:50px">ACTIONS<div class="col-resizer" data-col-index="10"></div></th>
+            <th style="width:110px">PROCESS<div class="col-resizer" data-col-index="11"></div></th>
             <th style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
           </tr>
         </thead>
@@ -3007,6 +3027,7 @@ function renderContainers() {
 
   if (!html) html = `<tr><td colspan="13"><div class="empty-state"><div class="emoji">🐋</div>No containers found</div></td></tr>`;
   tbody.innerHTML = html;
+  initTableResize();
 }
 
 function renderPorts(ports) {
@@ -3363,6 +3384,71 @@ function closeActionMenus(event) {
     document.querySelectorAll('.action-dropdown.open').forEach(d => d.classList.remove('open'));
     document.removeEventListener('click', closeActionMenus);
   }
+}
+
+let resizingColIndex = null;
+let resizingStartX = 0;
+let resizingStartWidth = 0;
+
+function startResize(e, colIndex) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  resizingColIndex = colIndex;
+  resizingStartX = e.clientX;
+  const th = document.querySelector(`#container-table th[data-col-index="${colIndex}"]`) ||
+             document.querySelector(`#container-table th:nth-child(${colIndex + 1})`);
+  resizingStartWidth = th.offsetWidth;
+  document.addEventListener('mousemove', onResizeMove);
+  document.addEventListener('mouseup', endResize);
+}
+
+function onResizeMove(e) {
+  if (resizingColIndex === null) return;
+  const delta = e.clientX - resizingStartX;
+  const newWidth = Math.max(30, resizingStartWidth + delta);
+  const table = document.getElementById('container-table');
+  const ths = table.querySelectorAll('th');
+  ths[resizingColIndex].style.width = newWidth + 'px';
+}
+
+function endResize() {
+  document.removeEventListener('mousemove', onResizeMove);
+  document.removeEventListener('mouseup', endResize);
+  if (resizingColIndex !== null) {
+    const table = document.getElementById('container-table');
+    const ths = table.querySelectorAll('th');
+    const widths = Array.from(ths).map(th => parseInt(th.style.width || th.offsetWidth));
+    localStorage.setItem('container-table-widths', JSON.stringify(widths));
+  }
+  resizingColIndex = null;
+}
+
+function restoreColumnWidths() {
+  const saved = localStorage.getItem('container-table-widths');
+  if (!saved) return;
+  try {
+    const widths = JSON.parse(saved);
+    const table = document.getElementById('container-table');
+    const ths = table.querySelectorAll('th');
+    ths.forEach((th, i) => {
+      if (widths[i]) th.style.width = widths[i] + 'px';
+    });
+  } catch (e) {
+    console.error('Failed to restore column widths:', e);
+  }
+}
+
+function initTableResize() {
+  const table = document.getElementById('container-table');
+  if (!table) return;
+
+  restoreColumnWidths();
+
+  const resizers = table.querySelectorAll('.col-resizer');
+  resizers.forEach((resizer, index) => {
+    resizer.addEventListener('mousedown', (e) => startResize(e, index + 1));
+  });
 }
 
 function openActionModal(action, id, name, extra = {}) {
@@ -7564,6 +7650,7 @@ async function confirmDeleteNetwork() {
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   window.addEventListener('load', () => {
+    initTableResize();
     navigator.serviceWorker.register('/sw.js').catch(err => {
       console.warn('Service worker registration failed:', err);
     });
