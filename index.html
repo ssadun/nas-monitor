@@ -3406,9 +3406,10 @@ function startResize(e, colIndex) {
   resizingColIndex = colIndex;
   resizingThElement = th;
   resizingStartX = e.clientX;
-  resizingStartWidth = th.offsetWidth;
-  document.addEventListener('mousemove', onResizeMove);
-  document.addEventListener('mouseup', endResize);
+  resizingStartWidth = parseInt(th.style.width || th.offsetWidth);
+  th.style.opacity = '0.8';
+  document.addEventListener('mousemove', onResizeMove, true);
+  document.addEventListener('mouseup', endResize, true);
 }
 
 function onResizeMove(e) {
@@ -3419,8 +3420,11 @@ function onResizeMove(e) {
 }
 
 function endResize() {
-  document.removeEventListener('mousemove', onResizeMove);
-  document.removeEventListener('mouseup', endResize);
+  document.removeEventListener('mousemove', onResizeMove, true);
+  document.removeEventListener('mouseup', endResize, true);
+  if (resizingThElement) {
+    resizingThElement.style.opacity = '';
+  }
   if (resizingColIndex !== null) {
     const table = document.getElementById('container-table');
     const ths = table.querySelectorAll('th');
