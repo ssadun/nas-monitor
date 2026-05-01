@@ -3419,9 +3419,10 @@ function startResize(e, colIndex) {
 function onResizeMove(e) {
   if (resizingColIndex === null || !resizingThElement) return;
   const delta = e.clientX - resizingStartX;
-  const newWidth = Math.max(30, resizingStartWidth + delta);
+  // Multiply delta by 1.5 to make changes more noticeable
+  const newWidth = Math.max(50, resizingStartWidth + delta * 1.5);
   resizingThElement.style.width = newWidth + 'px';
-  console.log('Moving:', { delta, newWidth });
+  console.log('Moving:', { delta, multipliedDelta: delta * 1.5, newWidth });
 }
 
 function endResize() {
@@ -3456,6 +3457,26 @@ function restoreColumnWidths() {
   }
 }
 
+function redistributeColumns() {
+  const table = document.getElementById('container-table');
+  if (!table) return;
+
+  const ths = table.querySelectorAll('th');
+  const containerWidth = table.offsetWidth;
+  const columnCount = ths.length;
+
+  // Only redistribute if we have explicit widths saved
+  const saved = localStorage.getItem('container-table-widths');
+  if (!saved) {
+    // If no saved widths, distribute evenly
+    const evenWidth = Math.floor(containerWidth / columnCount);
+    ths.forEach(th => {
+      th.style.width = evenWidth + 'px';
+    });
+    console.log('Distributed evenly:', evenWidth);
+  }
+}
+
 function initTableResize() {
   const table = document.getElementById('container-table');
   if (!table) return;
@@ -3473,6 +3494,9 @@ function initTableResize() {
       startResize(e, colIndex);
     });
   });
+
+  // Add window resize listener to redistribute columns
+  window.addEventListener('resize', redistributeColumns);
 }
 
 function openActionModal(action, id, name, extra = {}) {
