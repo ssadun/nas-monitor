@@ -3162,37 +3162,22 @@ function renderContainers() {
       <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
       <td onclick="event.stopPropagation()">
-        <div class="container-actions">
-          <button class="action-menu-btn" title="Actions" onclick="toggleActionMenu(event)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="5" r="1"></circle>
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="12" cy="19" r="1"></circle>
-            </svg>
-          </button>
-          <div class="action-dropdown" onclick="event.stopPropagation()">
-            <button class="action-dropdown-item start" title="${startTitle}"
-              ${stateClass === 'running' ? 'disabled' : ''}
-              onclick="${startAction}">▶ Start</button>
-            <button class="action-dropdown-item restart" title="Restart"
-              ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
-              onclick="openActionModal('restart','${c.id}','${esc(c.name)}')">↻ Restart</button>
-            <button class="action-dropdown-item stop" title="Stop"
-              ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
-              onclick="openActionModal('stop','${c.id}','${esc(c.name)}')">⏹ Stop</button>
-            <button class="action-dropdown-item archive" title="${canArchiveFromList ? 'Archive compose config' : 'Archive (non-registered only)'}"
-              ${canArchiveFromList ? '' : 'disabled'}
-              onclick="openActionModal('archive','${c.id}','${esc(c.name)}',{project:'${esc(c.composeProject || '')}'})">📦 Archive</button>
-            <button class="action-dropdown-item logs" title="Logs"
-              ${stateClass !== 'running' ? 'disabled' : ''}
-              onclick="openLogs('${c.id}','${esc(c.name)}')">📋 Logs</button>
-            <button class="action-dropdown-item console" title="Console" style="display:none;"
-              ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
-              onclick="openConsoleModal('${c.id}','${esc(c.name)}')">» Console</button>
-            <button class="action-dropdown-item delete" title="${(stateClass === 'running' || isComposeOnly(c)) ? 'Delete (stop container first)' : 'Delete'}"
-              ${(stateClass === 'running' || isComposeOnly(c)) ? 'disabled' : ''}
-              onclick="openActionModal('delete','${c.id}','${esc(c.name)}')">🗑 Delete</button>
-          </div>
+        <div class="container-actions" style="display:flex;gap:4px;">
+          <button class="action-btn start" title="${startTitle}"
+            ${stateClass === 'running' ? 'disabled' : ''}
+            onclick="${startAction}">▶</button>
+          <button class="action-btn restart" title="Restart"
+            ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
+            onclick="openActionModal('restart','${c.id}','${esc(c.name)}')">↻</button>
+          <button class="action-btn stop" title="Stop"
+            ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
+            onclick="openActionModal('stop','${c.id}','${esc(c.name)}')">⏹</button>
+          <button class="action-btn logs" title="Logs"
+            ${stateClass !== 'running' ? 'disabled' : ''}
+            onclick="openLogs('${c.id}','${esc(c.name)}')">📋</button>
+          <button class="action-btn archive" title="${canArchiveFromList ? 'Archive compose config' : 'Archive (non-registered only)'}"
+            ${canArchiveFromList ? '' : 'disabled'}
+            onclick="openActionModal('archive','${c.id}','${esc(c.name)}',{project:'${esc(c.composeProject || '')}'})">📦</button>
         </div>
       </td>
       <td onclick="event.stopPropagation()">
