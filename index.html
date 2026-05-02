@@ -3549,7 +3549,7 @@ const ACTION_META = {
 
 function toggleActionMenu(event) {
   event.stopPropagation();
-  const dropdown = event.target.closest('.container-actions').querySelector('.action-dropdown');
+  const dropdown = event.currentTarget.closest('.container-actions').querySelector('.action-dropdown');
   const isOpen = dropdown.classList.contains('open');
 
   document.querySelectorAll('.action-dropdown.open').forEach(d => {
