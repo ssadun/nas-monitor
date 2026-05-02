@@ -184,8 +184,8 @@
     justify-content: center;
     width: 100%;
     height: 50px;
-    background: var(--bg3);
-    border-bottom: 1px solid var(--border);
+    background: var(--bg4);
+    border-bottom: 1px solid var(--border2);
     cursor: pointer;
     color: var(--text);
     font-size: 24px;
@@ -195,6 +195,13 @@
     border: none;
     padding: 8px 0 0 0;
     line-height: 1;
+  }
+  .sidebar-toggle svg {
+    width: 24px;
+    height: 24px;
+  }
+  .sidebar-toggle svg line {
+    stroke-width: 3;
   }
   .sidebar-toggle:hover {
     background: var(--bg4);
@@ -1498,6 +1505,8 @@
   .view-btn.active { background: var(--accent); color: white; }
   .toolbar-spacer { flex: 1; }
   .toolbar-info { font-family: var(--mono); font-size: 12px; color: var(--text3); }
+  .toolbar-label { font-family: var(--mono); font-size: 12px; color: var(--text3); white-space: nowrap; }
+  .toolbar-sep { color: var(--text3); font-size: 11px; }
   .toolbar-right { display:flex; align-items:center; gap:8px; flex-shrink: 0; }
   .toolbar-refresh-btn {
     padding: 3px 8px; border-radius: 6px;
@@ -2331,12 +2340,15 @@
       <button class="expand-all-btn toolbar-main-btn" onclick="openNewComposeModal()" style="color:var(--green);border-color:rgba(34,197,94,.4);">＋ New Compose</button>
       <button class="expand-all-btn toolbar-main-btn" onclick="openArchiveBrowserModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🗄 Archive</button>
       <button class="expand-all-btn prune-btn toolbar-main-btn" onclick="openPruneModal()">🧹 Prune</button>
+      <button class="expand-all-btn toolbar-main-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
+      <button class="toolbar-refresh-btn" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list">↻ Refresh</button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
-        <div class="last-update" id="last-update">–</div>
-        <div class="toolbar-info" id="container-count-info">–</div>
-        <button class="expand-all-btn toolbar-main-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
-        <button class="toolbar-refresh-btn" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list">↻ Refresh</button>
+        <span class="toolbar-label toolbar-info" id="container-count-total">–</span>
+        <span class="toolbar-sep">|</span>
+        <span class="toolbar-label toolbar-info" id="container-count-compose" style="color:var(--text3);">–</span>
+        <span class="toolbar-sep">|</span>
+        <span class="toolbar-label last-update" id="last-update-containers">–</span>
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
@@ -2379,8 +2391,9 @@
       <button class="container-filter-btn" id="container-filter-btn" onclick="toggleFilter('container')">🐋 Container</button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
-        <div class="last-update" id="last-update">–</div>
-        <div class="toolbar-info" id="proc-count-info">–</div>
+        <span class="toolbar-label toolbar-info" id="proc-count-info">–</span>
+        <span class="toolbar-sep">|</span>
+        <span class="toolbar-label last-update" id="last-update-processes">–</span>
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
@@ -2430,8 +2443,9 @@
       <button class="expand-all-btn danger-btn disk-toolbar-btn" id="disk-delete-btn" onclick="deleteSelectedDiskScan()" style="display:none;">🗑 Delete</button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
-        <div class="last-update" id="last-update">–</div>
-        <div class="toolbar-info" id="disk-scan-info">–</div>
+        <span class="toolbar-label toolbar-info" id="disk-scan-info">–</span>
+        <span class="toolbar-sep">|</span>
+        <span class="toolbar-label last-update" id="last-update-disk">–</span>
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
@@ -2494,7 +2508,7 @@
   <div class="tab-panel" id="tab-network">
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <div class="toolbar">
-        <span style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">🌐 Network Utilization</span>
+        <button class="expand-all-btn" onclick="openNetworkMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🔌 Manage Networks</button>
         <div style="display:flex;gap:4px;">
           <button id="net-sort-iface"    onclick="setNetSort('iface')"    class="view-btn active" style="font-size:11px;padding:3px 10px;">NAME</button>
           <button id="net-sort-rxKBs"    onclick="setNetSort('rxKBs')"    class="view-btn"        style="font-size:11px;padding:3px 10px;">IN ↕</button>
@@ -2503,9 +2517,9 @@
         </div>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
-          <div class="last-update" id="last-update">–</div>
-          <span id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
-          <button class="expand-all-btn" onclick="openNetworkMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🔌 Manage Networks</button>
+          <span class="toolbar-label" id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
+          <span class="toolbar-sep">|</span>
+          <span class="toolbar-label last-update" id="last-update-network">–</span>
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
           </div>
@@ -2524,10 +2538,12 @@
         <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">🗂 Container Categories</span>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
-          <div class="last-update" id="last-update">–</div>
-          <span id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Click a category badge on a container to assign it</span>
+          <span class="toolbar-label" id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
+          <span class="toolbar-sep">|</span>
+          <span class="toolbar-label" style="font-family:var(--mono);font-size:11px;color:var(--text3);">Click a category badge on a container to assign it</span>
           <button class="expand-all-btn" onclick="openCatMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">⚙ Manage Categories</button>
+          <span class="toolbar-sep">|</span>
+          <span class="toolbar-label last-update" id="last-update-categories">–</span>
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
           </div>
@@ -2700,7 +2716,9 @@ function startStream() {
     updateSortHeaders();
     document.getElementById('loading').classList.add('done');
     const t = new Date(allData.lastUpdate);
-    document.getElementById('last-update').textContent = 'Updated ' + t.toLocaleTimeString();
+    document.querySelectorAll('.last-update').forEach(el => {
+      el.textContent = 'Updated ' + t.toLocaleTimeString();
+    });
     const refreshBtn = el('container-refresh-btn');
     if (refreshBtn) {
       refreshBtn.disabled = false;
@@ -2942,10 +2960,11 @@ function renderSummary() {
   el('s-nw-out').textContent = txKBs.toFixed(2) + ' KB/s';
   drawSummaryNwSparkline();
 
-  // Badges (removed - no longer displayed in sidebar)
-  el('container-count-info').textContent = composeDefined > 0
-    ? `${containers.length} containers · ${composeDefined} from compose config`
-    : containers.length + ' containers';
+  // Container count + compose breakdown
+  el('container-count-total').textContent = containers.length + ' containers';
+  el('container-count-compose').textContent = composeDefined > 0
+    ? `${composeDefined} from compose`
+    : '0 from compose';
 }
 
 function drawSummaryNwSparkline() {
@@ -4357,7 +4376,7 @@ async function scanDisk() {
         data.tree.children.forEach(child => collapseAllNodes(child));
       }
       const total = data.tree ? fmtBytes(data.tree.sizeBytes) : '–';
-      el('disk-scan-info').textContent = `${esc(path)} — ${total} total`;
+      el('disk-scan-info').textContent = `${esc(path)} – ${total} total`;
       el('disk-tree-root').textContent = path;
       const expandBtn = el('disk-expand-all-btn');
       if (expandBtn) { expandBtn.style.display = ''; expandBtn.textContent = ''; expandBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All'; }
@@ -4413,7 +4432,7 @@ async function loadHistoryScan(idx) {
   const expandBtn = el('disk-expand-all-btn');
   if (expandBtn) { expandBtn.style.display = ''; expandBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All'; }
   const total = entry.data.tree ? fmtBytes(entry.data.tree.sizeBytes) : fmtBytes(entry.totalBytes || 0);
-  el('disk-scan-info').textContent = `${esc(entry.path)} — ${total} · ${new Date(entry.scannedAt).toLocaleString()}`;
+  el('disk-scan-info').textContent = `${esc(entry.path)} – ${total} · ${new Date(entry.scannedAt).toLocaleString()}`;
   renderDiskHistory(idx);
   renderDiskTree();
   renderDiskFiles();
