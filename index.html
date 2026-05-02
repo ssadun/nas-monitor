@@ -163,48 +163,123 @@
   .sidebar {
     position: fixed;
     left: 0;
-    top: 52px;
+    top: 0;
     width: 60px;
-    height: calc(100vh - 52px);
+    height: 100vh;
     background: var(--bg2);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    z-index: 98;
+    z-index: 101;
     transition: width 0.3s ease;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: visible;
   }
+  /* NOTE: sidebar now overlays the left header area; if sidebar width or header layout changes, update header margin-left values accordingly */
   .sidebar.expanded {
     width: 240px;
   }
+  header {
+    margin-left: 60px;
+    transition: margin-left 0.3s ease;
+  }
+  body.sidebar-expanded header {
+    margin-left: 240px;
+  }
   .sidebar-toggle {
+    position: relative;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 72px;
+    background: rgba(79,142,247,.10);
+    border-bottom: 1px solid rgba(79,142,247,.22);
+    cursor: pointer;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    border: none;
+    padding: 0 14px;
+    line-height: 1;
+    z-index: 102;
+    text-align: left;
+  }
+  .sidebar-toggle-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .sidebar-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .sidebar-toggle-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+  .sidebar-toggle-motto {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .sidebar-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    flex-shrink: 0;
+    letter-spacing: 1px;
+  }
+  body:not(.sidebar-expanded) .sidebar-toggle-text {
+    display: none;
+  }
+  body:not(.sidebar-expanded) .sidebar-toggle-label {
+    display: none;
+  }
+  body:not(.sidebar-expanded) .sidebar-toggle {
+    justify-content: center;
+    padding: 0;
+  }
+  /* floating collapse/expand chip pinned to right-center of the sidebar toggle */
+  .sidebar-float-btn {
+    position: absolute;
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 50px;
-    background: var(--bg4);
-    border-bottom: 1px solid var(--border2);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     cursor: pointer;
-    color: var(--text);
-    font-size: 24px;
-    font-weight: bold;
-    transition: background 0.15s;
-    flex-shrink: 0;
-    border: none;
-    padding: 8px 0 0 0;
-    line-height: 1;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+    z-index: 103;
+    transition: border-color .15s;
+    user-select: none;
+    pointer-events: none;
   }
-  .sidebar-toggle svg {
-    width: 24px;
-    height: 24px;
-  }
-  .sidebar-toggle svg line {
-    stroke-width: 3;
+  .sidebar-toggle:hover .sidebar-float-btn {
+    border-color: var(--border2);
   }
   .sidebar-toggle:hover {
-    background: var(--bg4);
+    background: rgba(79,142,247,.18);
     color: var(--accent);
   }
   .sidebar-nav {
@@ -2222,14 +2297,6 @@
 
 <!-- HEADER -->
 <header>
-  <div class="logo">
-    <div class="icon">🐋</div>
-    <div>
-      <h1>NAS <span>Monitor</span></h1>
-      <div class="sub">Real-Time System Monitor</div>
-    </div>
-  </div>
-
   <div class="metrics-strip">
     <div class="metric-card" onclick="switchTab('containers')">
       <div class="metric-label">Containers</div>
@@ -2291,11 +2358,12 @@
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
+    <span class="sidebar-toggle-icon">🐋</span>
+    <span class="sidebar-toggle-text">
+      <span class="sidebar-toggle-name">NAS <span style="color:var(--accent)">Monitor</span></span>
+      <span class="sidebar-toggle-motto">Real-Time System Monitor</span>
+    </span>
+    <div class="sidebar-float-btn" id="sidebar-toggle-label">>></div>
   </button>
   <div class="sidebar-nav">
     <div class="sidebar-section">
@@ -2680,6 +2748,7 @@ let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
     document.body.classList.add('sidebar-expanded');
     document.getElementById('sidebar').classList.add('expanded');
   }
+  updateSidebarToggleLabel();
 })();
 let procView = 'flat';
 let procSort = { key: 'cpu', dir: -1 };
@@ -2782,11 +2851,18 @@ function switchTab(name) {
   render();
 }
 
+function updateSidebarToggleLabel() {
+  const label = document.getElementById('sidebar-toggle-label');
+  if (!label) return;
+  label.textContent = document.body.classList.contains('sidebar-expanded') ? '<<' : '>>';
+}
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   document.body.classList.toggle('sidebar-expanded');
   sidebar.classList.toggle('expanded');
   sessionStorage.setItem('sidebar-expanded', document.body.classList.contains('sidebar-expanded'));
+  updateSidebarToggleLabel();
 }
 
 function closeSidebar() {
@@ -2794,6 +2870,7 @@ function closeSidebar() {
   document.body.classList.remove('sidebar-expanded');
   sidebar.classList.remove('expanded');
   sessionStorage.setItem('sidebar-expanded', false);
+  updateSidebarToggleLabel();
 }
 
 function switchTabFromSidebar(name) {
