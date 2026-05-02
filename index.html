@@ -313,7 +313,7 @@
   }
   table {
     width: 100%; border-collapse: collapse;
-    font-family: var(--mono); font-size: 13px;
+    font-family: var(--mono); font-size: 12px;
   }
   table#container-table {
     table-layout: fixed;
@@ -327,7 +327,7 @@
   }
   th {
     padding: 9px 12px; text-align: left;
-    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    font-size: 12px; font-weight: 600; letter-spacing: 1px;
     text-transform: uppercase; color: var(--text3);
     white-space: nowrap; cursor: pointer; user-select: none;
     position: relative;
@@ -422,7 +422,7 @@
     background: var(--bg2);
   }
   .sub-proc-header span { color: var(--cyan); }
-  .sub-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  .sub-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
   .sub-table th {
     padding: 6px 14px; background: #141720;
     font-size: 11px; position: static;
@@ -3153,11 +3153,11 @@ function renderContainers() {
       <td>
         ${renderContainerTitle(c)}
       </td>
-      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:13px;">${esc(c.cpu || '–')}</td>
-      <td class="accent-text" style="font-family:var(--mono);font-size:13px;">${esc(c.memPercent || '–')}</td>
+      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:12px;">${esc(c.cpu || '–')}</td>
+      <td class="accent-text" style="font-family:var(--mono);font-size:12px;">${esc(c.memPercent || '–')}</td>
       <td>${esc(c.memUsage)}</td>
-      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
-      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:11px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
       <td class="muted">${esc(c.imageSize||'–')}</td>
       <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
