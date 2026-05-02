@@ -120,7 +120,7 @@
     margin-left: 240px;
   }
   body:not(.sidebar-expanded) .tab-bar {
-    margin-left: 90px;
+    margin-left: 60px;
   }
   .live-badge {
     display: flex; align-items: center; gap: 5px;
@@ -170,7 +170,7 @@
     position: fixed;
     left: 0;
     top: 94px;
-    width: 90px;
+    width: 60px;
     height: calc(100vh - 94px);
     background: var(--bg2);
     border-right: 1px solid var(--border);
@@ -199,7 +199,7 @@
     transition: background 0.15s;
     flex-shrink: 0;
     border: none;
-    padding: 0;
+    padding: 8px 0 0 0;
     line-height: 1;
   }
   .sidebar-toggle:hover {
@@ -268,7 +268,7 @@
     margin-left: 240px;
   }
   body:not(.sidebar-expanded) main {
-    margin-left: 90px;
+    margin-left: 60px;
   }
   main {
     transition: margin-left 0.3s ease;
@@ -3160,7 +3160,13 @@ function renderContainers() {
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
       <td onclick="event.stopPropagation()">
         <div class="container-actions">
-          <button class="action-menu-btn" title="Actions" onclick="toggleActionMenu(event)">⋯</button>
+          <button class="action-menu-btn" title="Actions" onclick="toggleActionMenu(event)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="5" r="1"></circle>
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="12" cy="19" r="1"></circle>
+            </svg>
+          </button>
           <div class="action-dropdown" onclick="event.stopPropagation()">
             <button class="action-dropdown-item start" title="${startTitle}"
               ${stateClass === 'running' ? 'disabled' : ''}
