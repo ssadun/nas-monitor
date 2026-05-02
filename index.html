@@ -538,6 +538,9 @@
     color: var(--text3);
     transition: all .15s;
   }
+  .action-menu-btn svg {
+    pointer-events: none;
+  }
 
   .action-menu-btn:hover:not(:disabled) {
     border-color: var(--text2);
@@ -3549,7 +3552,17 @@ const ACTION_META = {
 
 function toggleActionMenu(event) {
   event.stopPropagation();
-  const dropdown = event.currentTarget.closest('.container-actions').querySelector('.action-dropdown');
+  const button = event.currentTarget || event.target;
+  const containerActions = button.closest('.container-actions');
+  if (!containerActions) {
+    console.error('Could not find .container-actions');
+    return;
+  }
+  const dropdown = containerActions.querySelector('.action-dropdown');
+  if (!dropdown) {
+    console.error('Could not find .action-dropdown');
+    return;
+  }
   const isOpen = dropdown.classList.contains('open');
 
   document.querySelectorAll('.action-dropdown.open').forEach(d => {
