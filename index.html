@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/addon-fit.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   :root {
     --bg:        #0d0f14;
@@ -85,23 +86,26 @@
   }
   .metric-card {
     background: var(--bg3);
-    padding: 6px 12px;
-    display: flex; flex-direction: column; justify-content: center;
+    padding: 7px 12px;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
     flex: 1;
     min-width: 0;
+    height: 72px;
+    box-sizing: border-box;
     transition: background .15s;
     cursor: pointer;
   }
   .metric-card:hover { background: var(--bg4); }
-  .metric-label { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 2px; }
-  .metric-value { font-size: 16px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; }
+  .metric-label { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 2px; }
+  .metric-label svg { width: 13px; height: 13px; flex-shrink: 0; stroke-width: 2; }
+  .metric-value { font-size: 18px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; color: var(--accent); }
   .metric-value.green { color: var(--green); }
   .metric-value.yellow { color: var(--yellow); }
   .metric-value.red { color: var(--red); }
   .metric-value.cyan { color: var(--cyan); }
   .metric-value.accent { color: var(--accent); }
   .metric-value.orange { color: var(--orange); }
-  .metric-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 2px; }
+  .metric-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-top: 2px; }
   .mini-bar { height: 2px; background: var(--bg); border-radius: 2px; margin-top: 4px; overflow: hidden; }
   .mini-bar-fill { height: 100%; border-radius: 2px; transition: width .5s; }
 
@@ -2299,56 +2303,58 @@
 <header>
   <div class="metrics-strip">
     <div class="metric-card" onclick="switchTab('containers')">
-      <div class="metric-label">Containers</div>
+      <div class="metric-label"><i data-lucide="activity" style="color:var(--cyan)"></i>Containers</div>
       <div class="metric-value cyan" id="s-containers">–</div>
       <div class="metric-sub" id="s-containers-sub">–</div>
     </div>
     <div class="metric-card" onclick="switchTab('processes')">
-      <div class="metric-label">Processes</div>
+      <div class="metric-label"><i data-lucide="cpu" style="color:var(--accent)"></i>Processes</div>
       <div class="metric-value accent" id="s-procs">–</div>
       <div class="metric-sub" id="s-procs-sub">–</div>
     </div>
     <div class="metric-card" onclick="switchTab('processes')">
-      <div class="metric-label">Avg CPU</div>
+      <div class="metric-label"><i data-lucide="cpu" style="color:var(--green)"></i>Avg CPU</div>
       <div class="metric-value" id="s-cpu">–</div>
       <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
       <div class="metric-sub" id="s-cpu-sub">–</div>
     </div>
     <div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
-      <div class="metric-label">SYSTEM MEM</div>
+      <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-        <canvas id="s-sysmem-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
+        <div style="width:45px;height:45px;flex-shrink:0;">
+          <canvas id="s-sysmem-canvas" width="45" height="45" style="display:block;width:45px;height:45px;"></canvas>
+        </div>
         <div style="display:flex;flex-direction:column;gap:1px;">
-          <div class="metric-value green" id="s-sysmem" style="font-size:14px;">–</div>
+          <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
           <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
         </div>
       </div>
     </div>
     <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
-      <div class="metric-label">Disk Usage</div>
+      <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-        <canvas id="s-disk-canvas" width="36" height="36" style="flex-shrink:0;"></canvas>
+        <div style="width:45px;height:45px;flex-shrink:0;">
+          <canvas id="s-disk-canvas" width="45" height="45" style="display:block;width:45px;height:45px;"></canvas>
+        </div>
         <div style="display:flex;flex-direction:column;gap:1px;">
-          <div class="metric-value" id="s-disk" style="font-size:14px;">–</div>
+          <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
           <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
         </div>
       </div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Uptime</div>
+      <div class="metric-label"><i data-lucide="clock" style="color:var(--green)"></i>Uptime</div>
       <div class="metric-value green" id="s-uptime">–</div>
       <div class="metric-sub" id="s-load">load –</div>
     </div>
-    <div class="metric-card" style="min-width:160px;" onclick="switchTab('network')">
-      <div class="metric-label">Network</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
-        <canvas id="s-nw-canvas" width="90" height="28" style="flex-shrink:0;"></canvas>
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green);white-space:nowrap;" id="s-nw-in">– KB/s</div>
-          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);white-space:nowrap;"  id="s-nw-out">– KB/s</div>
-        </div>
+    <div class="metric-card" style="min-width:0;overflow:hidden;" onclick="switchTab('network')">
+      <div class="metric-label"><i data-lucide="network" style="color:var(--cyan)"></i>Network</div>
+      <canvas id="s-nw-canvas" width="120" height="28" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
+      <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
+        <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
+        <span style="color:var(--text3);">·</span>
+        <span id="s-nw-out" style="color:var(--cyan);">↑ – KB/s</span>
       </div>
-      <div class="metric-sub" id="s-nw-sub">↓ in · ↑ out</div>
     </div>
   </div>
 
@@ -2749,6 +2755,7 @@ let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
     document.getElementById('sidebar').classList.add('expanded');
   }
   updateSidebarToggleLabel();
+  if (window.lucide) lucide.createIcons();
 })();
 let procView = 'flat';
 let procSort = { key: 'cpu', dir: -1 };
@@ -3033,8 +3040,8 @@ function renderSummary() {
   const txKBs = s.netOutKBs || 0;
   summaryNwRx.push(rxKBs); if (summaryNwRx.length > SUMMARY_NW_LEN) summaryNwRx.shift();
   summaryNwTx.push(txKBs); if (summaryNwTx.length > SUMMARY_NW_LEN) summaryNwTx.shift();
-  el('s-nw-in').textContent  = rxKBs.toFixed(2) + ' KB/s';
-  el('s-nw-out').textContent = txKBs.toFixed(2) + ' KB/s';
+  el('s-nw-in').textContent  = '↓ ' + rxKBs.toFixed(2) + ' KB/s';
+  el('s-nw-out').textContent = '↑ ' + txKBs.toFixed(2) + ' KB/s';
   drawSummaryNwSparkline();
 
   // Container count + compose breakdown
