@@ -1482,6 +1482,8 @@
     display: flex; align-items: center; gap: 10px;
     padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    overflow-x: auto;
+    min-height: 0;
   }
   .view-toggle {
     display: flex; gap: 2px; background: var(--bg3);
@@ -1496,7 +1498,7 @@
   .view-btn.active { background: var(--accent); color: white; }
   .toolbar-spacer { flex: 1; }
   .toolbar-info { font-family: var(--mono); font-size: 12px; color: var(--text3); }
-  .toolbar-right { display:flex; align-items:center; gap:8px; }
+  .toolbar-right { display:flex; align-items:center; gap:8px; flex-shrink: 0; }
   .toolbar-refresh-btn {
     padding: 3px 8px; border-radius: 6px;
     border: 1px solid var(--border2); background: none;
