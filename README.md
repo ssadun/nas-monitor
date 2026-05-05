@@ -56,7 +56,7 @@ cd nas-monitor
 
 ### 2. Set up credentials
 
-Run this once to create a hashed `credentials.json` file:
+Run this once to create a hashed `data/credentials.json` file:
 
 ```bash
 node -e "
@@ -66,12 +66,12 @@ const username = 'admin';      // change this
 const password = 'yourpassword'; // change this
 const salt = crypto.randomBytes(32).toString('hex');
 const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-fs.writeFileSync('credentials.json', JSON.stringify({ username, passwordHash: hash, salt }, null, 2));
-console.log('credentials.json created');
+fs.writeFileSync('data/credentials.json', JSON.stringify({ username, passwordHash: hash, salt }, null, 2));
+console.log('data/credentials.json created');
 "
 ```
 
-Alternatively, pass credentials via environment variables on first launch and they will be automatically migrated to `credentials.json`:
+Alternatively, pass credentials via environment variables on first launch and they will be automatically migrated to `data/credentials.json`:
 
 ```bash
 AUTH_USER=admin AUTH_PASS=yourpassword node server.js
@@ -115,7 +115,7 @@ nohup node /volume1/system/nas-monitor/server.js > /volume1/system/nas-monitor/n
 nas-monitor/
 ├── server.js                 # Single-file Node.js backend
 ├── index.html                # Single-file frontend (served by server.js)
-├── credentials.json          # Hashed login credentials (auto-created)
+├── data/credentials.json     # Hashed login credentials (auto-created)
 ├── category-defs.json        # Custom container category definitions
 ├── category-assignments.json # Container → category mappings
 └── disk-history.json         # Historical disk usage snapshots
@@ -238,7 +238,7 @@ Per-interface network statistics:
 
 ## 🔒 Authentication
 
-Credentials are stored in `credentials.json` using **PBKDF2-SHA512** with 100,000 iterations and a 32-byte random salt — never in plain text.
+Credentials are stored in `data/credentials.json` using **PBKDF2-SHA512** with 100,000 iterations and a 32-byte random salt — never in plain text.
 
 ```json
 {
@@ -326,7 +326,7 @@ The interactive container console uses **WebSockets** (`/ws/console/:id`) on the
 | `AUTH_USER` | *(none)* | Username for first-run credential migration |
 | `AUTH_PASS` | *(none)* | Password for first-run credential migration |
 
-> After `credentials.json` is created, environment variables are no longer needed.
+> After `data/credentials.json` is created, environment variables are no longer needed.
 
 ---
 

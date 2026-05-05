@@ -140,7 +140,8 @@ function warnThresholdMs() {
 }
 
 // ─── Credentials file (PBKDF2-hashed) ────────────────────────────────────────
-const CREDENTIALS_FILE = path.join(__dirname, 'credentials.json');
+const CREDENTIALS_FILE = path.join(__dirname, 'data', 'credentials.json');
+const LEGACY_CREDENTIALS_FILE = path.join(__dirname, 'credentials.json');
 const PBKDF2_ITER  = 100_000;
 const PBKDF2_LEN   = 64;
 const PBKDF2_ALGO  = 'sha512';
@@ -154,13 +155,31 @@ function loadCredentials() {
     const data = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf8'));
     if (data.username && data.passwordHash && data.salt) return data;
   } catch {}
+
+  if (!fs.existsSync(CREDENTIALS_FILE) && fs.existsSync(LEGACY_CREDENTIALS_FILE)) {
+    try {
+      const legacy = JSON.parse(fs.readFileSync(LEGACY_CREDENTIALS_FILE, 'utf8'));
+      if (legacy.username && legacy.passwordHash && legacy.salt) {
+        try {
+          fs.mkdirSync(path.dirname(CREDENTIALS_FILE), { recursive: true });
+          fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(legacy, null, 2), 'utf8');
+          fs.unlinkSync(LEGACY_CREDENTIALS_FILE);
+        } catch {}
+        return legacy;
+      }
+    } catch {}
+  }
+
   // Fall back to env vars — migrate them into the file on first use
   const user = process.env.AUTH_USER || process.env.NAS_MONITOR_USER || '';
   const pass = process.env.AUTH_PASS || process.env.NAS_MONITOR_PASS || '';
   if (user && pass) {
     const salt = crypto.randomBytes(32).toString('hex');
     const creds = { username: user, passwordHash: hashPassword(pass, salt), salt };
-    try { fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), 'utf8'); } catch {}
+    try {
+      fs.mkdirSync(path.dirname(CREDENTIALS_FILE), { recursive: true });
+      fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(creds, null, 2), 'utf8');
+    } catch {}
     return creds;
   }
   return null; // no credentials configured → auth disabled

@@ -51,7 +51,7 @@ Volume1/system/nas-monitor/
 ├── server.js                 # Main Node.js server (with health check added)
 ├── service.sh               # Service management script (start/stop/status/restart)
 ├── index.html               # Frontend dashboard
-├── credentials.json         # Hashed login credentials (auto-created)
+├── data/credentials.json    # Hashed login credentials (auto-created)
 ├── category-defs.json       # Container category definitions
 ├── category-assignments.json # Container → category mappings
 ├── disk-history.json        # Historical disk usage snapshots
