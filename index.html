@@ -2751,21 +2751,6 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 let allData = { processes: [], containers: [], summary: {} };
 let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
-// Apply restored tab to DOM before first render
-(function initTab() {
-  const tabNames = ['containers', 'processes', 'disk', 'network', 'categories'];
-  document.querySelectorAll('.sidebar-item').forEach((b, i) => b.classList.toggle('active', tabNames[i] === currentTab));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + currentTab));
-
-  // Restore sidebar state
-  const sidebarExpanded = sessionStorage.getItem('sidebar-expanded') === 'true';
-  if (sidebarExpanded) {
-    document.body.classList.add('sidebar-expanded');
-    document.getElementById('sidebar').classList.add('expanded');
-  }
-  updateSidebarToggleLabel();
-  if (window.lucide) lucide.createIcons();
-})();
 let procView = 'flat';
 let procSort = { key: 'cpu', dir: -1 };
 let containerSort = { key: 'name', dir: 1 };
@@ -8032,5 +8017,6 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 }
 
 </script>
+<script src="/modules/menu.js"></script>
 </body>
 </html>

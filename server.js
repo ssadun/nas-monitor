@@ -1844,6 +1844,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/modules/menu.js') {
+    try {
+      const menuScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu.js'), 'utf8');
+      res.writeHead(200, {
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'no-cache',
+      });
+      res.end(menuScript);
+    } catch (e) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not found');
+    }
+    return;
+  }
+
   if (url.pathname === '/favicon.ico') {
     try {
       if (fs.existsSync(FAVICON_FILE)) {
