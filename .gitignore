@@ -4,7 +4,7 @@ Thumbs.db
 data/category-assignments.json
 data/credentials.json
 data/credentials*.json
-*.log
+logs/*.log
 *.bak
 *.disabled
 data/disk-history.json

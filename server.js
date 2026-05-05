@@ -3848,7 +3848,7 @@ async function healthCheck(req, res) {
   }
 }
 
-const PRUNE_LOG_FILE = path.join(__dirname, 'prune.log');
+const PRUNE_LOG_FILE = path.join(__dirname, 'logs', 'prune.log');
 const PRUNE_LOG_RETAIN_DAYS = 30;
 
 function appendPruneLog(lines) {

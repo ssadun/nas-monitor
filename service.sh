@@ -10,7 +10,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_FILE="${SCRIPT_DIR}/nas-monitor.pid"
-LOG_FILE="${SCRIPT_DIR}/nas-monitor.log"
+LOG_FILE="${SCRIPT_DIR}/logs/nas-monitor.log"
 SERVER_SCRIPT="${SCRIPT_DIR}/server.js"
 
 SERVICE_NAME="NAS Monitor"
@@ -131,6 +131,7 @@ do_start() {
 
   # Start the server in background
   cd "$SCRIPT_DIR"
+  mkdir -p logs
   nohup "$NODE" "$SERVER_SCRIPT" >> "$LOG_FILE" 2>&1 &
   local SERVER_PID=$!
   echo $SERVER_PID > "$PID_FILE"
