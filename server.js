@@ -185,10 +185,37 @@ function checkCredentials(username, password) {
 
 const SESSION_COOKIE = 'nas-monitor-session';
 const SESSION_TTL = 1000 * 60 * 60 * 4; // 4h
+const SESSIONS_FILE = path.join(__dirname, 'logs', 'sessions.json');
 const sessions = new Map();
 
 function isAuthEnabled() {
   return Boolean(appSettings.authenticationType) && Boolean(loadCredentials());
+}
+
+function loadSessionsFromFile() {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const data = fs.readFileSync(SESSIONS_FILE, 'utf8');
+      const sessionsData = JSON.parse(data);
+      for (const [token, sessionData] of Object.entries(sessionsData)) {
+        sessions.set(token, sessionData);
+      }
+    }
+  } catch (e) {
+    logError('Failed to load sessions from file', { error: e.message });
+  }
+}
+
+function saveSessionsToFile() {
+  try {
+    const data = {};
+    for (const [token, sessionData] of sessions.entries()) {
+      data[token] = sessionData;
+    }
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data), 'utf8');
+  } catch (e) {
+    logError('Failed to save sessions to file', { error: e.message });
+  }
 }
 
 function parseCookies(req) {
@@ -211,6 +238,7 @@ function createSession(username = '') {
     expiresAt: Date.now() + SESSION_TTL,
     username: String(username || '').trim() || 'unknown',
   });
+  saveSessionsToFile();
   return token;
 }
 
@@ -224,10 +252,12 @@ function validateSessionId(token) {
   const expiresAt = typeof data === 'number' ? data : Number(data.expiresAt || 0);
   if (!expiresAt || expiresAt < Date.now()) {
     sessions.delete(token);
+    saveSessionsToFile();
     return false;
   }
   const username = typeof data === 'number' ? 'unknown' : (data.username || 'unknown');
   sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, username });
+  saveSessionsToFile();
   return true;
 }
 
@@ -252,10 +282,15 @@ function requestUser(req) {
 // periodic cleanup for expired sessions
 setInterval(() => {
   const now = Date.now();
+  let changed = false;
   for (const [token, data] of sessions.entries()) {
     const expiry = typeof data === 'number' ? data : Number(data.expiresAt || 0);
-    if (expiry < now) sessions.delete(token);
+    if (expiry < now) {
+      sessions.delete(token);
+      changed = true;
+    }
   }
+  if (changed) saveSessionsToFile();
 }, 60 * 60 * 1000);
 
 function setAuthCookie(res, token) {
@@ -2182,6 +2217,12 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/logout') {
     logInfo('User logout', { user: reqUser, remoteIp: req.socket?.remoteAddress || '' });
+    const token = getSessionId(req);
+    if (token) {
+      sessions.delete(token);
+      saveSessionsToFile();
+    }
+    auditLog('logout', { user: reqUser, status: 'success' }, req);
     clearAuthCookie(res);
     res.writeHead(302, { Location: '/login' });
     res.end();
@@ -4248,6 +4289,9 @@ server.on('upgrade', (req, socket, head) => {
     try { socket.end(); } catch {}
   });
 });
+
+// Load persisted sessions on startup
+loadSessionsFromFile();
 
 server.listen(PORT, '0.0.0.0', () => {
   logInfo('NAS Monitor backend started', {
