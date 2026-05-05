@@ -10,4 +10,4 @@ logs/*.log
 data/disk-history.json
 IMPROVEMENT.md
 nas-monitor.pid
-pwa-icon-whale.svg
+pwa/pwa-icon-whale.svg

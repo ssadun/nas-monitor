@@ -8,6 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const auth = require('./modules/auth.js');
+const header = require('./modules/header.js');
 const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
@@ -344,10 +345,11 @@ const DOCKER_COMPOSE_PATHS = [
   '/bin/docker-compose',
 ];
 const FAVICON_FILE = path.join(__dirname, 'favicon.ico');
-const MANIFEST_FILE = path.join(__dirname, 'manifest.webmanifest');
-const SERVICE_WORKER_FILE = path.join(__dirname, 'sw.js');
-const PWA_ICON_FILE = path.join(__dirname, 'pwa-icon.svg');
-const PWA_ICON_WHALE_FILE = path.join(__dirname, 'pwa-icon-whale.svg');
+const PWA_DIR = path.join(__dirname, 'pwa');
+const MANIFEST_FILE = path.join(PWA_DIR, 'manifest.webmanifest');
+const SERVICE_WORKER_FILE = path.join(PWA_DIR, 'sw.js');
+const PWA_ICON_FILE = path.join(PWA_DIR, 'pwa-icon.svg');
+const PWA_ICON_WHALE_FILE = path.join(PWA_DIR, 'pwa-icon-whale.svg');
 const COMPOSE_BACKUP_ROOT = process.env.COMPOSE_BACKUP_ROOT || '/volume1/docker/_backups';
 const COMPOSE_FILE_CANDIDATES = ['compose.yaml', 'compose.yml', 'docker-compose.yaml', 'docker-compose.yml'];
 const COMPOSE_DISCOVERY_TTL_MS = 30 * 1000;
@@ -1845,32 +1847,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/modules/menu.js') {
-    try {
-      const menuScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu.js'), 'utf8');
-      res.writeHead(200, {
-        'Content-Type': 'application/javascript',
-        'Cache-Control': 'no-cache',
-      });
-      res.end(menuScript);
-    } catch (e) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not found');
-    }
+    const menuScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu.js'), 'utf8');
+    header.sendJavaScript(res, menuScript);
     return;
   }
 
   if (url.pathname === '/favicon.ico') {
-    try {
-      if (fs.existsSync(FAVICON_FILE)) {
-        res.writeHead(200, {
-          'Content-Type': 'image/x-icon',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(fs.readFileSync(FAVICON_FILE));
-        return;
-      }
-    } catch {}
-
+    if (header.sendFile(res, FAVICON_FILE, 'image/x-icon', null)) return;
     res.writeHead(200, {
       'Content-Type': 'image/svg+xml; charset=utf-8',
       'Cache-Control': 'no-cache',
@@ -1879,67 +1862,27 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname === '/manifest.webmanifest') {
-    try {
-      if (fs.existsSync(MANIFEST_FILE)) {
-        res.writeHead(200, {
-          'Content-Type': 'application/manifest+json; charset=utf-8',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(fs.readFileSync(MANIFEST_FILE, 'utf8'));
-        return;
-      }
-    } catch {}
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('manifest not found');
+  if (url.pathname === '/pwa/manifest.webmanifest') {
+    if (header.sendFile(res, MANIFEST_FILE, 'application/manifest+json; charset=utf-8')) return;
+    header.sendNotFound(res, 'manifest not found');
     return;
   }
 
-  if (url.pathname === '/sw.js') {
-    try {
-      if (fs.existsSync(SERVICE_WORKER_FILE)) {
-        res.writeHead(200, {
-          'Content-Type': 'application/javascript; charset=utf-8',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(fs.readFileSync(SERVICE_WORKER_FILE, 'utf8'));
-        return;
-      }
-    } catch {}
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('service worker not found');
+  if (url.pathname === '/pwa/sw.js') {
+    if (header.sendFile(res, SERVICE_WORKER_FILE, 'application/javascript; charset=utf-8')) return;
+    header.sendNotFound(res, 'service worker not found');
     return;
   }
 
-  if (url.pathname === '/pwa-icon.svg') {
-    try {
-      if (fs.existsSync(PWA_ICON_FILE)) {
-        res.writeHead(200, {
-          'Content-Type': 'image/svg+xml; charset=utf-8',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(fs.readFileSync(PWA_ICON_FILE, 'utf8'));
-        return;
-      }
-    } catch {}
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('icon not found');
+  if (url.pathname === '/pwa/pwa-icon.svg') {
+    if (header.sendFile(res, PWA_ICON_FILE, 'image/svg+xml; charset=utf-8')) return;
+    header.sendNotFound(res, 'icon not found');
     return;
   }
 
-  if (url.pathname === '/pwa-icon-whale.svg') {
-    try {
-      if (fs.existsSync(PWA_ICON_WHALE_FILE)) {
-        res.writeHead(200, {
-          'Content-Type': 'image/svg+xml; charset=utf-8',
-          'Cache-Control': 'no-cache',
-        });
-        res.end(fs.readFileSync(PWA_ICON_WHALE_FILE, 'utf8'));
-        return;
-      }
-    } catch {}
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('icon not found');
+  if (url.pathname === '/pwa/pwa-icon-whale.svg') {
+    if (header.sendFile(res, PWA_ICON_WHALE_FILE, 'image/svg+xml; charset=utf-8')) return;
+    header.sendNotFound(res, 'icon not found');
     return;
   }
 

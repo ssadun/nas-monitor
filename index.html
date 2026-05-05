@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NAS Monitor</title>
 <link rel="icon" href="/favicon.ico"/>
-<link rel="manifest" href="/manifest.webmanifest?v=2"/>
+<link rel="manifest" href="/pwa/manifest.webmanifest?v=2"/>
 <meta name="theme-color" content="#0d0f14"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
@@ -8010,7 +8010,7 @@ async function confirmDeleteNetwork() {
 if ('serviceWorker' in navigator && window.isSecureContext) {
   window.addEventListener('load', () => {
     initTableResize();
-    navigator.serviceWorker.register('/sw.js').catch(err => {
+    navigator.serviceWorker.register('/pwa/sw.js', { scope: '/' }).catch(err => {
       console.warn('Service worker registration failed:', err);
     });
   });
