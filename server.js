@@ -1904,11 +1904,11 @@ async function collectSystemSummary() {
 
 // ─── Cache layer ──────────────────────────────────────────────────────────────
 
-const DISK_HISTORY_FILE = path.join(__dirname, 'disk-history.json');
+const DISK_HISTORY_FILE = path.join(__dirname, 'data', 'disk-history.json');
 const DISK_HISTORY_MAX = 20;
 
-const CAT_ASSIGNMENTS_FILE = path.join(__dirname, 'category-assignments.json');
-const CAT_DEFS_FILE = path.join(__dirname, 'category-defs.json');
+const CAT_ASSIGNMENTS_FILE = path.join(__dirname, 'data', 'category-assignments.json');
+const CAT_DEFS_FILE = path.join(__dirname, 'data', 'category-defs.json');
 
 const DEFAULT_CAT_DEFS = [
   { id: 'media',       label: 'Media',       icon: '🎬', color: '#a78bfa', dot: '#8b5cf6' },

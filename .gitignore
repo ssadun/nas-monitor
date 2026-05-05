@@ -1,13 +1,13 @@
 @eaDir
 .DS_Store
 Thumbs.db
-category-assignments.json
-credentials.json
-credentials*.json
+data/category-assignments.json
+data/credentials.json
+data/credentials*.json
 *.log
 *.bak
 *.disabled
-disk-history.json
+data/disk-history.json
 IMPROVEMENT.md
 nas-monitor.pid
 pwa-icon-whale.svg
