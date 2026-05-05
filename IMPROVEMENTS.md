@@ -10,8 +10,8 @@
 - **Rate Limiting**  
   Protect `/login` against brute-force attempts with IP-based rate limiting (e.g. 5 attempts per 15 minutes, then lockout)
 
-- **Audit Logging**  
-  Track user actions (container start/stop, credential changes, prune operations) with timestamps and IP addresses in `audit.log`
+- ✅ **Audit Logging**  
+  Implemented in `server.js` via `auditLog()` and writing user actions to `logs/audit.log`
 
 - **Log Rotation**  
   Implement automatic log rotation for `nas-monitor.log` to prevent disk space issues; compress old logs and keep 10 latest files
@@ -50,7 +50,15 @@
   Move configuration into a separate `config.js` file for better maintainability
 
 - **Modularize Codebase**  
-  Split `server.js` into modules: `auth.js`, `docker.js`, `monitor.js`, `api.js`, `web.js`
+  Split `server.js` into modules: `auth.js`, `api.js`, `header.js`, `docker.js`, `categories.js`, `monitor.js`, `disk.js`, `network.js`, `web.js`
+  - `auth.js` for authentication & session handling
+  - `api.js` for API routing and handlers
+  - `header.js` for HTTP headers, static assets, and page metadata
+  - `docker.js` for container action and volume/network management
+  - `categories.js` for container category logic
+  - `monitor.js` for processes tab and system statistics workers
+  - `disk.js` for disk usage, history, and filesystem monitoring
+  - `network.js` for interface/network statistics and charts
 
 ## Documentation & Packaging
 

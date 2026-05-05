@@ -1,6 +1,6 @@
 # 🐋 NAS Monitor
 
-A real-time system monitoring dashboard for **Synology NAS** (and other Linux-based systems running Docker). Built as a single self-contained Node.js process — no frameworks, no build step, no Docker required to run it.
+A real-time system monitoring dashboard for **Synology NAS** (and other Linux-based systems running Docker). Built as a lightweight Node.js app with a modular backend — no frameworks, no build step, no Docker required to run it.
 
 ![Dashboard Preview](https://img.shields.io/badge/platform-Synology%20NAS-blue) ![Node.js](https://img.shields.io/badge/runtime-Node.js-green) ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
@@ -113,15 +113,18 @@ nohup node /volume1/system/nas-monitor/server.js > /volume1/system/nas-monitor/n
 
 ```
 nas-monitor/
-├── server.js                 # Single-file Node.js backend
-├── index.html                # Single-file frontend (served by server.js)
+├── server.js                 # Node.js backend entry point
+├── modules/                  # Backend helper modules
+│   ├── auth.js               # Authentication/session management
+│   └── menu.js               # Sidebar/tab UI logic
+├── index.html                # Frontend dashboard (served by server.js)
 ├── data/credentials.json     # Hashed login credentials (auto-created)
 ├── category-defs.json        # Custom container category definitions
 ├── category-assignments.json # Container → category mappings
 └── disk-history.json         # Historical disk usage snapshots
 ```
 
-> All data files are created automatically on first run. You only need `server.js` and `index.html` to get started.
+> All data files are created automatically on first run. The backend entry point is `server.js`; auth and UI helpers live in `modules/`.
 
 ---
 
