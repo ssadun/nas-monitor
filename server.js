@@ -107,6 +107,34 @@ function logInfo(message, meta) { writeLog('INFO', message, meta); }
 function logWarn(message, meta) { writeLog('WARN', message, meta); }
 function logError(message, meta) { writeLog('ERROR', message, meta); }
 
+function getClientIp(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+         req.headers['x-real-ip'] ||
+         req.socket.remoteAddress || 'unknown';
+}
+
+function auditLog(action, details, req) {
+  const ts = new Date().toISOString();
+  const ip = getClientIp(req);
+  const user = details.user || 'unknown';
+  const status = details.status || 'success';
+  const auditLine = JSON.stringify({
+    timestamp: ts,
+    action,
+    user,
+    ip,
+    status,
+    details: details.details || ''
+  });
+
+  try {
+    fs.appendFileSync(path.join(__dirname, 'logs', 'audit.log'), auditLine + '\n');
+  } catch (e) {
+    logError('Failed to write audit log', { error: e.message });
+  }
+}
+
+
 function warnThresholdMs() {
   return Math.max(0, Number(appSettings.warnThresholdSeconds || 3) * 1000);
 }
@@ -2554,8 +2582,10 @@ const server = http.createServer(async (req, res) => {
         composeDiscoveryCache = { ts: 0, projects: [] };
         await refreshCache();
 
+        auditLog('compose_create', { user: reqUser, details: name, status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, composeFile, openTarget }));
       } catch (e) {
+        auditLog('compose_create', { user: reqUser, details: name, status: 'failed', error: e.message }, req);
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -2832,14 +2862,17 @@ const server = http.createServer(async (req, res) => {
         try { await execAsync(`"${DOCKER}" stop ${id}`, { timeout: 15000 }); } catch {}
         const { stdout, stderr } = await execAsync(`"${DOCKER}" rm ${id}`, { timeout: 10000 });
         logInfo('Container action completed', { user: reqUser, action, id });
+        auditLog('container_' + action, { user: reqUser, details: id, status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, output: (stdout + stderr).trim() }));
       } else {
         const { stdout, stderr } = await execAsync(`"${DOCKER}" ${action} ${id}`, { timeout: 15000 });
         logInfo('Container action completed', { user: reqUser, action, id });
+        auditLog('container_' + action, { user: reqUser, details: id, status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, output: (stdout + stderr).trim() }));
       }
     } catch (e) {
       logError('Container action failed', { user: reqUser, action, id, error: e.message });
+      auditLog('container_' + action, { user: reqUser, details: id, status: 'failed', error: e.message }, req);
       res.end(JSON.stringify({ ok: false, error: e.message }));
     }
     return;
@@ -3019,8 +3052,10 @@ const server = http.createServer(async (req, res) => {
       try {
         const selected = JSON.parse(body);
         const summary = await runPrune(selected);
+        auditLog('prune_run', { user: reqUser, details: Object.keys(selected).filter(k => selected[k]).join(','), status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, summary }));
       } catch (e) {
+        auditLog('prune_run', { user: reqUser, status: 'failed', error: e.message }, req);
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -3111,6 +3146,7 @@ const server = http.createServer(async (req, res) => {
         const currentUser = creds ? creds.username : '';
         if (creds && !checkCredentials(currentUser, currentPassword || '')) {
           logWarn('Credential change failed due to invalid current password', { user: reqUser });
+          auditLog('credentials_change', { user: reqUser, status: 'failed', details: 'invalid current password' }, req);
           res.end(JSON.stringify({ ok: false, error: 'Current password is incorrect.' }));
           return;
         }
@@ -3124,6 +3160,7 @@ const server = http.createServer(async (req, res) => {
         }
         saveCredentials(newUsername.trim(), newPassword);
         logInfo('Credentials updated', { user: reqUser, newUsername: newUsername.trim() });
+        auditLog('credentials_change', { user: reqUser, details: newUsername.trim(), status: 'success' }, req);
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {
         logError('Failed to change credentials', { error: e.message, user: reqUser });
@@ -3753,9 +3790,11 @@ const server = http.createServer(async (req, res) => {
         cmd += ` ${shellQuote(safeName)}`;
         const { stdout } = await execAsync(cmd, { timeout: 15000 });
         logInfo('Docker volume created', { user: reqUser, name: safeName, driver: driver || 'local' });
+        auditLog('volume_create', { user: reqUser, details: safeName, status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, id: String(stdout || '').trim(), name: safeName }));
       } catch (e) {
         logError('Failed to create docker volume', { user: reqUser, error: e.message || 'unknown error' });
+        auditLog('volume_create', { user: reqUser, status: 'failed', error: e.message }, req);
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -3777,9 +3816,11 @@ const server = http.createServer(async (req, res) => {
         }
         await execAsync(`"${DOCKER}" volume rm ${shellQuote(safeName)}`, { timeout: 15000 });
         logInfo('Docker volume deleted', { user: reqUser, name: safeName });
+        auditLog('volume_delete', { user: reqUser, details: safeName, status: 'success' }, req);
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {
         logError('Failed to delete docker volume', { user: reqUser, error: e.message || 'unknown error' });
+        auditLog('volume_delete', { user: reqUser, details: safeName, status: 'failed', error: e.message }, req);
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
