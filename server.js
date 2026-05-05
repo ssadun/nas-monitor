@@ -184,9 +184,14 @@ function checkCredentials(username, password) {
 }
 
 const SESSION_COOKIE = 'nas-monitor-session';
-const SESSION_TTL = 1000 * 60 * 60 * 4; // 4h
+const SESSION_TTL_HOURS = 4; // default, can be overridden by settings.sessionTimeoutHours
 const SESSIONS_FILE = path.join(__dirname, 'logs', 'sessions.json');
 const sessions = new Map();
+
+function getSessionTTL() {
+  const hours = Number(appSettings.sessionTimeoutHours) || SESSION_TTL_HOURS;
+  return Math.max(1, hours) * 1000 * 60 * 60; // convert hours to milliseconds
+}
 
 function isAuthEnabled() {
   return Boolean(appSettings.authenticationType) && Boolean(loadCredentials());
@@ -235,7 +240,7 @@ function getSessionId(req) {
 function createSession(username = '') {
   const token = crypto.randomBytes(24).toString('hex');
   sessions.set(token, {
-    expiresAt: Date.now() + SESSION_TTL,
+    expiresAt: Date.now() + getSessionTTL(),
     username: String(username || '').trim() || 'unknown',
   });
   saveSessionsToFile();
@@ -256,7 +261,7 @@ function validateSessionId(token) {
     return false;
   }
   const username = typeof data === 'number' ? 'unknown' : (data.username || 'unknown');
-  sessions.set(token, { expiresAt: Date.now() + SESSION_TTL, username });
+  sessions.set(token, { expiresAt: Date.now() + getSessionTTL(), username });
   saveSessionsToFile();
   return true;
 }
@@ -294,7 +299,7 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 function setAuthCookie(res, token) {
-  const expires = new Date(Date.now() + SESSION_TTL).toUTCString();
+  const expires = new Date(Date.now() + getSessionTTL()).toUTCString();
   res.setHeader('Set-Cookie', `${SESSION_COOKIE}=${token}; Expires=${expires}; HttpOnly; Path=/; SameSite=Strict`);
 }
 
