@@ -2,11 +2,11 @@
 // menu.js — Sidebar and tab navigation logic for NAS Monitor
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'categories'];
+const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'categories', 'settings'];
 
 (function initSidebar() {
-  document.querySelectorAll('.sidebar-item').forEach((button, index) => {
-    button.classList.toggle('active', SIDEBAR_TAB_NAMES[index] === currentTab);
+  document.querySelectorAll('.sidebar-item[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === currentTab);
   });
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + currentTab);
@@ -31,8 +31,8 @@ function logout() {
 function switchTab(name) {
   currentTab = name;
   sessionStorage.setItem('nas-monitor-tab', name);
-  document.querySelectorAll('.sidebar-item').forEach((button, index) => {
-    button.classList.toggle('active', SIDEBAR_TAB_NAMES[index] === name);
+  document.querySelectorAll('.sidebar-item[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === name);
   });
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + name);

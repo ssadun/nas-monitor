@@ -220,23 +220,23 @@ function sendLoginPage(res, message = '') {
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:      #0d0f14;
-    --bg2:     #141720;
-    --bg3:     #1c2030;
-    --bg4:     #242840;
+    --main-bg:      #0d0f14;
+    --menu-bg:     #141720;
+    --card-bg:     #1c2030;
+    --card-hover-bg:     #242840;
     --border:  #2a2f4a;
     --border2: #353b5e;
     --text:    #e2e8ff;
     --text2:   #8891b8;
     --text3:   #545b7a;
-    --accent:  #4f8ef7;
+    --blue:  #4f8ef7;
     --red:     #ef4444;
     --green:   #22c55e;
     --mono:    'JetBrains Mono', monospace;
     --sans:    'Space Grotesk', sans-serif;
   }
   html, body {
-    height: 100%; background: var(--bg);
+    height: 100%; background: var(--main-bg);
     color: var(--text); font-family: var(--sans);
   }
 
@@ -296,7 +296,7 @@ function sendLoginPage(res, message = '') {
   .logo-name {
     font-size: 22px; font-weight: 700; letter-spacing: -.3px;
   }
-  .logo-name span { color: var(--accent); }
+  .logo-name span { color: var(--blue); }
   .logo-sub {
     font-family: var(--mono); font-size: 11px;
     letter-spacing: 2px; text-transform: uppercase; color: var(--text3);
@@ -334,16 +334,16 @@ function sendLoginPage(res, message = '') {
     color: var(--text3); font-size: 14px; pointer-events: none;
     transition: color .2s;
   }
-  .field:focus-within .input-icon { color: var(--accent); }
+  .field:focus-within .input-icon { color: var(--blue); }
   input[type=text], input[type=password] {
     width: 100%; padding: 11px 12px 11px 38px;
-    background: var(--bg3); border: 1px solid var(--border2);
+    background: var(--card-bg); border: 1px solid var(--border2);
     border-radius: 10px; color: var(--text);
     font-family: var(--sans); font-size: 14px;
     outline: none; transition: border-color .2s, box-shadow .2s;
   }
   input:focus {
-    border-color: var(--accent);
+    border-color: var(--blue);
     box-shadow: 0 0 0 3px rgba(79,142,247,.15);
   }
   input::placeholder { color: var(--text3); }
