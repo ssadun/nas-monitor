@@ -19,7 +19,7 @@ const execFileAsync = promisify(execFile);
 const PORT = process.env.PORT || 3232;
 
 // ─── App settings + logging ─────────────────────────────────────────────────
-const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
 const LEGACY_SETTINGS_FILE = path.join(__dirname, 'setting.json');
 /**
  * @typedef {Object} AppSettings

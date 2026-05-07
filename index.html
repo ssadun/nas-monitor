@@ -635,7 +635,7 @@
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;padding:24px;overflow:auto;">
       <div style="margin-bottom:18px;">
         <h2 style="font-size:20px;font-weight:700;color:var(--text);">Application Settings</h2>
-        <p style="color:var(--text3);font-size:13px;max-width:760px;margin-top:6px;">Values are loaded from <code style="color:var(--blue);font-family:var(--mono);">settings.json</code>. Update the form and save to persist changes.</p>
+        <p style="color:var(--text3);font-size:13px;max-width:760px;margin-top:6px;">Values are loaded from <code style="color:var(--blue);font-family:var(--mono);">data/settings.json</code>. Update the form and save to persist changes.</p>
       </div>
 
       <div id="settings-message" style="display:none;padding:14px;border-radius:12px;margin-bottom:18px;font-family:var(--mono);font-size:13px;"></div>
@@ -695,7 +695,7 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button type="submit" class="expand-all-btn toolbar-main-btn" style="background:var(--blue);border-color:rgba(79,142,247,.4);color:#fff;">Save Settings</button>
           <button type="button" class="expand-all-btn toolbar-main-btn" onclick="loadSettingsForm()" style="background:var(--card-bg);border-color:rgba(79,142,247,.2);color:var(--text);">Reload</button>
-          <span style="color:var(--text3);font-size:12px;">Saved values are written back to <code style="color:var(--blue);font-family:var(--mono);">settings.json</code>.</span>
+          <span style="color:var(--text3);font-size:12px;">Saved values are written back to <code style="color:var(--blue);font-family:var(--mono);">data/settings.json</code>.</span>
         </div>
       </form>
     </div>

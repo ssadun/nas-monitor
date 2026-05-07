@@ -31,7 +31,7 @@
   `/api/monitor/self` - expose the monitor's own CPU/memory/uptime metrics
 
 - **Terminal into Containers**  
-  Re-enable WebSocket terminal for interactive container console access with xterm.js (currently partial implementation)
+  Re-enable WebSocket terminal for interactive container console access with xterm.js
 
 - **Health Check Endpoint** (partial - started)  
   `/api/health` - check Docker availability, credential file existence, disk space, and memory usage
