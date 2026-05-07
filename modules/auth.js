@@ -15,7 +15,7 @@ const PBKDF2_ALGO = 'sha512';
 
 const SESSION_COOKIE = 'nas-monitor-session';
 const SESSION_TTL_HOURS = 4; // default, can be overridden by settings.sessionTimeoutHours
-const SESSIONS_FILE = path.join(__dirname, '..', 'logs', 'sessions.json');
+const SESSIONS_FILE = path.join(__dirname, '..', 'data', 'sessions.json');
 
 const sessions = new Map();
 
