@@ -2320,30 +2320,30 @@
       <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
       <div class="metric-sub" id="s-cpu-sub">–</div>
     </div>
-    <div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
-      <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-        <div style="width:45px;height:45px;flex-shrink:0;">
-          <canvas id="s-sysmem-canvas" width="45" height="45" style="display:block;width:45px;height:45px;"></canvas>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
-          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
-        </div>
-      </div>
+<div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
+  <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+    <div style="width:42px;height:42px;flex-shrink:0;">
+      <canvas id="s-sysmem-canvas" width="42" height="42" style="display:block;width:42px;height:42px;"></canvas>
     </div>
-    <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
-      <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-        <div style="width:45px;height:45px;flex-shrink:0;">
-          <canvas id="s-disk-canvas" width="45" height="45" style="display:block;width:45px;height:45px;"></canvas>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
-          <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
-        </div>
-      </div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
+      <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
     </div>
+  </div>
+</div>
+<div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
+  <div class="metric-label"><i data-lucide="hard-drive" style="color:var--yellow)"></i>Disk Usage</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+    <div style="width:42px;height:42px;flex-shrink:0;">
+      <canvas id="s-disk-canvas" width="42" height="42" style="display:block;width:42px;height:42px;"></canvas>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
+      <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
+    </div>
+  </div>
+</div>
     <div class="metric-card">
       <div class="metric-label"><i data-lucide="clock" style="color:var(--green)"></i>Uptime</div>
       <div class="metric-value green" id="s-uptime">–</div>
