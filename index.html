@@ -526,7 +526,7 @@
   .status-dot.paused { background: var(--yellow); }
   .status-dot.configured { background: var(--yellow); box-shadow: 0 0 6px rgba(234,179,8,.45); }
   .status-dot.S { background: var(--green); }
-  .status-dot.R { background: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
+  .status-dot.R { background: #477ed9; box-shadow: 0 0 4px #477ed9; }
   .status-dot.D { background: var(--orange); }
   .status-dot.Z { background: var(--red); }
   .status-dot.T { background: var(--yellow); }
@@ -534,7 +534,7 @@
 
   .state-text { font-size: 12px; }
   .state-S { color: var(--green); }
-  .state-R { color: var(--cyan); }
+  .state-R { color: #477ed9; }
   .state-D { color: var(--orange); }
   .state-Z { color: var(--red); }
   .state-T { color: var(--yellow); }
@@ -557,7 +557,8 @@
   .green-text { color: var(--green); }
   .yellow-text { color: var(--yellow); }
   .red-text { color: var(--red); }
-  .cyan-text { color: var(--cyan); }
+  .cyan-text { color: #477ed9; }
+  .orange-text { color: var(--orange); }
   .accent-text { color: var(--accent); }
 
   /* ─── Container name ────────────────────────────────────── */
@@ -577,15 +578,15 @@
   .depends-on-arrow {
     color: var(--text3);
     font-size: 11px;
-    margin-right: 2px;
+    margin-right: 6px;
   }
   .port-link {
     display: inline-block;
-    color: var(--cyan);
+    color: #477ed9;
     font-family: var(--mono);
     font-size: 12px;
     padding: 1px 6px;
-    border: 1px solid rgba(6,182,212,.3);
+    border: 1px solid rgba(71,126,217,.3);
     border-radius: 4px;
     margin: 1px 2px 1px 0;
     cursor: pointer;
@@ -593,9 +594,9 @@
     transition: background .1s, border-color .1s;
   }
   .port-link:hover {
-    background: rgba(6,182,212,.12);
-    border-color: var(--cyan);
-    color: var(--cyan);
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
+    color: #477ed9;
   }
   .container-expand-btn {
     background: none; border: 1px solid var(--border);
@@ -604,7 +605,7 @@
     white-space: nowrap;
   }
   .container-expand-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .container-expand-btn.open { color: var(--cyan); border-color: var(--cyan); }
+  .container-expand-btn.open { color: #477ed9; border-color: #477ed9; }
 
   /* ─── Container action buttons ──────────────────────────── */
   .container-actions {
@@ -708,7 +709,7 @@
   .action-dropdown-item.restart:not(:disabled) { color: var(--yellow); }
   .action-dropdown-item.stop:not(:disabled) { color: var(--red); }
   .action-dropdown-item.archive:not(:disabled) { color: var(--accent); }
-  .action-dropdown-item.logs:not(:disabled) { color: var(--cyan); }
+  .action-dropdown-item.logs:not(:disabled) { color: #477ed9; }
   .action-dropdown-item.console:not(:disabled) { color: var(--green); }
   .action-dropdown-item.delete:not(:disabled) { color: var(--red); }
 
@@ -726,8 +727,8 @@
   .action-btn.stop:hover:not(:disabled)   { background: rgba(239,68,68,.12);   border-color: var(--red); }
   .action-btn.restart{ color: var(--yellow); }
   .action-btn.restart:hover:not(:disabled){ background: rgba(234,179,8,.12);   border-color: var(--yellow); }
-  .action-btn.logs    { color: var(--cyan); }
-  .action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);   border-color: var(--cyan); }
+  .action-btn.logs    { color: #477ed9; }
+  .action-btn.logs:hover:not(:disabled)    { background: rgba(71,126,217,.12);  border-color: #477ed9; }
   .action-btn.archive { color: var(--accent); }
   .action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.14); border-color: var(--accent); }
   .action-btn.console { color: var(--green); }
@@ -1233,13 +1234,14 @@
     font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
     color: var(--text3); font-family: var(--mono); margin-bottom: 5px;
   }
-  .newcompose-name-input {
+  .newcompose-input {
     width: 100%; box-sizing: border-box;
     background: var(--bg3); color: var(--text); border: 1px solid var(--border);
     border-radius: 8px; padding: 9px 12px; font-family: var(--mono); font-size: 13px;
     outline: none; transition: border-color .15s;
   }
-  .newcompose-name-input:focus { border-color: var(--accent); }
+  .newcompose-input:focus { border-color: var(--accent); }
+  textarea.newcompose-input { min-height: 88px; resize: vertical; line-height: 1.45; }
   .newcompose-path-preview {
     font-size: 11px; color: var(--text3); font-family: var(--mono);
     margin-top: 4px; min-height: 14px;
@@ -1251,24 +1253,7 @@
     line-height: 1.6; outline: none; transition: border-color .15s;
   }
   .newcompose-editor:focus { border-color: var(--accent); }
-  .newcompose-run-input {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 5px 10px;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 12px;
-    outline: none;
-    width: 100%;
-    min-height: 88px;
-    box-sizing: border-box;
-    resize: vertical;
-    line-height: 1.45;
-    transition: border-color .15s;
-  }
-  .newcompose-run-input:focus { border-color: var(--cyan); }
-  .newcompose-run-input::placeholder { color: var(--text3); }
+  .newcompose-input::placeholder { color: var(--text3); }
   .newcompose-run-help {
     margin-top: 4px;
     font-size: 11px;
@@ -1319,11 +1304,11 @@
     pointer-events: none;
   }
   .newcompose-btn.template {
-    color: var(--cyan);
+    color: #477ed9;
   }
   .newcompose-btn.template:hover:not(:disabled) {
-    background: rgba(6,182,212,.12);
-    border-color: var(--cyan);
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
   }
   .newcompose-btn.cancel {
     color: var(--red);
@@ -1457,7 +1442,18 @@
   .archivebrowser-table .actions-col {
     width: 260px;
   }
-  .archivebrowser-table .files-col { color: var(--cyan); text-align: right; }
+  .archivebrowser-table .files-col { color: var(--text); }
+  .archive-view-btn {
+    padding: 6px 12px; border-radius: 6px;
+    border: 1px solid rgba(71,126,217,.45);
+    background: transparent;
+    color: #477ed9; font-family: var(--mono); font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .archive-view-btn:hover:enabled {
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
+  }
   .archivebrowser-table .actions-col { text-align: right; }
   .archivebrowser-actions {
     display: inline-flex; align-items: center; gap: 8px;
@@ -1611,8 +1607,8 @@
   #loading p { color: var(--text3); font-family: var(--mono); font-size: 13px; }
 
   /* ─── Toolbar row above table ───────────────────────────── */
-  .toolbar {
-    display: flex; align-items: center; gap: 10px;
+  .toolbar, .container-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
     padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     overflow-x: auto;
@@ -1634,21 +1630,25 @@
   .toolbar-label { font-family: var(--mono); font-size: 12px; color: var(--text3); white-space: nowrap; }
   .toolbar-sep { color: var(--text3); font-size: 11px; }
   .toolbar-right { display:flex; align-items:center; gap:8px; flex-shrink: 0; }
-  .toolbar-refresh-btn {
-    padding: 3px 8px; border-radius: 6px;
-    border: 1px solid var(--border2); background: none;
-    font-size: 12px; cursor: pointer; transition: all .15s;
-    color: var(--accent); font-family: var(--mono); line-height: 1.2;
+  .toolbar-btn {
+    background: none; border: 1px solid var(--border2);
+    border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    line-height: 1; transition: all .15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+    font-family: var(--sans); font-size: 12px; font-weight: 600;
   }
-  .toolbar-refresh-btn:hover { border-color: var(--accent); background: rgba(79,142,247,.15); }
-  .toolbar-refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
-  .toolbar-main-btn {
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-family: var(--mono);
-    line-height: 1.2;
-  }
+  .toolbar-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .toolbar-btn.newcompose { color: #477ed9; border-color: rgba(71,126,217,.4); }
+  .toolbar-btn.newcompose:hover:not(:disabled) { background: rgba(71,126,217,.12); border-color: #477ed9; }
+  .toolbar-btn.archive { color: var(--orange); border-color: rgba(249,115,22,.4); }
+  .toolbar-btn.archive:hover:not(:disabled) { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .toolbar-btn.prune { color: var(--red); border-color: rgba(239,68,68,.4); }
+  .toolbar-btn.prune:hover:not(:disabled) { background: rgba(239,68,68,.12); border-color: var(--red); }
+  .toolbar-btn.expand { color: var(--green); border-color: rgba(34,197,94,.4); }
+  .toolbar-btn.expand:hover:not(:disabled) { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .toolbar-btn.refresh { color: var(--accent); border-color: rgba(79,142,247,.4); }
+  .toolbar-btn.refresh:hover:not(:disabled) { background: rgba(79,142,247,.12); border-color: var(--accent); }
   .high-cpu-btn, .high-mem-btn {
     padding: 4px 10px; border-radius: 6px;
     border: 1px solid var(--border); background: none;
@@ -1700,13 +1700,6 @@
     justify-content: center;
     height: 34px;
     white-space: nowrap;
-  }
-  button.expand-all-btn.toolbar-main-btn {
-    padding: 3px 8px !important;
-    border-radius: 6px !important;
-    font-size: 12px !important;
-    font-family: var(--mono) !important;
-    line-height: 1.2 !important;
   }
 
   /* ─── Sort indicator ────────────────────────────────────── */
@@ -2120,20 +2113,17 @@
         <span id="prune-modal-title">Docker Cleanup — Unused Resources</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="log-autoscroll-btn" id="prune-log-btn" onclick="openPruneLogModal()" style="color:var(--text3);">📋 View Log</button>
+        <button class="cdetail-action-btn logs" id="prune-log-btn" onclick="openPruneLogModal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>View Prune Log</span></button>
         <button class="modal-close" onclick="closePruneModal()">✕</button>
       </div>
     </div>
     <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
       <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
-      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="log-autoscroll-btn">☑ Select All</button>
-      <button id="prune-confirm-btn" onclick="confirmPrune()"
-        style="background:var(--red);border:none;border-radius:var(--radius);padding:7px 20px;
-               color:white;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;">
+      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="cdetail-action-btn logs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg><span>Select All</span></button>
+      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn cancel">
         🗑 System Prune
       </button>
-      <button id="prune-cancel-btn" class="action-modal-btn cancel" onclick="closePruneModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -2306,7 +2296,7 @@
     <div class="newcompose-body">
       <div>
         <div class="newcompose-field-label">Project / Container Name</div>
-        <input id="newcompose-name" class="filter-input newcompose-name-input" type="text"
+        <input id="newcompose-name" class="filter-input newcompose-input" type="text"
           placeholder="e.g. my-app"
           oninput="updateNewComposePath()"
           onkeydown="if(event.key==='Enter')document.getElementById('newcompose-editor').focus()"/>
@@ -2314,13 +2304,13 @@
       </div>
       <div>
         <div class="newcompose-field-label">Docker Run Command (Optional)</div>
-        <textarea id="newcompose-run" class="newcompose-run-input" spellcheck="false"
+        <textarea id="newcompose-run" class="newcompose-input" spellcheck="false"
           placeholder="Paste full docker run command here, then click Apply Docker Run"></textarea>
         <div class="newcompose-run-help">Parses flags: --name, -e, -p, -v, --restart, --shm-size, --hostname, --network, --cap-add, --device, --dns, --user, --health-*</div>
       </div>
       <div>
         <div class="newcompose-field-label">Compose File / Snippet (Optional)</div>
-        <textarea id="newcompose-import" class="newcompose-run-input" spellcheck="false"
+        <textarea id="newcompose-import" class="newcompose-input" spellcheck="false"
           placeholder="Paste compose.yaml content here, then click Apply Compose"></textarea>
         <div class="newcompose-run-help">Reads the first service and applies fields like image, environment, volumes, ports, shm_size, restart and other supported options</div>
       </div>
@@ -2366,8 +2356,8 @@
 <header>
   <div class="metrics-strip">
     <div class="metric-card" onclick="switchTab('containers')">
-      <div class="metric-label"><i data-lucide="activity" style="color:var(--cyan)"></i>Containers</div>
-      <div class="metric-value cyan" id="s-containers">–</div>
+      <div class="metric-label"><i data-lucide="activity" style="color:#477ed9"></i>Containers</div>
+      <div class="metric-value" id="s-containers" style="color:#477ed9;">–</div>
       <div class="metric-sub" id="s-containers-sub">–</div>
     </div>
     <div class="metric-card" onclick="switchTab('processes')">
@@ -2394,7 +2384,7 @@
       </div>
     </div>
     <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
-    <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
+    <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--green)"></i>Disk Usage</div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:0px;">
       <div style="width:35px;height:35px;flex-shrink:0;">
         <canvas id="s-disk-canvas" width="35" height="35" style="display:block;width:35px;height:35px;"></canvas>
@@ -2472,12 +2462,11 @@
 <main>
   <!-- ═══ CONTAINERS TAB ═══════════════════════════════════════════════ -->
   <div class="tab-panel active" id="tab-containers">
-    <div class="toolbar">
-      <button class="expand-all-btn toolbar-main-btn" onclick="openNewComposeModal()" style="color:var(--green);border-color:rgba(34,197,94,.4);">＋ New Compose</button>
-      <button class="expand-all-btn toolbar-main-btn" onclick="openArchiveBrowserModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🗄 Archive</button>
-      <button class="expand-all-btn prune-btn toolbar-main-btn" onclick="openPruneModal()">🧹 Prune</button>
-      <button class="expand-all-btn toolbar-main-btn" id="expand-all-btn" onclick="toggleAllContainers()"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>Expand All</button>
-      <button class="toolbar-refresh-btn" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list">↻ Refresh</button>
+    <div class="container-toolbar">
+      <button class="toolbar-btn newcompose" onclick="openNewComposeModal()"><i data-lucide="file-plus" style="width:14px;height:14px;stroke-width:2;"></i><span>New Compose</span></button>
+      <button class="toolbar-btn archive" onclick="openArchiveBrowserModal()"><i data-lucide="archive" style="width:14px;height:14px;stroke-width:2;"></i><span>Archive</span></button>
+      <button class="toolbar-btn prune" onclick="openPruneModal()"><i data-lucide="trash-2" style="width:14px;height:14px;stroke-width:2;"></i><span>Prune</span></button>
+      <button class="toolbar-btn expand" id="expand-all-btn" onclick="toggleAllContainers()"><i data-lucide="arrow-up-down" style="width:14px;height:14px;stroke-width:2;"></i><span>Expand All</span></button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
         <span class="toolbar-label toolbar-info" id="container-count-total">–</span>
@@ -2488,7 +2477,7 @@
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
-        <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+        <button class="toolbar-btn refresh" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list"><i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i></button>
       </div>
     </div>
     <div class="table-wrap">
@@ -2852,7 +2841,8 @@ function startStream() {
     const refreshBtn = el('container-refresh-btn');
     if (refreshBtn) {
       refreshBtn.disabled = false;
-      refreshBtn.textContent = '↻ Refresh';
+      refreshBtn.innerHTML = '<i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i>';
+      lucide.createIcons({ nodes: [refreshBtn] });
     }
   };
   es.onerror = () => {
@@ -2869,7 +2859,8 @@ function refreshContainerMonitoring() {
   const btn = el('container-refresh-btn');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '⟳ Refreshing';
+    btn.innerHTML = '<i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i>';
+    lucide.createIcons({ nodes: [btn] });
   }
   startStream();
 }
@@ -3078,7 +3069,7 @@ function renderSummary() {
   // Disk
   if (s.diskTotal > 0) {
     const diskPct = (s.diskUsed / s.diskTotal * 100);
-    const diskColor = diskPct >= 90 ? 'red' : diskPct >= 70 ? 'orange' : 'yellow';
+    const diskColor = diskPct >= 90 ? 'red' : diskPct >= 70 ? 'orange' : 'green';
     el('s-disk').textContent = fmtBytes(s.diskUsed);
     el('s-disk').className = 'metric-value ' + diskColor;
     el('s-disk-sub').textContent = fmtBytes(s.diskTotal) + ' · ' + diskPct.toFixed(1) + '%';
@@ -3396,15 +3387,15 @@ function renderContainers() {
       </td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
-          ${c.dependsOnDepth ? '<span class="depends-on-arrow">↳</span>' : ''}
+          ${c.dependsOnDepth ? '<span class="depends-on-arrow">⤷</span>' : ''}
           ${renderContainerTitle(c)}
         </div>
       </td>
       <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:12px;">${esc(c.cpu || '–')}</td>
       <td class="accent-text" style="font-family:var(--mono);font-size:12px;">${esc(c.memPercent || '–')}</td>
       <td>${esc(c.memUsage)}</td>
-      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethRxKBs||0).toFixed(2)+' KB/s'}</td>
-      <td class="cyan-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':(c.vethTxKBs||0).toFixed(2)+' KB/s'}</td>
+      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethRxKBs?c.vethRxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
+      <td class="orange-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethTxKBs?c.vethTxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
       <td class="muted">${esc(c.imageSize||'–')}</td>
       <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
       <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
@@ -3474,12 +3465,11 @@ function renderNetworks(networks) {
     const color = n.driver === 'host'    ? 'var(--orange)'
                 : n.driver === 'none'    ? 'var(--text3)'
                 : n.driver === 'overlay' ? 'var(--pink)'
-                : 'var(--cyan)';
+                : '#477ed9';
     return `<span onclick="event.stopPropagation()" title="${esc(tip)}"
       style="display:inline-block;font-size:12px;font-family:var(--mono);
              padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
-             border:1px solid ${color}33;color:${color};
-             background:${color}11;white-space:nowrap;cursor:default;"
+             color:${color};white-space:nowrap;cursor:default;"
     >${esc(n.name)}${n.driver ? ' ' + '<span style="opacity:.55;">'+esc(n.driver)+'</span>' : ''}${n.ip ? ': '+esc(n.ip) : ''}</span>`;
   }).join('');
 }
@@ -3503,11 +3493,13 @@ function toggleAllContainers() {
   }
   const btn = el('expand-all-btn');
   if (btn) {
-    const iconExpand   = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/><path d="M13 20h-2"/><path d="M13 16h-5"/><path d="M13 12h-2"/></svg>`;
-    const iconCollapse = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h10"/><path d="M11 16h7"/><path d="M11 20h4"/><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="M13 8h-2"/><path d="M13 4h-5"/><path d="M13 8h-2"/></svg>`;
+    const iconExpand   = `<i data-lucide="arrow-up-down" style="width:14px;height:14px;stroke-width:2;"></i>`;
+    const iconCollapse = `<i data-lucide="fold-vertical" style="width:14px;height:14px;stroke-width:2;"></i>`;
+    btn.className = allContainersExpanded ? 'toolbar-btn expand' : 'toolbar-btn expand';
     btn.innerHTML = allContainersExpanded
-      ? iconCollapse + 'Collapse All'
-      : iconExpand   + 'Expand All';
+      ? iconCollapse + '<span>Collapse All</span>'
+      : iconExpand   + '<span>Expand All</span>';
+    lucide.createIcons({ nodes: [btn] });
   }
   renderContainers();
 }
@@ -3541,7 +3533,7 @@ function renderSubProcTable(pids) {
 
     let expandBtn = '';
     if (depth > 0) {
-      expandBtn = `<span style="color:var(--text3);font-size:13px">└  </span>`;
+      expandBtn = `<span style="color:var(--text3);font-size:13px;margin-right:6px;">⤷</span>`;
     }
 
     rows += `<tr>
@@ -3661,9 +3653,9 @@ function procRow(p, depth, hasChildren, isCollapsed) {
 
   let expandBtn = '';
   if (procView === 'tree' && hasChildren) {
-    expandBtn = `<button class="toggle-btn" onclick="toggleProcCollapse(${p.pid},event)">${isCollapsed ? '▶' : '▼'}</button>`;
+    expandBtn = `<button class="toggle-btn" onclick="toggleProcCollapse(${p.pid},event)">${isCollapsed ? '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="m9 18 6-6-6-6"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="m6 9 6 6 6-6"/></svg>'}</button>`;
   } else if (procView === 'tree' && depth > 0) {
-    expandBtn = `<span style="color:var(--text3);font-size:13px">└ </span>`;
+    expandBtn = `<span style="color:var(--text3);font-size:13px;margin-right:6px;">⤷</span>`;
   }
 
   const pj = JSON.stringify(p).replace(/"/g,'&quot;');
@@ -5275,9 +5267,7 @@ function pruneSelectAll() {} // no-op for system prune
 async function confirmPrune() {
   el('prune-confirm-btn').disabled = true;
   el('prune-confirm-btn').textContent = '⟳ Running system prune…';
-  el('prune-cancel-btn').disabled = true;
-  el('prune-cancel-btn').style.opacity = '0.4';
-  el('prune-cancel-btn').style.cursor = 'not-allowed';
+
 
   try {
     const res = await fetch('/api/prune/run', {
@@ -5301,14 +5291,9 @@ async function confirmPrune() {
       el('prune-confirm-btn').onclick = closePruneModal;
     } else {
       el('prune-confirm-btn').textContent = '✕ Failed';
-      el('prune-confirm-btn').style.background = 'var(--red)';
     }
   } catch (e) {
     el('prune-confirm-btn').textContent = '✕ Error';
-  } finally {
-    el('prune-cancel-btn').disabled = false;
-    el('prune-cancel-btn').style.opacity = '';
-    el('prune-cancel-btn').style.cursor = '';
   }
 }
 
@@ -5317,9 +5302,6 @@ function closePruneModal() {
   el('prune-confirm-btn').textContent = '🗑 System Prune';
   el('prune-confirm-btn').disabled = false;
   el('prune-confirm-btn').onclick = confirmPrune;
-  el('prune-cancel-btn').disabled = false;
-  el('prune-cancel-btn').style.opacity = '';
-  el('prune-cancel-btn').style.cursor = '';
   el('prune-select-all-btn').textContent = '☑ Select All';
 }
 
@@ -6105,7 +6087,7 @@ function _renderArchiveList(backups) {
     return `<tr>
       <td title="${esc(proj.project || '')}">${esc(proj.project || '(unnamed)')}</td>
       <td class="files-col">${files.length}</td>
-      <td class="actions-col"><div class="archivebrowser-actions"><button class="expand-all-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button><button class="archive-delete-btn" onclick="openArchiveDeleteModal('${esc(proj.project || '')}','${esc(proj.dataPath || '')}')" ${isRestoring ? 'disabled' : ''}>Delete</button></div></td>
+      <td class="actions-col"><div class="archivebrowser-actions"><button class="archive-view-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button><button class="archive-delete-btn" onclick="openArchiveDeleteModal('${esc(proj.project || '')}','${esc(proj.dataPath || '')}')" ${isRestoring ? 'disabled' : ''}>Delete</button></div></td>
     </tr>${detailRow}`;
   }).join('');
 
