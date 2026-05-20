@@ -570,6 +570,15 @@
     color: var(--text3);
     white-space: nowrap;
   }
+  .depends-on-row td {
+    background: rgba(79,142,247,0.04);
+    border-top: none !important;
+  }
+  .depends-on-arrow {
+    color: var(--text3);
+    font-size: 11px;
+    margin-right: 2px;
+  }
   .port-link {
     display: inline-block;
     color: var(--cyan);
@@ -802,20 +811,20 @@
     pointer-events: none;
   }
   .action-modal-btn.confirm {
-    color: var(--accent);
-    border-color: rgba(79,142,247,.45);
+    color: var(--green);
+    border-color: rgba(34,197,94,.45);
   }
   .action-modal-btn.confirm:hover:not(:disabled) {
-    background: rgba(79,142,247,.12);
-    border-color: var(--accent);
+    background: rgba(34,197,94,.12);
+    border-color: var(--green);
   }
   .action-modal-btn.confirm[data-action="composeUp"] {
-    color: var(--cyan);
-    border-color: rgba(6,182,212,.45);
+    color: var(--green);
+    border-color: rgba(34,197,94,.45);
   }
   .action-modal-btn.confirm[data-action="composeUp"]:hover:not(:disabled) {
-    background: rgba(6,182,212,.12);
-    border-color: var(--cyan);
+    background: rgba(34,197,94,.12);
+    border-color: var(--green);
   }
   .action-modal-btn.confirm[data-action="start"] {
     color: var(--green);
@@ -826,20 +835,20 @@
     border-color: var(--green);
   }
   .action-modal-btn.confirm[data-action="restart"] {
-    color: var(--yellow);
-    border-color: rgba(234,179,8,.45);
-  }
-  .action-modal-btn.confirm[data-action="restart"]:hover:not(:disabled) {
-    background: rgba(234,179,8,.12);
-    border-color: var(--yellow);
-  }
-  .action-modal-btn.confirm[data-action="stop"] {
     color: var(--orange);
     border-color: rgba(249,115,22,.45);
   }
-  .action-modal-btn.confirm[data-action="stop"]:hover:not(:disabled) {
+  .action-modal-btn.confirm[data-action="restart"]:hover:not(:disabled) {
     background: rgba(249,115,22,.12);
     border-color: var(--orange);
+  }
+  .action-modal-btn.confirm[data-action="stop"] {
+    color: var(--yellow);
+    border-color: rgba(234,179,8,.45);
+  }
+  .action-modal-btn.confirm[data-action="stop"]:hover:not(:disabled) {
+    background: rgba(234,179,8,.12);
+    border-color: var(--yellow);
   }
   .action-modal-btn.confirm[data-action="archive"] {
     color: var(--accent);
@@ -864,6 +873,19 @@
   .action-modal-btn.cancel:hover:not(:disabled) {
     background: rgba(239,68,68,.12);
     border-color: var(--red);
+  }
+  /* Positive actions: save, restore, start, open, download */
+  .action-modal-btn.ok {
+    color: var(--green);
+    border-color: rgba(34,197,94,.45);
+    background: rgba(34,197,94,.08);
+  }
+  .action-modal-btn.ok:hover:not(:disabled) {
+    background: rgba(34,197,94,.18);
+    border-color: var(--green);
+  }
+  .action-modal-btn.ok:disabled {
+    opacity: .35; cursor: not-allowed;
   }
   .action-progress { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
   .action-progress-step {
@@ -1004,14 +1026,14 @@
     gap: 0;
   }
   .cdetail-action-btn.apply:hover:not(:disabled)   { background: rgba(71,126,217,.12); border-color: #477ed9; }
-  .cdetail-action-btn.restart { color: var(--yellow); }
-  .cdetail-action-btn.restart:hover:not(:disabled) { background: rgba(234,179,8,.12);  border-color: var(--yellow); }
-  .cdetail-action-btn.stop    { color: var(--orange); }
-  .cdetail-action-btn.stop:hover:not(:disabled)    { background: rgba(249,115,22,.12); border-color: var(--orange); }
-  .cdetail-action-btn.logs    { color: var(--cyan); }
-  .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(6,182,212,.12);  border-color: var(--cyan); }
-  .cdetail-action-btn.archive { color: var(--accent); }
-  .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(79,142,247,.12); border-color: var(--accent); }
+  .cdetail-action-btn.restart { color: var(--orange); }
+  .cdetail-action-btn.restart:hover:not(:disabled) { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .cdetail-action-btn.stop    { color: var(--yellow); }
+  .cdetail-action-btn.stop:hover:not(:disabled)    { background: rgba(234,179,8,.12);  border-color: var(--yellow); }
+  .cdetail-action-btn.logs    { color: #477ed9; }
+  .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(71,126,217,.12);  border-color: #477ed9; }
+  .cdetail-action-btn.archive { color: var(--orange); }
+  .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(249,115,22,.12); border-color: var(--orange); }
   .compose-editor-head {
     display: flex;
     align-items: center;
@@ -1021,15 +1043,15 @@
   }
   .compose-editor-up-btn {
     background: none;
-    border: 1px solid var(--border2);
-    color: var(--green);
-    border-radius: 8px;
-    padding: 7px 14px;
+    border: 1px solid rgba(71,126,217,.45);
+    color: #477ed9;
+    border-radius: 6px;
+    padding: 4px 12px;
     font-family: var(--sans);
-    font-size: 16px;
-    font-weight: 400;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    line-height: 1;
+    line-height: 1.2;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
@@ -1037,13 +1059,8 @@
     transition: all .15s;
   }
   .compose-editor-up-btn:hover {
-    background: rgba(34,197,94,.12);
-    border-color: var(--green);
-  }
-  .compose-editor-up-btn span {
-    font-family: var(--sans);
-    font-size: 12px;
-    font-weight: 600;
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
   }
   .compose-editor-up-btn svg {
     width: 14px;
@@ -1057,23 +1074,34 @@
   .cdetail-action-btn.delete:hover:not(:disabled)  { background: rgba(239,68,68,.12);  border-color: var(--red); }
   .folder-nav-btn {
     background: none;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 4px 9px;
+    border: 1px solid rgba(71,126,217,.45);
+    border-radius: 6px;
+    padding: 4px 12px;
     cursor: pointer;
     font-family: var(--sans);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--cyan);
+    color: #477ed9;
     transition: all .15s;
     line-height: 1.2;
+    white-space: nowrap;
   }
   .folder-nav-btn:hover:not(:disabled) {
-    background: rgba(6,182,212,.12);
-    border-color: var(--cyan);
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
   }
+  .folder-nav-btn.download {
+    color: #477ed9;
+    border-color: rgba(71,126,217,.45);
+  }
+  .folder-nav-btn.download:hover:not(:disabled) {
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
+  }
+
   .folder-nav-btn.delete {
     color: var(--red);
+    border-color: rgba(239,68,68,.45);
   }
   .folder-nav-btn.delete:hover:not(:disabled) {
     background: rgba(239,68,68,.12);
@@ -1327,7 +1355,7 @@
   }
   .archivebrowser-modal {
     background: var(--bg2); border: 1px solid var(--border2);
-    border-radius: 16px; width: 820px; max-width: 98vw;
+    border-radius: 16px; width: 960px; max-width: 98vw;
     max-height: 80vh; min-height: 200px;
     box-shadow: 0 24px 60px rgba(0,0,0,.7);
     display: flex; flex-direction: column; overflow: hidden;
@@ -1427,7 +1455,7 @@
     width: 100px;
   }
   .archivebrowser-table .actions-col {
-    width: 180px;
+    width: 260px;
   }
   .archivebrowser-table .files-col { color: var(--cyan); text-align: right; }
   .archivebrowser-table .actions-col { text-align: right; }
@@ -1448,6 +1476,20 @@
   .archive-restore-btn:disabled {
     opacity: .55; cursor: not-allowed;
   }
+  .archive-delete-btn {
+    padding: 6px 12px; border-radius: 6px;
+    border: 1px solid rgba(239,68,68,.45);
+    background: rgba(239,68,68,.1);
+    color: var(--red); font-family: var(--mono); font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .archive-delete-btn:hover:enabled {
+    background: rgba(239,68,68,.2);
+    border-color: rgba(239,68,68,.7);
+  }
+  .archive-delete-btn:disabled {
+    opacity: .55; cursor: not-allowed;
+  }
   .archivebrowser-file-list {
     padding: 10px 12px 12px;
     background: rgba(13,15,20,.55);
@@ -1459,6 +1501,11 @@
     font-family: var(--mono); font-size: 12px;
   }
   .archivebrowser-file-list-item:last-child { border-bottom: none; }
+  .archivebrowser-section-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text3);
+    padding: 2px 0 4px;
+  }
 
   .compose-editor-toolbar {
     display: flex;
@@ -1936,17 +1983,16 @@
   }
   .catedit-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
   .catedit-save {
-    background: var(--accent); border: none; border-radius: 7px;
-    color: white; font-family: var(--sans); font-size: 13px;
-    font-weight: 600; padding: 7px 20px; cursor: pointer; transition: opacity .15s;
+    /* uses action-modal-btn ok — kept for specificity only */
   }
-  .catedit-save:hover { opacity: .85; }
   .catedit-cancel {
-    background: none; border: 1px solid var(--border2); border-radius: 7px;
-    color: var(--text2); font-family: var(--sans); font-size: 13px;
-    padding: 7px 16px; cursor: pointer; transition: all .15s;
+    color: var(--red);
+    border-color: rgba(239,68,68,.45);
+    background: none; border-width: 1px; border-style: solid; border-radius: 8px;
+    font-family: var(--sans); font-size: 12px; font-weight: 600;
+    padding: 7px 14px; cursor: pointer; transition: all .15s;
   }
-  .catedit-cancel:hover { border-color: var(--text3); color: var(--text); }
+  .catedit-cancel:hover { background: rgba(239,68,68,.12); border-color: var(--red); }
   .creds-input {
     width: 100%;
     border-color: var(--border2);
@@ -2087,11 +2133,7 @@
                color:white;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;">
         🗑 System Prune
       </button>
-      <button id="prune-cancel-btn" onclick="closePruneModal()"
-        style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 16px;
-               color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;">
-        Cancel
-      </button>
+      <button id="prune-cancel-btn" class="action-modal-btn cancel" onclick="closePruneModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -2155,15 +2197,34 @@
       <div id="restore-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="restore-confirm-btn" onclick="confirmRestoreProject()"
-        style="padding:8px 22px;border:none;border-radius:var(--radius);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;background:var(--green);color:white;">
-        Restore
+      <button id="restore-confirm-btn" class="action-modal-btn ok" onclick="confirmRestoreProject()">Restore</button>
+      <button class="action-modal-btn cancel" onclick="closeRestoreConfirmModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHIVE DELETE CONFIRMATION MODAL -->
+<div class="action-modal-backdrop" id="archive-delete-confirm-modal">
+  <div class="action-modal">
+    <div class="action-modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🗑</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--red);">Delete Archive</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="archive-delete-confirm-project">–</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeArchiveDeleteModal()">✕</button>
+    </div>
+    <div class="action-modal-body">
+      <div id="archive-delete-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+    </div>
+    <div class="action-modal-footer">
+      <button id="archive-delete-confirm-btn" onclick="confirmArchiveDelete()"
+        style="padding:8px 22px;border:1px solid var(--red);border-radius:var(--radius);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;background:rgba(239,68,68,.15);color:var(--red);">
+        Delete permanently
       </button>
-      <button onclick="closeRestoreConfirmModal()"
-        style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);
-               background:none;color:var(--text2);font-family:var(--mono);font-size:13px;cursor:pointer;">
-        Cancel
-      </button>
+      <button class="action-modal-btn cancel" onclick="closeArchiveDeleteModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -2277,7 +2338,7 @@
       </div>
       <div class="newcompose-footer-right">
         <button class="newcompose-btn cancel" onclick="closeNewComposeModal()">Cancel</button>
-        <button id="newcompose-save-btn" class="newcompose-btn save" onclick="saveNewCompose()">Save</button>
+        <button id="newcompose-save-btn" class="action-modal-btn ok" onclick="saveNewCompose()">Save</button>
       </div>
     </div>
   </div>
@@ -2320,30 +2381,30 @@
       <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
       <div class="metric-sub" id="s-cpu-sub">–</div>
     </div>
-<div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
-  <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
-  <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-<div style="width:20px;height:20px;flex-shrink:0;">
-  <canvas id="s-sysmem-canvas" width="20" height="20" style="display:block;width:20px;height:20px;"></canvas>
-</div>
-    <div style="display:flex;flex-direction:column;gap:1px;">
-      <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
-      <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
+    <div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
+      <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:0px;">
+        <div style="width:35px;height:35px;flex-shrink:0;">
+          <canvas id="s-sysmem-canvas" width="35" height="35" style="display:block;width:35px;height:35px;"></canvas>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0px;">
+          <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
+          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-<div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
-  <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
-  <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-<div style="width:20px;height:20px;flex-shrink:0;">
-  <canvas id="s-disk-canvas" width="20" height="20" style="display:block;width:20px;height:20px;"></canvas>
-</div>
-    <div style="display:flex;flex-direction:column;gap:1px;">
-      <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
-      <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
+    <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
+    <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:0px;">
+      <div style="width:35px;height:35px;flex-shrink:0;">
+        <canvas id="s-disk-canvas" width="35" height="35" style="display:block;width:35px;height:35px;"></canvas>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0px;">
+        <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
+        <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
+      </div>
     </div>
-  </div>
-</div>
+    </div>
     <div class="metric-card">
       <div class="metric-label"><i data-lucide="clock" style="color:var(--green)"></i>Uptime</div>
       <div class="metric-value green" id="s-uptime">–</div>
@@ -2351,7 +2412,7 @@
     </div>
     <div class="metric-card" style="min-width:0;overflow:hidden;" onclick="switchTab('network')">
       <div class="metric-label"><i data-lucide="network" style="color:var(--cyan)"></i>Network</div>
-      <canvas id="s-nw-canvas" width="120" height="28" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
+        <canvas id="s-nw-canvas" width="120" height="28" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
         <span style="color:var(--text3);">·</span>
@@ -2359,7 +2420,6 @@
       </div>
     </div>
   </div>
-
 </header>
 
 
@@ -2674,8 +2734,8 @@
       <div id="creds-success" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--green);">✓ Credentials updated successfully.</div>
     </div>
     <div class="catmgr-footer" style="justify-content:flex-end;">
-      <button class="cdetail-action-btn delete" onclick="closeCredentialsModal()"><span>Cancel</span></button>
-      <button id="creds-save-btn" class="cdetail-action-btn start" onclick="submitCredentials()"><span>Save Credentials</span></button>
+      <button class="action-modal-btn cancel" onclick="closeCredentialsModal()">Cancel</button>
+      <button id="creds-save-btn" class="action-modal-btn ok" onclick="submitCredentials()">Save Credentials</button>
     </div>
   </div>
 </div>
@@ -3206,6 +3266,73 @@ function openComposeUpAction(project, service, name) {
   openActionModal('composeUp', `${project}/${service}`, name, { project, service });
 }
 
+// ─── depends_on grouping ──────────────────────────────────────────────────────
+// Within each compose project, show the depended-upon container (the "main"
+// one, e.g. gluetun) at depth 0, then indent containers that depend on it
+// directly beneath it at depth 1.
+function buildDependsOnOrder(list) {
+  const composeGroups = new Map(); // "project|dir" -> [containers]
+  const nonCompose = [];
+
+  for (const c of list) {
+    if (c.composeManaged && c.composeProject) {
+      const key = (c.composeProject || '') + '|' + (c.composeDir || '');
+      if (!composeGroups.has(key)) composeGroups.set(key, []);
+      composeGroups.get(key).push(c);
+    } else {
+      nonCompose.push(c);
+    }
+  }
+
+  const result = [];
+
+  for (const group of composeGroups.values()) {
+    // Any depends_on relationships at all in this group?
+    const hasDeps = group.some(c => (c.composeDependsOn || []).length > 0);
+    if (!hasDeps) {
+      for (const c of group) result.push({ ...c, dependsOnDepth: 0 });
+      continue;
+    }
+
+    const byService = new Map();
+    for (const c of group) {
+      if (c.composeService) byService.set(c.composeService, c);
+    }
+
+    // Build reverse map: serviceName -> [containers that depend on it]
+    const dependents = new Map(); // serviceName -> Container[]
+    for (const c of group) {
+      for (const dep of (c.composeDependsOn || [])) {
+        if (!dependents.has(dep)) dependents.set(dep, []);
+        dependents.get(dep).push(c);
+      }
+    }
+
+    // "Root" containers are those depended upon by others (e.g. gluetun).
+    // They appear at depth 0; their dependents follow at depth 1.
+    const isDependedUpon = new Set(dependents.keys());
+    const emitted = new Set();
+
+    const emit = (c, depth) => {
+      if (emitted.has(c.id)) return;
+      emitted.add(c.id);
+      result.push({ ...c, dependsOnDepth: depth });
+      // After this container, emit anything that depends on it
+      const deps = dependents.get(c.composeService) || [];
+      for (const dep of deps) emit(dep, depth + 1);
+    };
+
+    // Emit depended-upon containers first (they become the visual roots)
+    for (const c of group) {
+      if (isDependedUpon.has(c.composeService)) emit(c, 0);
+    }
+    // Emit any remaining containers (standalone services)
+    for (const c of group) emit(c, 0);
+  }
+
+  return [...result, ...nonCompose];
+}
+
 // ─── Container table ──────────────────────────────────────────────────────────
 function renderContainers() {
   const tbody = el('container-tbody');
@@ -3244,22 +3371,34 @@ function renderContainers() {
 
   list = getSorted(list, containerSort);
 
+  // Group depends_on: within each compose project, reorder so that containers
+  // which are listed as depends_on dependencies appear directly after their
+  // dependents, with a visual indent.
+  list = buildDependsOnOrder(list);
+
   let html = '';
   for (const c of list) {
     const rowId = 'cr-' + c.id;
     const isExpanded = expandedContainers.has(c.id);
     const stateClass = getContainerStateClass(c);
     const rowClick = ` onclick="openCDetailModal('${c.id}','${esc(c.name)}','${stateClass}')"`;
-    const startAction = `openActionModal('start','${c.id}','${esc(c.name)}')`;
-    const startTitle = 'Start';
+    const isComposeParent = !c.dependsOnDepth && c.composeManaged && c.composeProject && c.composeService;
+    const startAction = isComposeParent
+      ? `openActionModal('composeUp','${esc(c.composeProject)}/${esc(c.composeService)}','${esc(c.name)}',{project:'${esc(c.composeProject)}',service:'${esc(c.composeService)}',parentStart:true})`
+      : `openActionModal('start','${c.id}','${esc(c.name)}')`;
+    const startTitle = isComposeParent ? 'Compose Up' : 'Start';
     const canArchiveFromList = stateClass === 'configured' && Boolean(c.composeProject);
 
-    html += `<tr id="${rowId}"${rowClick}>
+    const depIndent = (c.dependsOnDepth || 0) * 20;
+    html += `<tr id="${rowId}"${rowClick} ${c.dependsOnDepth ? 'class="depends-on-row"' : ''}>
       <td style="width:30px">
         <span class="status-dot ${stateClass}"></span>
       </td>
       <td>
-        ${renderContainerTitle(c)}
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${c.dependsOnDepth ? '<span class="depends-on-arrow">↳</span>' : ''}
+          ${renderContainerTitle(c)}
+        </div>
       </td>
       <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:12px;">${esc(c.cpu || '–')}</td>
       <td class="accent-text" style="font-family:var(--mono);font-size:12px;">${esc(c.memPercent || '–')}</td>
@@ -3272,7 +3411,7 @@ function renderContainers() {
       <td onclick="event.stopPropagation()">
         <div class="container-actions" style="display:flex;gap:4px;">
           <button class="action-btn start" title="${startTitle}"
-            ${stateClass === 'running' ? 'disabled' : ''}
+            ${stateClass === 'running' || c.dependsOnDepth ? 'disabled' : ''}
             onclick="${startAction}">▶</button>
           <button class="action-btn restart" title="Restart"
             ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
@@ -3841,7 +3980,7 @@ function updateStep(stepEl, state, text) {
 
 async function executeAction() {
   if (!_actionPending) return;
-  const { action, id, name, project, service } = _actionPending;
+  const { action, id, name, project, service, parentStart } = _actionPending;
   const meta = ACTION_META[action];
   const isComposeUpAction = action === 'composeUp';
   let composeCancelled = false;
@@ -4001,7 +4140,7 @@ async function executeAction() {
       const res = await fetch('/api/compose/up/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project, service }),
+        body: JSON.stringify({ project, service, parentStart: parentStart || false }),
         signal: _composeUpAbortController.signal,
       });
 
@@ -4132,11 +4271,41 @@ async function executeAction() {
       }
     } else {
       // start / stop / restart
+      // When stopping a container that others depend on, stop the dependents first
+      if (action === 'stop' && allData && Array.isArray(allData.containers)) {
+        const stoppedContainer = allData.containers.find(c => c.id === id);
+        if (stoppedContainer && stoppedContainer.composeService) {
+          const dependents = allData.containers.filter(c =>
+            c.id !== id &&
+            c.composeProject === stoppedContainer.composeProject &&
+            (c.composeDependsOn || []).includes(stoppedContainer.composeService) &&
+            (c.state === 'running' || c.running)
+          );
+          for (const dep of dependents) {
+            const sd = addProgressStep(`Stopping dependent: ${dep.name}…`, 'active');
+            setLocalContainerState(dep.id, 'stopped');
+            try {
+              await fetch(`/api/container/stop?id=${encodeURIComponent(dep.id)}`);
+              updateStep(sd, 'done', `Stopped ${dep.name}.`);
+            } catch {
+              updateStep(sd, 'error', `Failed to stop ${dep.name}.`);
+            }
+          }
+        }
+      }
       const s1 = addProgressStep(meta.steps[0], 'active');
       if (action === 'start') setLocalContainerState(id, 'running');
       if (action === 'stop') setLocalContainerState(id, 'stopped');
       const res = await fetch(`/api/container/${action}?id=${encodeURIComponent(id)}`);
       const data = await res.json();
+      const cmdMap = { start: 'start', stop: 'stop', restart: 'restart', delete: 'rm -f' };
+      if (cmdMap[action]) {
+        const logBox = document.createElement('pre');
+        logBox.className = 'action-stream-log';
+        logBox.textContent = `$ docker ${cmdMap[action]} ${name}\n${data.output || data.error || ''}`;
+        el('action-progress').appendChild(logBox);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
       if (data.ok) {
         updateStep(s1, 'done', meta.steps[1]);
         addProgressStep(meta.steps[2], 'done');
@@ -5289,7 +5458,7 @@ async function openCDetailModal(id, name, stateClass) {
         <button class="cdetail-action-btn restart" title="Restart" ${isRunning ? '' : 'disabled'}
           onclick="openActionModal('restart','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Restart</span></button>
         <button class="cdetail-action-btn stop" title="Stop" ${isRunning ? '' : 'disabled'}
-          onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Stop</span></button>
+          onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span>Stop</span></button>
         <button class="cdetail-action-btn logs" title="Logs"
           onclick="openLogs('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>Logs</span></button>
         <button class="cdetail-action-btn delete" title="Delete" ${isRunning ? 'disabled' : ''}
@@ -5477,10 +5646,7 @@ async function openCDetailModal(id, name, stateClass) {
         if (!fd.ok) {
           wrap.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:8px 0;">⚠ ${esc(fd.error||'Failed to load compose file')}</div>`;
         } else {
-          const composeUpInlineBtn = !isRunning
-            ? `<button class="compose-editor-up-btn" title="Compose Up"
-                onclick="${composeStartOnclick}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Compose Up</span></button>`
-            : '';
+          const composeUpInlineBtn = '';
           wrap.innerHTML = `
             <div class="compose-editor-head">
               <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${esc(fd.composeFile)}</div>
@@ -5499,7 +5665,7 @@ async function openCDetailModal(id, name, stateClass) {
                      line-height:1.5;box-sizing:border-box;outline:none;"
             ></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <button id="${saveId}" class="action-modal-btn confirm" data-action="archive"
+              <button id="${saveId}" class="action-modal-btn ok"
                 onclick="saveComposeFile('${esc(d.composeProject)}','${esc(fd.composeFile)}','${editorId}','${saveId}','${statusId}')">Save</button>
               <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
             </div>`;
@@ -5624,7 +5790,7 @@ function renderFoldersTab(containerName, containerId, data) {
         <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
           No data folder found. Create it to resolve missing-volume errors during Compose Up.
         </div>
-        <button class="folder-nav-btn" style="font-size:13px;padding:8px 20px;"
+        <button class="folder-nav-btn"
           onclick="createDataFolderAt('${encodedName}','${containerId}','',[])">＋ Create Data Folder</button>
         <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>
       </div>`;
@@ -5664,23 +5830,23 @@ function renderFoldersTab(containerName, containerId, data) {
       ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder">📁 ${esc(entry.name)}</button>`
       : `📄 ${esc(entry.name)}`;
     const openBtn = isDir
-      ? `<button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Open</button>`
+      ? `<button class="folder-nav-btn open" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Open</button>`
       : '';
     const renameBtn = isDir
-      ? `<button class="folder-nav-btn" onclick="renameDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Rename</button>`
+      ? `<button class="folder-nav-btn rename" onclick="renameDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Rename</button>`
       : '';
     const deleteBtn = isDir
       ? `<button class="folder-nav-btn delete" onclick="deleteDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Delete</button>`
       : '';
     const downloadBtn = !isDir
-      ? `<button class="folder-nav-btn" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')">Download</button>`
+      ? `<button class="folder-nav-btn download" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')">Download</button>`
       : '';
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${nameCellHtml}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${isDir ? 'Folder' : 'File'}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
-      <td style="white-space:nowrap;display:flex;gap:6px;justify-content:flex-end;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</td>
+      <td style="white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
     </tr>`;
   }).join('');
 
@@ -5921,19 +6087,25 @@ function _renderArchiveList(backups) {
     const files = Array.isArray(proj.files) ? proj.files : [];
     const isOpen = i === _archiveExpandedIndex;
     const isRestoring = _archiveRestoringProject === (proj.project || '');
+    const dataFiles = Array.isArray(proj.dataFiles) ? proj.dataFiles : [];
     const detailRow = isOpen
       ? `<tr><td colspan="3" style="padding:0;">
           <div class="archivebrowser-file-list">
+            <div class="archivebrowser-section-label">Configuration</div>
             ${files.length
-              ? files.map(f => `<div class="archivebrowser-file-list-item"><span>${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
-              : '<div class="archivebrowser-empty" style="padding:8px 0;text-align:left;">No files</div>'}
+              ? files.map(f => `<div class="archivebrowser-file-list-item"><span>📄 ${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
+              : '<div class="archivebrowser-empty" style="padding:4px 0 8px;text-align:left;">No files</div>'}
+            <div class="archivebrowser-section-label" style="margin-top:10px;">Data</div>
+            ${dataFiles.length
+              ? dataFiles.map(f => `<div class="archivebrowser-file-list-item"><span>${f.isDir ? '📁 ' : ''}${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
+              : '<div class="archivebrowser-empty" style="padding:4px 0 8px;text-align:left;">No data folder found</div>'}
           </div>
         </td></tr>`
       : '';
     return `<tr>
       <td title="${esc(proj.project || '')}">${esc(proj.project || '(unnamed)')}</td>
       <td class="files-col">${files.length}</td>
-      <td class="actions-col"><div class="archivebrowser-actions"><button class="expand-all-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button></div></td>
+      <td class="actions-col"><div class="archivebrowser-actions"><button class="expand-all-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button><button class="archive-delete-btn" onclick="openArchiveDeleteModal('${esc(proj.project || '')}','${esc(proj.dataPath || '')}')" ${isRestoring ? 'disabled' : ''}>Delete</button></div></td>
     </tr>${detailRow}`;
   }).join('');
 
@@ -5996,6 +6168,50 @@ async function restoreArchiveProject(i) {
   const project = proj && proj.project ? proj.project : '';
   if (!project) return;
   openRestoreConfirmModal(project);
+}
+
+let _archiveProjectToDelete = '';
+
+function openArchiveDeleteModal(project, dataPath) {
+  _archiveProjectToDelete = project;
+  el('archive-delete-confirm-project').textContent = project;
+  el('archive-delete-confirm-desc').innerHTML =
+    `<span style="color:var(--red);font-weight:600;">⚠ This cannot be undone.</span><br><br>` +
+    `The following will be permanently deleted:<br><br>` +
+    `<code style="color:var(--cyan);">_backups/${esc(project)}/</code> — archived configuration files<br>` +
+    (dataPath ? `<code style="color:var(--cyan);">_data/${esc(project)}/</code> — container data folder` : `<span style="color:var(--text3);">No data folder found</span>`);
+  el('archive-delete-confirm-modal').classList.add('open');
+}
+
+function closeArchiveDeleteModal() {
+  el('archive-delete-confirm-modal').classList.remove('open');
+  _archiveProjectToDelete = '';
+}
+
+async function confirmArchiveDelete() {
+  const project = _archiveProjectToDelete;
+  if (!project) return;
+  el('archive-delete-confirm-btn').disabled = true;
+  el('archive-delete-confirm-btn').textContent = 'Deleting…';
+  try {
+    const res = await fetch('/api/compose/archive/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Delete failed');
+    const listRes = await fetch('/api/compose/backups');
+    const listData = await listRes.json();
+    if (!listData.ok) throw new Error(listData.error || 'Failed to refresh archives');
+    renderArchiveBrowser(listData.backups);
+    showToast(`Deleted archive for ${project}`, 'ok');
+    closeArchiveDeleteModal();
+  } catch (e) {
+    showToast(`Delete failed: ${e.message}`, 'err', 3400);
+    el('archive-delete-confirm-btn').disabled = false;
+    el('archive-delete-confirm-btn').textContent = 'Delete permanently';
+  }
 }
 
 // ─── New Compose Modal ────────────────────────────────────────────────────────
@@ -7188,7 +7404,7 @@ function openCatEditForm(idx) {
       </div>
       <div class="catedit-actions">
         <button class="catedit-cancel" onclick="renderCatMgrList()">Cancel</button>
-        <button class="catedit-save" onclick="saveCatEdit(${isNew ? 'null' : idx})">${isNew ? 'Add Category' : 'Save Changes'}</button>
+        <button class="action-modal-btn ok catedit-save" onclick="saveCatEdit(${isNew ? 'null' : idx})">${isNew ? 'Add Category' : 'Save Changes'}</button>
       </div>
     </div>`;
   // store chosen values in form dataset
@@ -7670,7 +7886,7 @@ function openDockerVolumeCreateForm() {
       </div>
       <div class="catedit-actions">
         <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()">Cancel</button>
-        <button class="action-modal-btn confirm" data-action="archive" onclick="createDockerVolume()">Create Volume</button>
+        <button class="action-modal-btn ok" onclick="createDockerVolume()">Create Volume</button>
       </div>
     </div>`;
 }
@@ -7752,7 +7968,7 @@ async function openDockerVolumeDetail(idx) {
           <span style="font-size:16px;">📋</span>
           Volume details
         </div>
-        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()" style="padding:4px 8px;font-size:11px;">Back</button>
+        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()">Back</button>
       </div>
 
       <div style="margin-bottom:20px;">
@@ -7906,7 +8122,7 @@ function openNetworkEditForm(idx) {
       </div>
       <div class="catedit-actions">
         <button class="action-modal-btn cancel" onclick="renderNetworkMgrList()">Cancel</button>
-        <button class="action-modal-btn confirm" data-action="archive" onclick="saveNetwork(${isNew ? 'null' : idx})">${isNew ? 'Create Network' : 'Update Network'}</button>
+        <button class="action-modal-btn ok" onclick="saveNetwork(${isNew ? 'null' : idx})">${isNew ? 'Create Network' : 'Update Network'}</button>
       </div>
     </div>
   `;

@@ -712,7 +712,7 @@ async function collectDiskUsage(scanPath, maxDepth = 4) {
 
 // ─── HTTP Server ──────────────────────────────────────────────────────────────
 
-const HTML = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const HTML_PATH = path.join(__dirname, 'index.html');
 
 const server = http.createServer(async (req, res) => {
   const startedAt = Date.now();
@@ -866,7 +866,7 @@ const server = http.createServer(async (req, res) => {
       'Pragma': 'no-cache',
       'Expires': '0',
     });
-    res.end(HTML);
+    res.end(fs.readFileSync(HTML_PATH, 'utf8'));
     return;
   }
 

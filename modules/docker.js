@@ -143,6 +143,8 @@ function parseComposeServices(raw) {
   let currentIndent = 0;
   let inPorts = false;
   let portsIndent = 0;
+  let inDependsOn = false;
+  let dependsOnIndent = 0;
 
   const flushCurrent = () => {
     if (!current) return;
@@ -151,10 +153,12 @@ function parseComposeServices(raw) {
       containerName: current.containerName || '',
       image: current.image || '',
       ports: current.ports || [],
+      dependsOn: current.dependsOn || [],
       displayName: current.containerName || current.service,
     });
     current = null;
     inPorts = false;
+    inDependsOn = false;
   };
 
   for (const line of lines) {
@@ -177,7 +181,7 @@ function parseComposeServices(raw) {
 
     if (indent === servicesIndent + 2 && /^[A-Za-z0-9_.-]+:\s*$/.test(trimmed)) {
       flushCurrent();
-      current = { service: trimmed.slice(0, -1), ports: [] };
+      current = { service: trimmed.slice(0, -1), ports: [], dependsOn: [] };
       currentIndent = indent;
       continue;
     }
@@ -188,6 +192,8 @@ function parseComposeServices(raw) {
       const m = trimmed.match(/^([A-Za-z0-9_.-]+):\s*(.*)$/);
       if (!m) continue;
       const [, key, value] = m;
+      inPorts = false;
+      inDependsOn = false;
       if (key === 'container_name') {
         current.containerName = unquoteYamlScalar(value);
       } else if (key === 'image') {
@@ -195,6 +201,15 @@ function parseComposeServices(raw) {
       } else if (key === 'ports') {
         inPorts = true;
         portsIndent = indent;
+      } else if (key === 'depends_on') {
+        inDependsOn = true;
+        dependsOnIndent = indent;
+        // inline list form: depends_on: [svc1, svc2]
+        if (value.startsWith('[')) {
+          const inner = value.replace(/^\[|\]$/g, '');
+          inner.split(',').map(s => unquoteYamlScalar(s.trim())).filter(Boolean).forEach(s => current.dependsOn.push(s));
+          inDependsOn = false;
+        }
       }
       continue;
     }
@@ -202,6 +217,18 @@ function parseComposeServices(raw) {
     if (inPorts && indent > portsIndent && trimmed.startsWith('- ')) {
       const parsed = parseComposePortSpec(trimmed.slice(2));
       if (parsed) current.ports.push(parsed);
+    }
+
+    if (inDependsOn && indent > dependsOnIndent) {
+      if (trimmed.startsWith('- ')) {
+        // list form: - servicename
+        const svc = unquoteYamlScalar(trimmed.slice(2).trim());
+        if (svc) current.dependsOn.push(svc);
+      } else {
+        // map form: servicename:\n  condition: ...
+        const mapKey = trimmed.match(/^([A-Za-z0-9_.-]+):\s*$/);
+        if (mapKey && indent === dependsOnIndent + 2) current.dependsOn.push(mapKey[1]);
+      }
     }
   }
 
@@ -461,7 +488,8 @@ async function runComposeProject(composeFile, args = [], timeoutMs = 60000) {
 }
 
 async function runComposeUpStream(composeFile, service, sendChunk, opts = {}) {
-  const child = spawnComposeCommand(composeFile, ['up', '-d', service], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const args = service ? ['up', '-d', service] : ['up', '-d'];
+  const child = spawnComposeCommand(composeFile, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   if (!child) return { ok: false, error: 'Failed to start compose process' };
   if (opts.onSpawn) opts.onSpawn(child);
 
@@ -496,7 +524,8 @@ async function runComposeUpStream(composeFile, service, sendChunk, opts = {}) {
 }
 
 async function runComposeBootLogStream(composeFile, service, sendChunk, opts = {}) {
-  const child = spawnComposeCommand(composeFile, ['logs', '--follow', '--timestamps', service], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const logArgs = service ? ['logs', '--follow', '--timestamps', service] : ['logs', '--follow', '--timestamps'];
+  const child = spawnComposeCommand(composeFile, logArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
   if (!child) return { ok: false, error: 'Failed to start compose logs' };
   if (opts.onSpawn) opts.onSpawn(child);
 
@@ -934,6 +963,7 @@ async function collectContainers() {
         inspectMeta.composeConfigFiles
       ),
       composeOnly: false,
+      composeDependsOn: [],
     });
   }
 
@@ -968,6 +998,7 @@ async function collectContainers() {
     container.composeFile = container.composeFile || project.composeFile;
     container.composeDir = container.composeDir || project.dir;
     container.composeManaged = true;
+    container.composeDependsOn = service.dependsOn || [];
     if ((!container.ports || !container.ports.length) && service.ports.length) {
       container.ports = service.ports;
     }
@@ -1009,6 +1040,7 @@ async function collectContainers() {
         composeFile: project.composeFile,
         composeManaged: true,
         composeOnly: true,
+        composeDependsOn: service.dependsOn || [],
       });
     }
   }
@@ -1632,8 +1664,8 @@ async function handleComposeUpStream(req, res, url, reqUser) {
 
   try {
     const body = await getRequestBody(req);
-    const { project, service } = JSON.parse(body || '{}');
-    if (!project || !service) {
+    const { project, service, parentStart } = JSON.parse(body || '{}');
+    if (!project || (!service && !parentStart)) {
       logError('Compose stream rejected: missing project or service', { user: reqUser, project, service });
       send({ type: 'error', message: 'project and service are required' });
       send({ type: 'done', ok: false });
@@ -1641,17 +1673,33 @@ async function handleComposeUpStream(req, res, url, reqUser) {
       return true;
     }
 
-    const target = findComposeServiceTarget(project, service);
-    if (!target) {
-      logError('Compose stream failed: target not found', { user: reqUser, project, service });
-      send({ type: 'error', message: 'Compose service not found under configured compose root.' });
-      send({ type: 'done', ok: false });
-      res.end();
-      return true;
+    let composeFile, resolvedService;
+    if (parentStart) {
+      const proj = discoverComposeProjects().find(p => p.project === project);
+      if (!proj) {
+        logError('Compose stream failed: project not found', { user: reqUser, project });
+        send({ type: 'error', message: 'Compose project not found under configured compose root.' });
+        send({ type: 'done', ok: false });
+        res.end();
+        return true;
+      }
+      composeFile = proj.composeFile;
+      resolvedService = null;
+    } else {
+      const target = findComposeServiceTarget(project, service);
+      if (!target) {
+        logError('Compose stream failed: target not found', { user: reqUser, project, service });
+        send({ type: 'error', message: 'Compose service not found under configured compose root.' });
+        send({ type: 'done', ok: false });
+        res.end();
+        return true;
+      }
+      composeFile = target.project.composeFile;
+      resolvedService = target.service.service;
     }
 
     send({ type: 'status', message: 'Reading compose project…' });
-    const result = await runComposeUpStream(target.project.composeFile, target.service.service, sendChunk, {
+    const result = await runComposeUpStream(composeFile, resolvedService, sendChunk, {
       onSpawn: child => { activeChild = child; },
       isCancelled: () => clientClosed,
     });
@@ -1663,7 +1711,7 @@ async function handleComposeUpStream(req, res, url, reqUser) {
     }
 
     if (result.ok) {
-      const bootLogs = await runComposeBootLogStream(target.project.composeFile, target.service.service, sendChunk, {
+      const bootLogs = await runComposeBootLogStream(composeFile, resolvedService, sendChunk, {
         onSpawn: child => { activeChild = child; },
         isCancelled: () => clientClosed,
       });
@@ -1675,7 +1723,7 @@ async function handleComposeUpStream(req, res, url, reqUser) {
       if (!bootLogs.ok) {
         send({ type: 'status', message: `Startup log follow ended early: ${bootLogs.error || 'unknown reason'}` });
       }
-      logInfo('Compose stream completed', { user: reqUser, project: target.project.project, service: target.service.service });
+      logInfo('Compose stream completed', { user: reqUser, project, service: resolvedService || '(all)' });
       send({ type: 'done', ok: true, message: 'Compose up completed successfully.' });
     } else {
       logError('Compose stream failed', {
@@ -1800,7 +1848,23 @@ async function handleComposeBackups(req, res, url) {
           try { mtime = fs.statSync(fp).mtime.toISOString(); } catch {}
           return { name: f, mtime };
         }).sort((a, b) => (b.mtime || '').localeCompare(a.mtime || ''));
-        result.push({ project, path: dir, files });
+
+        const dataRoot = getContainerDataRoot();
+        const dataDir = path.join(dataRoot, project);
+        let dataFiles = [];
+        try {
+          if (fs.existsSync(dataDir) && isPathInsideRoot(dataDir, dataRoot)) {
+            dataFiles = fs.readdirSync(dataDir).map(f => {
+              const fp = path.join(dataDir, f);
+              let mtime = null;
+              let isDir = false;
+              try { const st = fs.statSync(fp); mtime = st.mtime.toISOString(); isDir = st.isDirectory(); } catch {}
+              return { name: f, mtime, isDir };
+            }).sort((a, b) => (b.mtime || '').localeCompare(a.mtime || ''));
+          }
+        } catch {}
+
+        result.push({ project, path: dir, files, dataFiles, dataPath: dataDir });
       }
       result.sort((a, b) => a.project.localeCompare(b.project));
     }
@@ -1916,6 +1980,43 @@ async function handleComposeRestore(req, res, url) {
   return true;
 }
 
+async function handleComposeArchiveDelete(req, res, url) {
+  if (url.pathname !== '/api/compose/archive/delete' || req.method !== 'POST') return false;
+  const body = await getRequestBody(req);
+  try {
+    const { project } = JSON.parse(body || '{}');
+    if (!project || !/^[a-zA-Z0-9_-]+$/.test(project)) {
+      writeJson(res, { ok: false, error: 'Invalid project name.' });
+      return true;
+    }
+
+    const backupDir = path.join(COMPOSE_BACKUP_ROOT, project);
+    if (!isPathInsideRoot(backupDir, COMPOSE_BACKUP_ROOT)) {
+      writeJson(res, { ok: false, error: 'Invalid project path.' });
+      return true;
+    }
+
+    const deleted = [];
+
+    if (fs.existsSync(backupDir)) {
+      fs.rmSync(backupDir, { recursive: true, force: true });
+      deleted.push(backupDir);
+    }
+
+    const dataDir = path.join(getContainerDataRoot(), project);
+    if (isPathInsideRoot(dataDir, getContainerDataRoot()) && fs.existsSync(dataDir)) {
+      fs.rmSync(dataDir, { recursive: true, force: true });
+      deleted.push(dataDir);
+    }
+
+    composeDiscoveryCache = { ts: 0, projects: [] };
+    writeJson(res, { ok: true, deleted });
+  } catch (e) {
+    writeJson(res, { ok: false, error: e.message });
+  }
+  return true;
+}
+
 async function handleComposeFileGet(req, res, url) {
   if (url.pathname !== '/api/compose/file' || req.method !== 'GET') return false;
   const project = url.searchParams.get('project') || '';
@@ -1975,6 +2076,7 @@ async function handleApi(req, res, url, reqUser) {
   if (await handleComposeBackups(req, res, url)) return true;
   if (await handleComposeArchive(req, res, url)) return true;
   if (await handleComposeRestore(req, res, url)) return true;
+  if (await handleComposeArchiveDelete(req, res, url)) return true;
   if (await handleComposeFileGet(req, res, url)) return true;
   if (await handleComposeFilePost(req, res, url)) return true;
   return false;
