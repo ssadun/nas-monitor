@@ -50,6 +50,7 @@ async function loadSettingsForm() {
     setSettingsInputValue('settings-composeInactivityTimeoutSeconds', settings.composeInactivityTimeoutSeconds ?? 120);
     setSettingsInputValue('settings-dockerConfigFolder', settings.dockerConfigFolder || '');
     setSettingsInputValue('settings-dockerDataFolder', settings.dockerDataFolder || '');
+    setSettingsInputValue('settings-refreshIntervalSeconds', settings.refreshIntervalSeconds ?? 3);
   } catch (error) {
     showSettingsMessage(error.message || 'Failed to load settings.', true);
   }
@@ -73,6 +74,7 @@ async function submitSettingsForm() {
     composeInactivityTimeoutSeconds: parseNumberField('settings-composeInactivityTimeoutSeconds', 120),
     dockerConfigFolder: getElement('settings-dockerConfigFolder')?.value || '',
     dockerDataFolder: getElement('settings-dockerDataFolder')?.value || '',
+    refreshIntervalSeconds: parseNumberField('settings-refreshIntervalSeconds', 3),
   };
 
   try {
@@ -86,6 +88,7 @@ async function submitSettingsForm() {
       throw new Error(data.error || 'Unable to save settings.');
     }
     showSettingsMessage('Settings saved successfully.');
+    if (typeof startStream === 'function') startStream();
     if (data.settings) {
       setSettingsInputValue('settings-logLevel', data.settings.logLevel || 'INFO');
       setSettingsInputValue('settings-authenticationType', String(Boolean(data.settings.authenticationType)));
@@ -95,6 +98,7 @@ async function submitSettingsForm() {
       setSettingsInputValue('settings-composeInactivityTimeoutSeconds', data.settings.composeInactivityTimeoutSeconds ?? 120);
       setSettingsInputValue('settings-dockerConfigFolder', data.settings.dockerConfigFolder || '');
       setSettingsInputValue('settings-dockerDataFolder', data.settings.dockerDataFolder || '');
+      setSettingsInputValue('settings-refreshIntervalSeconds', data.settings.refreshIntervalSeconds ?? 3);
     }
   } catch (error) {
     showSettingsMessage(error.message || 'Failed to save settings.', true);

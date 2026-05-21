@@ -10,6 +10,7 @@ const path = require('path');
 const auth = require('./modules/auth.js');
 const header = require('./modules/header.js');
 const docker = require('./modules/docker.js');
+const categories = require('./modules/categories.js');
 const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
@@ -31,6 +32,7 @@ const LEGACY_SETTINGS_FILE = path.join(__dirname, 'setting.json');
  * @property {number} composeInactivityTimeoutSeconds
  * @property {string} dockerConfigFolder
  * @property {string} dockerDataFolder
+ * @property {number} refreshIntervalSeconds
  */
 
 const LOG_LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
@@ -44,6 +46,7 @@ const DEFAULT_SETTINGS = {
   composeInactivityTimeoutSeconds: 120,
   dockerConfigFolder: '/volume1/docker/_config',
   dockerDataFolder: '/volume1/docker/_data',
+  refreshIntervalSeconds: 3,
 };
 
 function normalizeSettings(raw = {}) {
@@ -60,6 +63,8 @@ function normalizeSettings(raw = {}) {
   const composeInactivityNum = Number(composeInactivityRaw);
   const dockerConfigFolder = String(raw.dockerConfigFolder || DEFAULT_SETTINGS.dockerConfigFolder).trim() || DEFAULT_SETTINGS.dockerConfigFolder;
   const dockerDataFolder = String(raw.dockerDataFolder || DEFAULT_SETTINGS.dockerDataFolder).trim() || DEFAULT_SETTINGS.dockerDataFolder;
+  const refreshIntervalRaw = raw.refreshIntervalSeconds ?? DEFAULT_SETTINGS.refreshIntervalSeconds;
+  const refreshIntervalNum = Number(refreshIntervalRaw);
   /** @type {AppSettings} */
   const normalized = {
     logLevel: safeLevel,
@@ -72,6 +77,9 @@ function normalizeSettings(raw = {}) {
       : DEFAULT_SETTINGS.composeInactivityTimeoutSeconds,
     dockerConfigFolder,
     dockerDataFolder,
+    refreshIntervalSeconds: Number.isFinite(refreshIntervalNum) && refreshIntervalNum >= 1 && refreshIntervalNum <= 60
+      ? refreshIntervalNum
+      : DEFAULT_SETTINGS.refreshIntervalSeconds,
   };
   return normalized;
 }
@@ -107,6 +115,7 @@ if (!fs.existsSync(SETTINGS_FILE)) {
 
 // Initialize auth module with dependencies
 auth.setDependencies(appSettings, logError);
+categories.setDependencies(logError);
 
 function shouldLog(level) {
   const current = LOG_LEVELS[String(appSettings.logLevel || 'INFO').toUpperCase()] ?? LOG_LEVELS.INFO;
@@ -537,44 +546,6 @@ async function collectSystemSummary() {
 const DISK_HISTORY_FILE = path.join(__dirname, 'data', 'disk-history.json');
 const DISK_HISTORY_MAX = 20;
 
-const CAT_ASSIGNMENTS_FILE = path.join(__dirname, 'data', 'category-assignments.json');
-const CAT_DEFS_FILE = path.join(__dirname, 'data', 'category-defs.json');
-
-const DEFAULT_CAT_DEFS = [
-  { id: 'media',       label: 'Media',       icon: '🎬', color: '#a78bfa', dot: '#8b5cf6' },
-  { id: 'performance', label: 'Performance', icon: '⚡', color: '#f97316', dot: '#f97316' },
-  { id: 'utilities',  label: 'Utilities',   icon: '🔧', color: '#06b6d4', dot: '#06b6d4' },
-  { id: 'system',     label: 'System',      icon: '🖥',  color: '#22c55e', dot: '#22c55e' },
-];
-
-function loadCatDefs() {
-  try {
-    const data = JSON.parse(fs.readFileSync(CAT_DEFS_FILE, 'utf8'));
-    return Array.isArray(data) && data.length ? data : DEFAULT_CAT_DEFS;
-  } catch { return DEFAULT_CAT_DEFS; }
-}
-
-function saveCatDefs(data) {
-  try {
-    fs.writeFileSync(CAT_DEFS_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    logError('Failed to save category definitions file', { error: e.message });
-  }
-}
-
-function loadCatAssignments() {
-  try {
-    return JSON.parse(fs.readFileSync(CAT_ASSIGNMENTS_FILE, 'utf8'));
-  } catch { return {}; }
-}
-
-function saveCatAssignments(data) {
-  try {
-    fs.writeFileSync(CAT_ASSIGNMENTS_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    logError('Failed to save category assignments file', { error: e.message });
-  }
-}
 
 function loadDiskHistory() {
   try {
@@ -624,7 +595,12 @@ async function refreshCache() {
 
 // Initial + periodic refresh
 refreshCache();
-setInterval(refreshCache, 3000);
+let refreshTimer = setInterval(refreshCache, appSettings.refreshIntervalSeconds * 1000);
+
+function resetRefreshTimer() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(refreshCache, appSettings.refreshIntervalSeconds * 1000);
+}
 
 // ─── Disk usage scanner ───────────────────────────────────────────────────────
 
@@ -799,6 +775,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/modules/setting.js') {
+    const settingScript = fs.readFileSync(path.join(__dirname, 'modules', 'setting.js'), 'utf8');
+    header.sendJavaScript(res, settingScript);
+    return;
+  }
+
   if (url.pathname === '/styles.css') {
     if (header.sendFile(res, STYLES_FILE, 'text/css; charset=utf-8')) return;
     header.sendNotFound(res, 'styles not found');
@@ -908,16 +890,17 @@ const server = http.createServer(async (req, res) => {
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
     });
-    res.write('retry: 3000\n\n');
+    const intervalMs = appSettings.refreshIntervalSeconds * 1000;
+    res.write(`retry: ${intervalMs}\n\n`);
 
     const send = () => {
       if (!res.writableEnded) {
-        res.write(`data: ${JSON.stringify(cache)}\n\n`);
+        res.write(`data: ${JSON.stringify({ ...cache, refreshIntervalSeconds: appSettings.refreshIntervalSeconds })}\n\n`);
       }
     };
 
     send();
-    const iv = setInterval(send, 3000);
+    const iv = setInterval(send, intervalMs);
     req.on('close', () => clearInterval(iv));
     return;
   }
@@ -1090,6 +1073,12 @@ const server = http.createServer(async (req, res) => {
         const input = JSON.parse(body || '{}');
         const previous = { ...appSettings };
         appSettings = saveSettingsFile({ ...appSettings, ...input });
+        const changed = Object.keys(appSettings).filter(k => appSettings[k] !== previous[k]);
+        auditLog('settings_change', {
+          user: reqUser,
+          status: 'success',
+          details: changed.map(k => `${k}: ${JSON.stringify(previous[k])} → ${JSON.stringify(appSettings[k])}`).join(', '),
+        }, req);
         logInfo('Application settings updated', {
           user: reqUser,
           logLevel: appSettings.logLevel,
@@ -1119,9 +1108,17 @@ const server = http.createServer(async (req, res) => {
             currentSeconds: appSettings.composeInactivityTimeoutSeconds,
           });
         }
+        if (previous.refreshIntervalSeconds !== appSettings.refreshIntervalSeconds) {
+          resetRefreshTimer();
+          logInfo('Refresh interval changed', {
+            previousSeconds: previous.refreshIntervalSeconds,
+            currentSeconds: appSettings.refreshIntervalSeconds,
+          });
+        }
         res.end(JSON.stringify({ ok: true, settings: appSettings }));
       } catch (e) {
         logError('Failed to update settings', { error: e.message, user: reqUser });
+        auditLog('settings_change', { user: reqUser, status: 'failed', details: e.message }, req);
         res.end(JSON.stringify({ ok: false, error: e.message }));
       }
     });
@@ -1165,70 +1162,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // GET /api/category-defs  — return category definitions array
-  if (url.pathname === '/api/category-defs' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-cache' });
-    res.end(JSON.stringify(loadCatDefs()));
-    return;
-  }
-
-  // POST /api/category-defs  — body: array of category objects
-  if (url.pathname === '/api/category-defs' && req.method === 'POST') {
-    let body = '';
-    req.on('data', d => body += d);
-    req.on('end', () => {
-      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      try {
-        const defs = JSON.parse(body);
-        if (!Array.isArray(defs)) { res.end(JSON.stringify({ ok: false, error: 'expected array' })); return; }
-        saveCatDefs(defs);
-        res.end(JSON.stringify({ ok: true }));
-      } catch (e) {
-        res.end(JSON.stringify({ ok: false, error: e.message }));
-      }
-    });
-    return;
-  }
-
-  // GET /api/categories  — return all assignments { containerName: categoryId }
-  if (url.pathname === '/api/categories' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-cache' });
-    res.end(JSON.stringify(loadCatAssignments()));
-    return;
-  }
-
-  // POST /api/categories  — body: { containerId, categoryId }  (categoryId null = remove)
-  if (url.pathname === '/api/categories' && req.method === 'POST') {
-    let body = '';
-    req.on('data', d => body += d);
-    req.on('end', () => {
-      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      try {
-        const { containerName, categoryId, purge } = JSON.parse(body);
-        const assignments = loadCatAssignments();
-        // purge: remove all assignments for a deleted category id
-        if (purge) {
-          for (const key of Object.keys(assignments)) {
-            if (assignments[key] === purge) delete assignments[key];
-          }
-          saveCatAssignments(assignments);
-          res.end(JSON.stringify({ ok: true, assignments }));
-          return;
-        }
-        if (!containerName) { res.end(JSON.stringify({ ok: false, error: 'containerName required' })); return; }
-        if (categoryId === null || categoryId === undefined) {
-          delete assignments[containerName];
-        } else {
-          assignments[containerName] = categoryId;
-        }
-        saveCatAssignments(assignments);
-        res.end(JSON.stringify({ ok: true, assignments }));
-      } catch (e) {
-        res.end(JSON.stringify({ ok: false, error: e.message }));
-      }
-    });
-    return;
-  }
+  // ── Category routes ──────────────────────────────────────────────────────────
+  if (categories.registerRoutes(req, res, url)) return;
 
   // ── Network Management Endpoints ────────────────────────────────────────────
   // GET /api/network/list  — list all Docker networks (excluding system ones)

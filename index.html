@@ -25,6 +25,8 @@
     --text3:     #545b7a;
     --accent:    #4f8ef7;
     --accent2:   #7c3aed;
+    --lavender:  #8b5cf6;
+    --white:     #f2ffff;
     --green:     #22c55e;
     --yellow:    #eab308;
     --red:       #ef4444;
@@ -214,10 +216,13 @@
     text-align: left;
   }
   .sidebar-toggle-icon {
-    font-size: 28px;
     flex-shrink: 0;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
   }
+  .sidebar-toggle-icon svg { width: 26px; height: 26px; }
   .sidebar-toggle-text {
     display: flex;
     flex-direction: column;
@@ -313,7 +318,7 @@
     border: none;
     color: var(--text2);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all .15s;
@@ -329,10 +334,14 @@
     color: var(--accent);
   }
   .sidebar-item-icon {
-    font-size: 18px;
     flex-shrink: 0;
     width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .sidebar-item-icon svg { width: 18px; height: 18px; color: inherit !important; }
   .sidebar-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -370,6 +379,21 @@
   }
   .filter-input:focus { border-color: var(--accent); }
   .filter-input::placeholder { color: var(--text3); }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    background: transparent
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16' viewBox='0 0 10 16'%3E%3Cpath d='M5 3 L9 7 L1 7 Z' fill='rgba(255,255,255,0.4)'/%3E%3Cpath d='M5 13 L1 9 L9 9 Z' fill='rgba(255,255,255,0.4)'/%3E%3C/svg%3E")
+      center / 10px 16px no-repeat;
+    cursor: pointer;
+    opacity: 1;
+  }
+  input[type=number]::-webkit-inner-spin-button:hover,
+  input[type=number]::-webkit-outer-spin-button:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='16' viewBox='0 0 10 16'%3E%3Cpath d='M5 3 L9 7 L1 7 Z' fill='rgba(255,255,255,0.9)'/%3E%3Cpath d='M5 13 L1 9 L9 9 Z' fill='rgba(255,255,255,0.9)'/%3E%3C/svg%3E");
+  }
   .netedit-input { width: 100%; }
   .netedit-input:disabled {
     opacity: .7;
@@ -888,6 +912,32 @@
     border-color: var(--green);
   }
   .action-modal-btn.ok:disabled {
+    opacity: .35; cursor: not-allowed;
+  }
+  /* Lavender actions */
+  .action-modal-btn.lavender {
+    color: var(--lavender);
+    border-color: rgba(139,92,246,.45);
+    background: rgba(139,92,246,.08);
+  }
+  .action-modal-btn.lavender:hover:not(:disabled) {
+    background: rgba(139,92,246,.18);
+    border-color: var(--lavender);
+  }
+  .action-modal-btn.lavender:disabled {
+    opacity: .35; cursor: not-allowed;
+  }
+  /* White actions */
+  .action-modal-btn.white {
+    color: var(--white);
+    border-color: rgba(242,255,255,.45);
+    background: rgba(242,255,255,.08);
+  }
+  .action-modal-btn.white:hover:not(:disabled) {
+    background: rgba(242,255,255,.18);
+    border-color: var(--white);
+  }
+  .action-modal-btn.white:disabled {
     opacity: .35; cursor: not-allowed;
   }
   .action-progress { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
@@ -1889,6 +1939,31 @@
   }
   .catmgr-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
   .catmgr-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .settings-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  .settings-backdrop.open { opacity: 1; pointer-events: all; }
+  .settings-modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 14px; width: 520px; max-width: 95vw;
+    max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,.7);
+    animation: modalIn .15s ease;
+  }
+  .settings-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); border-radius: 14px 14px 0 0;
+  }
+  .settings-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .settings-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .settings-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-top: 1px solid var(--border); gap: 10px;
+  }
+  .settings-label { font-size: 13px; font-weight: 500; color: var(--text2); }
   .catmgr-row {
     display: flex; align-items: center; gap: 10px;
     background: var(--bg3); border: 1px solid var(--border);
@@ -2362,13 +2437,13 @@
 <header>
   <div class="metrics-strip">
     <div class="metric-card containers" style="flex:13 1 100px;" onclick="switchTab('containers')">
-      <div class="metric-label"><i data-lucide="activity" style="color:#477ed9"></i>Containers</div>
-      <div class="metric-value" id="s-containers" style="color:#477ed9;">–</div>
+      <div class="metric-label"><i data-lucide="activity" style="color:var(--accent)"></i>Containers</div>
+      <div class="metric-value" id="s-containers" style="color:var(--accent);">–</div>
       <div class="metric-sub" id="s-containers-sub">–</div>
     </div>
     <div class="metric-card processes" style="flex:13 1 100px;" onclick="switchTab('processes')">
-      <div class="metric-label"><i data-lucide="cpu" style="color:var(--accent)"></i>Processes</div>
-      <div class="metric-value accent" id="s-procs">–</div>
+      <div class="metric-label"><i data-lucide="cpu" style="color:var(--green)"></i>Processes</div>
+      <div class="metric-value green" id="s-procs">–</div>
       <div class="metric-sub" id="s-procs-sub">–</div>
     </div>
     <div class="metric-card avg-cpu" style="flex:13 1 100px;" onclick="switchTab('processes')">
@@ -2388,7 +2463,7 @@
       </div>
     </div>
     <div class="metric-card disk" style="flex:15 1 120px;" onclick="switchTab('disk')">
-      <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--green)"></i>Disk Usage</div>
+      <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--yellow)"></i>Disk Usage</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <canvas id="s-disk-canvas" width="35" height="35" style="display:block;width:35px;height:35px;flex-shrink:0;"></canvas>
         <div>
@@ -2403,7 +2478,7 @@
       <div class="metric-sub" id="s-load">load –</div>
     </div>
     <div class="metric-card network" style="flex:18 1 120px;" onclick="switchTab('network')">
-      <div class="metric-label"><i data-lucide="network" style="color:var(--accent)"></i>Network</div>
+      <div class="metric-label"><i data-lucide="network" style="color:var(--red)"></i>Network</div>
         <canvas id="s-nw-canvas" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
@@ -2418,7 +2493,7 @@
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
-    <span class="sidebar-toggle-icon">🐋</span>
+    <span class="sidebar-toggle-icon"><i data-lucide="ship"></i></span>
     <span class="sidebar-toggle-text">
       <span class="sidebar-toggle-name">NAS <span style="color:var(--accent)">Monitor</span></span>
       <span class="sidebar-toggle-motto">Real-Time System Monitor</span>
@@ -2428,33 +2503,37 @@
   <div class="sidebar-nav">
     <div class="sidebar-section">
       <button class="sidebar-item active" onclick="switchTabFromSidebar('containers')">
-        <span class="sidebar-item-icon">🐋</span>
+        <span class="sidebar-item-icon"><i data-lucide="box"></i></span>
         <span class="sidebar-item-text">Container Monitoring</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('processes')">
-        <span class="sidebar-item-icon">⚙️</span>
+        <span class="sidebar-item-icon" style="color:var(--green);"><i data-lucide="cpu"></i></span>
         <span class="sidebar-item-text">System Processes</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('disk')">
-        <span class="sidebar-item-icon">💾</span>
+        <span class="sidebar-item-icon" style="color:var(--yellow);"><i data-lucide="server"></i></span>
         <span class="sidebar-item-text">Disk Usage</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('network')">
-        <span class="sidebar-item-icon">🌐</span>
+        <span class="sidebar-item-icon" style="color:var(--red);"><i data-lucide="network"></i></span>
         <span class="sidebar-item-text">Network Utilization</span>
       </button>
     </div>
     <div class="sidebar-section bottom">
       <button class="sidebar-item" onclick="switchTabFromSidebar('categories')">
-        <span class="sidebar-item-icon">🗃️</span>
+        <span class="sidebar-item-icon" style="color:var(--yellow);"><i data-lucide="folder-open"></i></span>
         <span class="sidebar-item-text">Categories</span>
       </button>
+      <button class="sidebar-item" onclick="openSettingsModal(); closeSidebar();">
+        <span class="sidebar-item-icon" style="color:var(--white);"><i data-lucide="settings"></i></span>
+        <span class="sidebar-item-text">Settings</span>
+      </button>
       <button class="sidebar-item" onclick="openCredentialsModal(); closeSidebar();">
-        <span class="sidebar-item-icon">🔑</span>
+        <span class="sidebar-item-icon" style="color:var(--accent);"><i data-lucide="key-round"></i></span>
         <span class="sidebar-item-text">Credentials</span>
       </button>
       <button class="sidebar-item" onclick="logout()">
-        <span class="sidebar-item-icon">🚪</span>
+        <span class="sidebar-item-icon" style="color:var(--red);"><i data-lucide="log-out"></i></span>
         <span class="sidebar-item-text">Logout</span>
       </button>
     </div>
@@ -2462,7 +2541,7 @@
 </div>
 
 <main>
-  <!-- ═══ CONTAINERS TAB ═══════════════════════════════════════════════ -->
+  <!--  CONTAINERS TAB  -->
   <div class="tab-panel active" id="tab-containers">
     <div class="container-toolbar">
       <button class="toolbar-btn newcompose" onclick="openNewComposeModal()"><i data-lucide="file-plus" style="width:14px;height:14px;stroke-width:2;"></i><span>New Compose</span></button>
@@ -2479,7 +2558,7 @@
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
-        <button class="toolbar-btn refresh" id="container-refresh-btn" onclick="refreshContainerMonitoring()" title="Refresh container list"><i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i></button>
+        <div class="live-badge" id="container-refresh-btn" onclick="refreshContainerMonitoring()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
       </div>
     </div>
     <div class="table-wrap">
@@ -2506,7 +2585,7 @@
     </div>
   </div>
 
-  <!-- ═══ PROCESSES TAB ════════════════════════════════════════════════ -->
+  <!--  PROCESSES TAB  -->
   <div class="tab-panel" id="tab-processes">
     <div class="toolbar">
       <div class="view-toggle">
@@ -2524,7 +2603,7 @@
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
-        <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+        <div class="live-badge" onclick="startStream()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
       </div>
     </div>
     <div class="table-wrap">
@@ -2550,7 +2629,7 @@
     </div>
   </div>
 
-  <!-- ═══ DISK USAGE TAB ══════════════════════════════════════════════════ -->
+  <!--  DISK USAGE TAB  -->
   <div class="tab-panel" id="tab-disk">
     <div class="toolbar">
       <button class="expand-all-btn disk-toolbar-btn" onclick="openDockerVolumesModal()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">💽 Docker Volumes</button>
@@ -2576,7 +2655,7 @@
         <div class="filter-box">
           <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
         </div>
-        <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+        <div class="live-badge" onclick="startStream()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
       </div>
     </div>
     <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
@@ -2631,7 +2710,7 @@
     </div>
   </div>
 
-  <!-- ═══ NETWORK UTILIZATION TAB ══════════════════════════════════════════ -->
+  <!--  NETWORK UTILIZATION TAB  -->
   <div class="tab-panel" id="tab-network">
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <div class="toolbar">
@@ -2650,14 +2729,14 @@
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
           </div>
-          <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+          <div class="live-badge" onclick="startStream()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
         </div>
       </div>
       <div id="net-ifaces" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-content:flex-start;"></div>
     </div>
   </div>
 
-  <!-- ═══ CATEGORIES TAB ════════════════════════════════════════════════════ -->
+  <!--  CATEGORIES TAB  -->
   <div class="tab-panel" id="tab-categories">
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <!-- Toolbar -->
@@ -2674,7 +2753,7 @@
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
           </div>
-          <div class="live-badge"><div class="live-dot"></div> LIVE · 3s</div>
+          <div class="live-badge" onclick="startStream()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
         </div>
       </div>
       <!-- Categories grid + unassigned -->
@@ -2731,6 +2810,69 @@
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="settings-backdrop" id="settings-backdrop">
+  <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:460px;">
+    <div class="settings-header">
+      <div class="settings-title"><i data-lucide="settings" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>Settings</div>
+      <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+    </div>
+    <div class="settings-body" style="padding:20px 24px;gap:14px;" id="settings-body">
+      <div class="catedit-row">
+        <div class="settings-label">Refresh Interval (seconds)</div>
+        <input class="filter-input" type="number" id="settings-refreshIntervalSeconds" min="1" max="60" step="1" value="3" style="width:100px;"/>
+      </div>
+      <div style="height:1px;background:var(--border);margin:2px 0;"></div>
+      <div class="catedit-row">
+        <div class="settings-label">Log Level</div>
+        <select class="filter-input" id="settings-logLevel" style="width:120px;">
+          <option value="DEBUG">DEBUG</option>
+          <option value="INFO">INFO</option>
+          <option value="WARN">WARN</option>
+          <option value="ERROR">ERROR</option>
+        </select>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Authentication</div>
+        <select class="filter-input" id="settings-authenticationType" style="width:120px;">
+          <option value="true">Enabled</option>
+          <option value="false">Disabled</option>
+        </select>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Session Timeout (hours)</div>
+        <input class="filter-input" type="number" id="settings-sessionTimeoutHours" min="1" max="720" step="1" value="4" style="width:100px;"/>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Warn Threshold (seconds)</div>
+        <input class="filter-input" type="number" id="settings-warnThresholdSeconds" min="0" max="60" step="1" value="3" style="width:100px;"/>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Prune Interval (hours)</div>
+        <input class="filter-input" type="number" id="settings-pruneIntervalHours" min="1" max="720" step="1" value="24" style="width:100px;"/>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Compose Inactivity (seconds)</div>
+        <input class="filter-input" type="number" id="settings-composeInactivityTimeoutSeconds" min="10" max="3600" step="1" value="120" style="width:100px;"/>
+      </div>
+      <div style="height:1px;background:var(--border);margin:2px 0;"></div>
+      <div class="catedit-row">
+        <div class="settings-label">Docker Config Folder</div>
+        <input class="filter-input" type="text" id="settings-dockerConfigFolder" style="flex:1;" placeholder="/volume1/docker/_config"/>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Docker Data Folder</div>
+        <input class="filter-input" type="text" id="settings-dockerDataFolder" style="flex:1;" placeholder="/volume1/docker/_data"/>
+      </div>
+      <div id="settings-message" style="display:none;border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;"></div>
+    </div>
+    <div class="settings-footer" style="justify-content:flex-end;">
+      <button class="action-modal-btn cancel" onclick="closeSettingsModal()">Cancel</button>
+      <button class="action-modal-btn ok" onclick="submitSettingsForm()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
 <!-- CATEGORY MANAGER MODAL -->
 <div class="catmgr-backdrop" id="catmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
@@ -2745,7 +2887,7 @@
   </div>
 </div>
 
-<!-- ═══ DOCKER VOLUMES MODAL ═════════════════════════════════════════════ -->
+<!--  DOCKER VOLUMES MODAL  -->
 <div class="catmgr-backdrop" id="volmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()" style="width:900px;max-width:98vw;">
     <div class="catmgr-header">
@@ -2759,7 +2901,7 @@
   </div>
 </div>
 
-<!-- ═══ NETWORK MANAGER MODAL ═════════════════════════════════════════════ -->
+<!--  NETWORK MANAGER MODAL  -->
 <div class="catmgr-backdrop" id="netmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
@@ -2799,6 +2941,7 @@
 </div>
 
 <script>
+lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
 // ─── State ────────────────────────────────────────────────────────────────────
 let allData = { processes: [], containers: [], summary: {} };
 let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
@@ -2825,7 +2968,16 @@ function startStream() {
   streamEs = es;
   es.onmessage = e => {
     if (streamEs !== es) return;
-    allData = JSON.parse(e.data);
+    const parsed = JSON.parse(e.data);
+    // Reconnect SSE if server refresh interval changed
+    if (parsed.refreshIntervalSeconds && parsed.refreshIntervalSeconds !== allData.refreshIntervalSeconds && allData.refreshIntervalSeconds != null) {
+      startStream();
+      return;
+    }
+    allData = parsed;
+    document.querySelectorAll('.live-badge').forEach(el => {
+      el.childNodes[el.childNodes.length - 1].textContent = ` LIVE · ${allData.refreshIntervalSeconds ?? 3}s`;
+    });
     procByPid = {};
     allData.processes.forEach(p => procByPid[p.pid] = p);
     // Build PID → container name map
@@ -2840,12 +2992,6 @@ function startStream() {
     document.querySelectorAll('.last-update').forEach(el => {
       el.textContent = 'Updated ' + t.toLocaleTimeString();
     });
-    const refreshBtn = el('container-refresh-btn');
-    if (refreshBtn) {
-      refreshBtn.disabled = false;
-      refreshBtn.innerHTML = '<i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i>';
-      lucide.createIcons({ nodes: [refreshBtn] });
-    }
   };
   es.onerror = () => {
     if (streamEs !== es) return;
@@ -2858,12 +3004,6 @@ function startStream() {
 }
 
 function refreshContainerMonitoring() {
-  const btn = el('container-refresh-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i>';
-    lucide.createIcons({ nodes: [btn] });
-  }
   startStream();
 }
 
@@ -3071,7 +3211,7 @@ function renderSummary() {
   // Disk
   if (s.diskTotal > 0) {
     const diskPct = (s.diskUsed / s.diskTotal * 100);
-    const diskColor = diskPct >= 90 ? 'red' : diskPct >= 70 ? 'orange' : 'green';
+    const diskColor = diskPct >= 90 ? 'red' : diskPct >= 70 ? 'orange' : 'yellow';
     el('s-disk').textContent = fmtBytes(s.diskUsed);
     el('s-disk').className = 'metric-value ' + diskColor;
     el('s-disk-sub').textContent = fmtBytes(s.diskTotal) + ' · ' + diskPct.toFixed(1) + '%';
@@ -3142,8 +3282,8 @@ function drawSummaryNwSparkline() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  drawLine(summaryNwRx, 'rgb(34,197,94)');   // --green
-  drawLine(summaryNwTx, 'rgb(79,142,247)');    // --blue
+  drawLine(summaryNwRx, 'rgb(34,197,94)');    // --green
+  drawLine(summaryNwTx, 'rgb(79,142,247)');   // --blue
 }
 
 function drawDiskPie(fraction, colorName) {
@@ -7202,6 +7342,16 @@ function closeCredentialsModal(e) {
   document.getElementById('creds-backdrop').classList.remove('open');
 }
 
+function openSettingsModal() {
+  document.getElementById('settings-backdrop').classList.add('open');
+  lucide.createIcons({ nodes: [document.getElementById('settings-backdrop')] });
+  if (typeof loadSettingsForm === 'function') loadSettingsForm();
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-backdrop').classList.remove('open');
+}
+
 function checkCredsStrength(pw) {
   const fill  = document.getElementById('creds-strength-fill');
   const label = document.getElementById('creds-strength-label');
@@ -8233,5 +8383,6 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 
 </script>
 <script src="/modules/menu.js"></script>
+<script src="/modules/setting.js"></script>
 </body>
 </html>

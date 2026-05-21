@@ -25,7 +25,7 @@ This is a single-file Node.js HTTP server that monitors a NAS/Docker host via `/
 
 **modules/auth.js** handles PBKDF2-SHA512 password hashing (100K iterations), session creation/validation/expiry (4-hour TTL), cookie management, and periodic session cleanup. Sessions are persisted to `data/sessions.json` so they survive restarts.
 
-**index.html** is the entire frontend — a ~8,000-line single file containing all HTML, CSS, and JavaScript. Vanilla JS only; no framework. It connects to `/api/stream` (SSE) for live metric updates every 3 seconds and `/ws/console/:id` (WebSocket + xterm.js) for interactive container terminals.
+**index.html** is the entire frontend — a ~8,000-line single file containing all HTML, CSS, and JavaScript. Vanilla JS only; no framework. It connects to `/api/stream` (SSE) for live metric updates every 3 seconds and `/ws/console/:id` (WebSocket + xterm.js) for interactive container terminals. It is read from disk on every request (no restart needed for frontend changes — just refresh the browser).
 
 **modules/menu.js** and **modules/setting.js** are small frontend JS modules served at `/modules/*.js`.
 
@@ -65,9 +65,14 @@ Dark, high-contrast theme. All colors are CSS variables defined in [styles.css](
 
 - Backgrounds: `--main-bg` (#0d0f14), `--menu-bg` (#141720), `--card-bg` (#1c2030), `--card-hover-bg` (#242840)
 - Borders: `--border` (#2a2f4a), `--border2` (#353b5e)
-- Accent: `--blue` (#4f8ef7), `--purple` (#7c3aed), `--green` (#22c55e), `--yellow` (#eab308), `--red` (#ef4444), `--orange` (#f97316), `--cyan` (#06b6d4), `--pink` (#ec4899)
+- Accent: `--accent` (#4f8ef7), `--accent2` (#7c3aed), `--green` (#22c55e), `--yellow` (#eab308), `--red` (#ef4444), `--orange` (#f97316), `--cyan` (#06b6d4), `--pink` (#ec4899), `--lavender` (#8b5cf6), `--white` (#f2ffff)
 
 Typography: `Inter` (Google Fonts) for UI, monospace for data. Base size 15px, labels at 10–12px. Icons via `lucide` (CDN). Terminal via `xterm.js` (CDN).
+
+### Text case conventions
+
+- **Default: Title Case** — all labels, form fields, sidebar items, modal titles, button text, tooltips, and captions
+- **UPPER CASE** — page/tab headers and table column headers only
 
 ### Button conventions
 
@@ -78,6 +83,8 @@ Every modal and form must use these shared classes — no inline styles or one-o
 - **Blue — inform** (up, refresh, add folder, open, rename, compose up): `class="folder-nav-btn"` — blue (#477ed9) tint border/hover, matches `cdetail-action-btn apply`
 - **Yellow — stop**: `class="cdetail-action-btn stop"` — yellow tint border/hover (container detail modal only)
 - **Orange — restart**: `class="cdetail-action-btn restart"` — orange tint border/hover (container detail modal only)
+- **Lavender**: `class="action-modal-btn lavender"` — #8b5cf6 tint border/hover
+- **White**: `class="action-modal-btn white"` — #f2ffff tint border/hover
 
 ## Planned improvements (IMPROVEMENTS.md)
 
