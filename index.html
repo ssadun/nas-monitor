@@ -77,26 +77,28 @@
 
   /* ─── Metrics strip (top-right) ─────────────────────────── */
   .metrics-strip {
-    display: flex; align-items: stretch; gap: 1px;
+    display: flex; align-items: stretch; gap: 1px; flex-wrap: wrap;
     background: var(--border);
     border: 1px solid var(--border);
     border-radius: var(--radius2);
     overflow: hidden;
     flex: 1;
+    min-width: 0;
   }
   .metric-card {
     background: var(--bg3);
     padding: 7px 12px;
     display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    overflow: hidden;
     height: 72px;
     box-sizing: border-box;
     transition: background .15s;
     cursor: pointer;
   }
   .metric-card:hover { background: var(--bg4); }
-  .metric-label { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 2px; }
+  .metric-label { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 6px; }
   .metric-label svg { width: 13px; height: 13px; flex-shrink: 0; stroke-width: 2; }
   .metric-value { font-size: 18px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; color: var(--accent); }
   .metric-value.green { color: var(--green); }
@@ -582,16 +584,16 @@
   }
   .port-link {
     display: inline-block;
-    color: #477ed9;
+    color: var(--text3);
     font-family: var(--mono);
     font-size: 12px;
     padding: 1px 6px;
-    border: 1px solid rgba(71,126,217,.3);
+    border: 1px solid rgba(71,126,217,.15);
     border-radius: 4px;
     margin: 1px 2px 1px 0;
     cursor: pointer;
     text-decoration: none;
-    transition: background .1s, border-color .1s;
+    transition: background .1s, border-color .1s, color .1s;
   }
   .port-link:hover {
     background: rgba(71,126,217,.12);
@@ -2355,58 +2357,54 @@
 <!-- HEADER -->
 <header>
   <div class="metrics-strip">
-    <div class="metric-card" onclick="switchTab('containers')">
+    <div class="metric-card containers" style="flex:13 1 100px;" onclick="switchTab('containers')">
       <div class="metric-label"><i data-lucide="activity" style="color:#477ed9"></i>Containers</div>
       <div class="metric-value" id="s-containers" style="color:#477ed9;">–</div>
       <div class="metric-sub" id="s-containers-sub">–</div>
     </div>
-    <div class="metric-card" onclick="switchTab('processes')">
+    <div class="metric-card processes" style="flex:13 1 100px;" onclick="switchTab('processes')">
       <div class="metric-label"><i data-lucide="cpu" style="color:var(--accent)"></i>Processes</div>
       <div class="metric-value accent" id="s-procs">–</div>
       <div class="metric-sub" id="s-procs-sub">–</div>
     </div>
-    <div class="metric-card" onclick="switchTab('processes')">
+    <div class="metric-card avg-cpu" style="flex:13 1 100px;" onclick="switchTab('processes')">
       <div class="metric-label"><i data-lucide="cpu" style="color:var(--green)"></i>Avg CPU</div>
       <div class="metric-value" id="s-cpu">–</div>
-      <div class="mini-bar"><div class="mini-bar-fill" id="s-cpu-bar" style="background:var(--accent)"></div></div>
       <div class="metric-sub" id="s-cpu-sub">–</div>
+      <div style="display:none"><div id="s-cpu-bar"></div></div>
     </div>
-    <div class="metric-card" style="min-width:140px;" onclick="switchTab('processes')">
+    <div class="metric-card sysmem" style="flex:15 1 120px;" onclick="switchTab('processes')">
       <div class="metric-label"><i data-lucide="memory-stick" style="color:var(--green)"></i>SYSTEM MEM</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:0px;">
-        <div style="width:35px;height:35px;flex-shrink:0;">
-          <canvas id="s-sysmem-canvas" width="35" height="35" style="display:block;width:35px;height:35px;"></canvas>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0px;">
-          <div class="metric-value green" id="s-sysmem" style="font-size:18px;">–</div>
-          <div class="metric-sub" id="s-sysmem-sub" style="margin-top:0;">–</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <canvas id="s-sysmem-canvas" width="35" height="35" style="display:block;width:35px;height:35px;flex-shrink:0;"></canvas>
+        <div>
+          <div class="metric-value green" id="s-sysmem">–</div>
+          <div class="metric-sub" id="s-sysmem-sub">–</div>
         </div>
       </div>
     </div>
-    <div class="metric-card" style="min-width:140px;" onclick="switchTab('disk')">
-    <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--green)"></i>Disk Usage</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:0px;">
-      <div style="width:35px;height:35px;flex-shrink:0;">
-        <canvas id="s-disk-canvas" width="35" height="35" style="display:block;width:35px;height:35px;"></canvas>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:0px;">
-        <div class="metric-value" id="s-disk" style="font-size:18px;">–</div>
-        <div class="metric-sub" id="s-disk-sub" style="margin-top:0;">–</div>
+    <div class="metric-card disk" style="flex:15 1 120px;" onclick="switchTab('disk')">
+      <div class="metric-label"><i data-lucide="hard-drive" style="color:var(--green)"></i>Disk Usage</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <canvas id="s-disk-canvas" width="35" height="35" style="display:block;width:35px;height:35px;flex-shrink:0;"></canvas>
+        <div>
+          <div class="metric-value" id="s-disk">–</div>
+          <div class="metric-sub" id="s-disk-sub">–</div>
+        </div>
       </div>
     </div>
-    </div>
-    <div class="metric-card">
+    <div class="metric-card uptime" style="flex:13 1 100px;">
       <div class="metric-label"><i data-lucide="clock" style="color:var(--green)"></i>Uptime</div>
       <div class="metric-value green" id="s-uptime">–</div>
       <div class="metric-sub" id="s-load">load –</div>
     </div>
-    <div class="metric-card" style="min-width:0;overflow:hidden;" onclick="switchTab('network')">
-      <div class="metric-label"><i data-lucide="network" style="color:var(--cyan)"></i>Network</div>
-        <canvas id="s-nw-canvas" width="120" height="28" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
+    <div class="metric-card network" style="flex:18 1 120px;" onclick="switchTab('network')">
+      <div class="metric-label"><i data-lucide="network" style="color:var(--accent)"></i>Network</div>
+        <canvas id="s-nw-canvas" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
         <span style="color:var(--text3);">·</span>
-        <span id="s-nw-out" style="color:var(--cyan);">↑ – KB/s</span>
+        <span id="s-nw-out" style="color:var(--accent);">↑ – KB/s</span>
       </div>
     </div>
   </div>
@@ -2484,19 +2482,19 @@
       <table id="container-table">
         <thead>
           <tr>
-            <th style="width:30px"></th>
-            <th style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="3"></div></th>
-            <th style="width:100px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="4"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="5"></div></th>
-            <th style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="6"></div></th>
-            <th style="width:90px" onclick="event.target.closest('.col-resizer') || sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="7"></div></th>
-            <th style="width:220px">NETWORKS<div class="col-resizer" data-col-index="8"></div></th>
-            <th style="width:130px">PORTS<div class="col-resizer" data-col-index="9"></div></th>
-            <th style="width:50px">ACTIONS<div class="col-resizer" data-col-index="10"></div></th>
-            <th style="width:110px">PROCESS<div class="col-resizer" data-col-index="11"></div></th>
-            <th style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
+            <th class="col-status" style="width:30px"></th>
+            <th class="col-name" style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1"></div></th>
+            <th class="col-cpu" style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2"></div></th>
+            <th class="col-mem" style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memNum')">%MEM <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="3"></div></th>
+            <th class="col-mem-usage" style="width:100px" onclick="event.target.closest('.col-resizer') || sortTable('containers','memUsage')">MEM USAGE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="4"></div></th>
+            <th class="col-net-in" style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethRxKBs')">NET IN <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="5"></div></th>
+            <th class="col-net-out" style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','vethTxKBs')">NET OUT <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="6"></div></th>
+            <th class="col-img-size" style="width:90px" onclick="event.target.closest('.col-resizer') || sortTable('containers','imageSize')">IMG SIZE <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="7"></div></th>
+            <th class="col-networks" style="width:220px">NETWORKS<div class="col-resizer" data-col-index="8"></div></th>
+            <th class="col-ports" style="width:130px">PORTS<div class="col-resizer" data-col-index="9"></div></th>
+            <th class="col-actions" style="width:50px">ACTIONS<div class="col-resizer" data-col-index="10"></div></th>
+            <th class="col-process" style="width:110px">PROCESS<div class="col-resizer" data-col-index="11"></div></th>
+            <th class="col-category" style="width:110px" onclick="event.stopPropagation()">CATEGORY</th>
           </tr>
         </thead>
         <tbody id="container-tbody"></tbody>
@@ -3100,7 +3098,12 @@ function drawSummaryNwSparkline() {
   const canvas = el('s-nw-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 120;
+  const H = canvas.offsetHeight || 28;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
   const maxVal = Math.max(1, ...summaryNwRx, ...summaryNwTx);
@@ -3136,7 +3139,7 @@ function drawSummaryNwSparkline() {
   ctx.setLineDash([]);
 
   drawLine(summaryNwRx, 'rgb(34,197,94)');   // --green
-  drawLine(summaryNwTx, 'rgb(6,182,212)');    // --cyan
+  drawLine(summaryNwTx, 'rgb(79,142,247)');    // --blue
 }
 
 function drawDiskPie(fraction, colorName) {
@@ -3147,12 +3150,13 @@ function drawDiskPie(fraction, colorName) {
   const cx = W / 2, cy = H / 2, r = (Math.min(W, H) / 2) - 2;
 
   const colorMap = {
+    green:  'rgb(34,197,94)',
     red:    'rgb(239,68,68)',
     orange: 'rgb(249,115,22)',
     yellow: 'rgb(234,179,8)',
     text3:  'rgb(84,91,122)',
   };
-  const usedColor = colorMap[colorName] || colorMap.yellow;
+  const usedColor = colorMap[colorName] || colorMap.green;
   const freeColor = 'rgba(42,47,74,0.8)';
 
   ctx.clearRect(0, 0, W, H);
@@ -3382,24 +3386,24 @@ function renderContainers() {
 
     const depIndent = (c.dependsOnDepth || 0) * 20;
     html += `<tr id="${rowId}"${rowClick} ${c.dependsOnDepth ? 'class="depends-on-row"' : ''}>
-      <td style="width:30px">
+      <td class="col-status" style="width:30px">
         <span class="status-dot ${stateClass}"></span>
       </td>
-      <td>
+      <td class="col-name">
         <div style="display:flex;align-items:center;gap:6px;">
           ${c.dependsOnDepth ? '<span class="depends-on-arrow">⤷</span>' : ''}
           ${renderContainerTitle(c)}
         </div>
       </td>
-      <td class="${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:12px;">${esc(c.cpu || '–')}</td>
-      <td class="accent-text" style="font-family:var(--mono);font-size:12px;">${esc(c.memPercent || '–')}</td>
-      <td>${esc(c.memUsage)}</td>
-      <td class="green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethRxKBs?c.vethRxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
-      <td class="orange-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethTxKBs?c.vethTxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
-      <td class="muted">${esc(c.imageSize||'–')}</td>
-      <td style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
-      <td style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
-      <td onclick="event.stopPropagation()">
+      <td class="col-cpu ${cpuColor(c.cpuNum)}-text" style="font-family:var(--mono);font-size:12px;">${esc(c.cpu || '–')}</td>
+      <td class="col-mem accent-text" style="font-family:var(--mono);font-size:12px;">${esc(c.memPercent || '–')}</td>
+      <td class="col-mem-usage green-text">${esc(c.memUsage)}</td>
+      <td class="col-net-in green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethRxKBs?c.vethRxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
+      <td class="col-net-out accent-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethTxKBs?c.vethTxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
+      <td class="col-img-size muted">${esc(c.imageSize||'–')}</td>
+      <td class="col-networks muted" style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
+      <td class="col-ports" style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
+      <td class="col-actions" onclick="event.stopPropagation()">
         <div class="container-actions" style="display:flex;gap:4px;">
           <button class="action-btn start" title="${startTitle}"
             ${stateClass === 'running' || c.dependsOnDepth ? 'disabled' : ''}
@@ -3418,12 +3422,12 @@ function renderContainers() {
             onclick="openActionModal('archive','${c.id}','${esc(c.name)}',{project:'${esc(c.composeProject || '')}'})">📦</button>
         </div>
       </td>
-      <td onclick="event.stopPropagation()">
+      <td class="col-process" onclick="event.stopPropagation()">
         <button class="container-expand-btn ${isExpanded?'open':''}" ${isComposeOnly(c) ? 'disabled' : ''} onclick="toggleContainerRow('${c.id}', event)">
           ${isExpanded ? `▼ ${c.pids.length || c.processCount} ⚙ ` : `▶ ${c.pids.length || c.processCount} ⚙ `}
         </button>
       </td>
-      <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+      <td class="col-category" onclick="event.stopPropagation()" style="white-space:nowrap;">
         ${renderCategoryBadge(c.id, c.name)}
       </td>
     </tr>`;
@@ -3463,9 +3467,8 @@ function renderNetworks(networks) {
       n.macAddr? 'mac: '    + n.macAddr: '',
     ].filter(Boolean).join('\n');
     const color = n.driver === 'host'    ? 'var(--orange)'
-                : n.driver === 'none'    ? 'var(--text3)'
                 : n.driver === 'overlay' ? 'var(--pink)'
-                : '#477ed9';
+                : 'var(--text3)';
     return `<span onclick="event.stopPropagation()" title="${esc(tip)}"
       style="display:inline-block;font-size:12px;font-family:var(--mono);
              padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
