@@ -313,7 +313,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 12px;
+    padding: 12px 12px;
     background: none;
     border: none;
     color: var(--text2);
@@ -330,18 +330,27 @@
     color: var(--text);
   }
   .sidebar-item.active {
-    background: rgba(79,142,247,.12);
-    color: var(--accent);
+    color: var(--text);
   }
   .sidebar-item-icon {
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #6b7fa3;
   }
-  .sidebar-item-icon svg { width: 18px; height: 18px; color: inherit !important; }
+  .sidebar-item-icon svg { width: 24px; height: 24px; color: inherit !important; }
+  .sidebar-system-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 12px 4px;
+  }
+  body:not(.sidebar-expanded) .sidebar-system-label { display: none; }
   .sidebar-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1919,12 +1928,12 @@
   .cat-container-card-name, .cat-container-card-image { display: none; }
 
   /* ─── Category manager modal ────────────────────────────── */
-  .catmgr-backdrop {
+  .catmgr-backdrop, .change-auth {
     position: fixed; inset: 0; background: rgba(0,0,0,.6);
     display: flex; align-items: center; justify-content: center;
     z-index: 3000; opacity: 0; pointer-events: none; transition: opacity .18s;
   }
-  .catmgr-backdrop.open { opacity: 1; pointer-events: all; }
+  .catmgr-backdrop.open, .change-auth.open { opacity: 1; pointer-events: all; }
   .catmgr-modal {
     background: var(--bg2); border: 1px solid var(--border2);
     border-radius: 14px; width: 520px; max-width: 95vw;
@@ -2478,7 +2487,7 @@
       <div class="metric-sub" id="s-load">load –</div>
     </div>
     <div class="metric-card network" style="flex:18 1 120px;" onclick="switchTab('network')">
-      <div class="metric-label"><i data-lucide="network" style="color:var(--red)"></i>Network</div>
+      <div class="metric-label"><i data-lucide="network" style="color:var(--lavender)"></i>Network</div>
         <canvas id="s-nw-canvas" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
@@ -2503,37 +2512,38 @@
   <div class="sidebar-nav">
     <div class="sidebar-section">
       <button class="sidebar-item active" onclick="switchTabFromSidebar('containers')">
-        <span class="sidebar-item-icon"><i data-lucide="box"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#4f8ef7"><i data-lucide="box"></i></span>
         <span class="sidebar-item-text">Container Monitoring</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('processes')">
-        <span class="sidebar-item-icon" style="color:var(--green);"><i data-lucide="cpu"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#22c55e"><i data-lucide="cpu"></i></span>
         <span class="sidebar-item-text">System Processes</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('disk')">
-        <span class="sidebar-item-icon" style="color:var(--yellow);"><i data-lucide="server"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#eab308"><i data-lucide="server"></i></span>
         <span class="sidebar-item-text">Disk Usage</span>
       </button>
       <button class="sidebar-item" onclick="switchTabFromSidebar('network')">
-        <span class="sidebar-item-icon" style="color:var(--red);"><i data-lucide="network"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#8b5cf6"><i data-lucide="network"></i></span>
         <span class="sidebar-item-text">Network Utilization</span>
       </button>
     </div>
     <div class="sidebar-section bottom">
       <button class="sidebar-item" onclick="switchTabFromSidebar('categories')">
-        <span class="sidebar-item-icon" style="color:var(--yellow);"><i data-lucide="folder-open"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f97316"><i data-lucide="folder-open"></i></span>
         <span class="sidebar-item-text">Categories</span>
       </button>
+      <div class="sidebar-system-label">System</div>
       <button class="sidebar-item" onclick="openSettingsModal(); closeSidebar();">
-        <span class="sidebar-item-icon" style="color:var(--white);"><i data-lucide="settings"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f2ffff"><i data-lucide="settings"></i></span>
         <span class="sidebar-item-text">Settings</span>
       </button>
       <button class="sidebar-item" onclick="openCredentialsModal(); closeSidebar();">
-        <span class="sidebar-item-icon" style="color:var(--accent);"><i data-lucide="key-round"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f2ffff"><i data-lucide="key-round"></i></span>
         <span class="sidebar-item-text">Credentials</span>
       </button>
       <button class="sidebar-item" onclick="logout()">
-        <span class="sidebar-item-icon" style="color:var(--red);"><i data-lucide="log-out"></i></span>
+        <span class="sidebar-item-icon" data-idle-color="#ef4444" data-active-color="#ef4444"><i data-lucide="log-out"></i></span>
         <span class="sidebar-item-text">Logout</span>
       </button>
     </div>
@@ -2763,27 +2773,27 @@
 </main>
 
 <!-- CREDENTIALS MODAL -->
-<div class="catmgr-backdrop" id="creds-backdrop">
-  <div class="catmgr-modal" onclick="event.stopPropagation()" style="max-width:420px;">
-    <div class="catmgr-header">
-      <div class="catmgr-title">🔑 Change Credentials</div>
+<div class="change-auth" id="creds-backdrop">
+  <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:420px;">
+    <div class="settings-header">
+      <div class="settings-title"><i data-lucide="key-round" style="width:22px;height:22px;vertical-align:middle;"></i> Change Credentials</div>
       <button class="modal-close" onclick="closeCredentialsModal()">✕</button>
     </div>
-    <div class="catmgr-body" style="padding:20px 24px;gap:14px;">
-      <div class="catedit-row">
-        <div class="catedit-label">Current Password</div>
+    <div class="settings-body" style="padding:20px 24px;gap:14px;">
+      <div class="settings-row">
+        <div class="settings-label">Current Password</div>
         <div style="position:relative;">
           <input class="filter-input creds-input" type="password" id="creds-current" placeholder="Enter current password" autocomplete="current-password"/>
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('creds-current')" title="Show/hide password">👁</button>
         </div>
       </div>
       <div style="height:1px;background:var(--border);margin:2px 0;"></div>
-      <div class="catedit-row">
-        <div class="catedit-label">New Username</div>
+      <div class="settings-row">
+        <div class="settings-label">New Username</div>
         <input class="filter-input creds-input" type="text" id="creds-user" placeholder="Enter new username" autocomplete="username"/>
       </div>
-      <div class="catedit-row">
-        <div class="catedit-label">New Password</div>
+      <div class="settings-row">
+        <div class="settings-label">New Password</div>
         <div style="position:relative;">
           <input class="filter-input creds-input" type="password" id="creds-pass" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkCredsStrength(this.value)"/>
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('creds-pass')" title="Show/hide password">👁</button>
@@ -2793,8 +2803,8 @@
         </div>
         <div id="creds-strength-label" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px;"></div>
       </div>
-      <div class="catedit-row">
-        <div class="catedit-label">Confirm New Password</div>
+      <div class="settings-row">
+        <div class="settings-label">Confirm New Password</div>
         <div style="position:relative;">
           <input class="filter-input creds-input" type="password" id="creds-confirm" placeholder="Repeat new password" autocomplete="new-password"/>
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('creds-confirm')" title="Show/hide password">👁</button>
@@ -2803,7 +2813,7 @@
       <div id="creds-error" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:#fca5a5;"></div>
       <div id="creds-success" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--green);">✓ Credentials updated successfully.</div>
     </div>
-    <div class="catmgr-footer" style="justify-content:flex-end;">
+    <div class="settings-footer" style="justify-content:flex-end;">
       <button class="action-modal-btn cancel" onclick="closeCredentialsModal()">Cancel</button>
       <button id="creds-save-btn" class="action-modal-btn ok" onclick="submitCredentials()">Save Credentials</button>
     </div>
@@ -2814,7 +2824,7 @@
 <div class="settings-backdrop" id="settings-backdrop">
   <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:460px;">
     <div class="settings-header">
-      <div class="settings-title"><i data-lucide="settings" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>Settings</div>
+      <div class="settings-title"><i data-lucide="settings" style="width:22px;height:22px;vertical-align:middle;margin-right:6px;"></i>Settings</div>
       <button class="modal-close" onclick="closeSettingsModal()">✕</button>
     </div>
     <div class="settings-body" style="padding:20px 24px;gap:14px;" id="settings-body">
@@ -2942,6 +2952,14 @@
 
 <script>
 lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+// Set initial sidebar icon colors (idle = muted gray, active item = its accent color)
+document.querySelectorAll('.sidebar-item').forEach(b => {
+  const icon = b.querySelector('.sidebar-item-icon');
+  if (!icon) return;
+  const isActive = b.classList.contains('active');
+  icon.style.color = isActive ? icon.dataset.activeColor : icon.dataset.idleColor;
+  if (isActive) b.style.background = `${icon.dataset.activeColor}1e`;
+});
 // ─── State ────────────────────────────────────────────────────────────────────
 let allData = { processes: [], containers: [], summary: {} };
 let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
@@ -3035,7 +3053,14 @@ function switchTab(name) {
   sessionStorage.setItem('nas-monitor-tab', name);
   const tabNames = ['containers', 'processes', 'disk', 'network', 'categories'];
   document.querySelectorAll('.sidebar-item').forEach((b, i) => {
-    b.classList.toggle('active', tabNames[i] === name);
+    const isActive = tabNames[i] === name;
+    b.classList.toggle('active', isActive);
+    const icon = b.querySelector('.sidebar-item-icon');
+    if (icon) {
+      const color = isActive ? icon.dataset.activeColor : icon.dataset.idleColor;
+      icon.style.color = color || '';
+      b.style.background = isActive ? `${icon.dataset.activeColor}1e` : '';
+    }
   });
   document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab-' + name);
@@ -7334,6 +7359,7 @@ function openCredentialsModal() {
   document.getElementById('creds-strength-fill').style.width = '0';
   document.getElementById('creds-strength-label').textContent = '';
   document.getElementById('creds-backdrop').classList.add('open');
+  lucide.createIcons({ nodes: [document.getElementById('creds-backdrop')] });
   setTimeout(() => document.getElementById('creds-current').focus(), 80);
 }
 
@@ -7840,10 +7866,10 @@ function renderCategories() {
                 <td class="col-dot"><span class="status-dot ${stateClass}"></span></td>
                 <td class="col-name" style="font-weight:600;color:var(--text);">${esc(c.name)}</td>
                 <td class="col-cpu" style="color:${cpuHex(c.cpuNum)};">${c.cpu || '0%'}</td>
-                <td class="col-mem" style="color:var(--blue);">${c.memPercent || '0%'}</td>
+                <td class="col-mem" style="color:var(--accent);">${c.memPercent || '0%'}</td>
                 <td class="col-memused" style="color:var(--green);">${c.memUsage || '–'}</td>
-                <td class="col-netin" style="color:var(--blue);">${c.vethRxKBs ? c.vethRxKBs.toFixed(2)+' KB/s' : '–'}</td>
-                <td class="col-netout" style="color:var(--cyan);">${c.vethTxKBs ? c.vethTxKBs.toFixed(2)+' KB/s' : '–'}</td>
+                <td class="col-netin" style="color:var(--green);">${c.vethRxKBs ? c.vethRxKBs.toFixed(2)+' KB/s' : '–'}</td>
+                <td class="col-netout" style="color:var(--accent);">${c.vethTxKBs ? c.vethTxKBs.toFixed(2)+' KB/s' : '–'}</td>
                 <td class="col-img" style="color:var(--text3);">${c.imageSize || '–'}</td>
                 <td class="col-cat" onclick="event.stopPropagation()">${renderCategoryBadge(c.id, c.name)}</td>
               </tr>`;
@@ -7871,17 +7897,17 @@ function renderCategories() {
             <div class="cat-summary-label">Mem %</div>
             <div class="cat-summary-value" style="color:var(--green);">${totalMem.toFixed(1)}%</div>
           </div>
-          <div class="cat-summary-cell cat-sc-memused">
-            <div class="cat-summary-label">Mem Used</div>
-            <div class="cat-summary-value" style="color:var(--orange);">${fmtBytes(totalMemUsed)}</div>
-          </div>
           <div class="cat-summary-cell cat-sc-netin">
             <div class="cat-summary-label">Net In</div>
             <div class="cat-summary-value" style="color:var(--green);">${totalRx.toFixed(1)} <span style="font-size:10px;font-weight:400;">KB/s</span></div>
           </div>
           <div class="cat-summary-cell cat-sc-netout">
             <div class="cat-summary-label">Net Out</div>
-            <div class="cat-summary-value" style="color:var(--blue);">${totalTx.toFixed(1)} <span style="font-size:10px;font-weight:400;">KB/s</span></div>
+            <div class="cat-summary-value" style="color:var(--accent);">${totalTx.toFixed(1)} <span style="font-size:10px;font-weight:400;">KB/s</span></div>
+          </div>
+          <div class="cat-summary-cell cat-sc-memused">
+            <div class="cat-summary-label">Mem Used</div>
+            <div class="cat-summary-value" style="color:var(--orange);">${fmtBytes(totalMemUsed)}</div>
           </div>
           <div class="cat-summary-cell cat-sc-img">
             <div class="cat-summary-label">Img Size</div>
