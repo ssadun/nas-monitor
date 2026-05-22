@@ -781,6 +781,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/modules/menu-ui.js') {
+    const menuUiScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu-ui.js'), 'utf8');
+    header.sendJavaScript(res, menuUiScript);
+    return;
+  }
+
   if (url.pathname === '/styles.css') {
     if (header.sendFile(res, STYLES_FILE, 'text/css; charset=utf-8')) return;
     header.sendNotFound(res, 'styles not found');
