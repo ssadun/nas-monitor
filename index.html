@@ -300,6 +300,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
+    padding-top: 8px;
   }
   .sidebar-section {
     display: flex;
@@ -312,56 +313,69 @@
   .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 12px;
+    gap: 10px;
+    padding: 9px 10px;
+    margin: 1px 6px;
+    border-radius: 8px;
     background: none;
     border: none;
     color: var(--text2);
     font-family: var(--mono);
     font-size: 13px;
     font-weight: 600;
+    line-height: 1;
     cursor: pointer;
-    transition: all .15s;
+    transition: background .15s, color .15s;
     white-space: nowrap;
     overflow: hidden;
+    width: calc(100% - 12px);
+    box-sizing: border-box;
   }
   .sidebar-item:hover {
     background: var(--bg3);
     color: var(--text);
   }
   .sidebar-item.active {
+    background: var(--sidebar-active-bg);
     color: var(--text);
   }
   .sidebar-item-icon {
     flex-shrink: 0;
     width: 24px;
     height: 24px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #6b7fa3;
+    color: var(--sidebar-idle-color, #6b7fa3);
+    line-height: 1;
   }
-  .sidebar-item-icon svg { width: 24px; height: 24px; color: inherit !important; }
+  .sidebar-item.active .sidebar-item-icon {
+    color: var(--sidebar-active-color);
+  }
+  .sidebar-item-icon svg { width: 20px; height: 20px; color: inherit; display: block; }
   .sidebar-system-label {
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--text3);
-    padding: 8px 12px 4px;
+    padding: 10px 16px 4px;
   }
   body:not(.sidebar-expanded) .sidebar-system-label { display: none; }
   .sidebar-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1;
   }
   body:not(.sidebar-expanded) .sidebar-item-text {
     display: none;
   }
   body:not(.sidebar-expanded) .sidebar-item {
     justify-content: center;
-    padding: 10px 0;
+    width: 44px;
+    margin: 1px 8px;
+    padding: 10px;
     gap: 0;
   }
   body.sidebar-expanded main {
@@ -483,7 +497,7 @@
 
   td {
     padding: 7px 12px; vertical-align: middle;
-    color: var(--text); white-space: nowrap;
+    color: var(--text2); white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -749,9 +763,9 @@
   .action-dropdown-item.delete:not(:disabled) { color: var(--red); }
 
   .action-btn {
-    background: none; border: 1px solid var(--border);
+    background: none; border: 1px solid transparent;
     border-radius: 4px; padding: 0; cursor: pointer;
-    font-size: 11px; font-family: var(--mono); transition: all .15s;
+    font-size: 11px; font-family: var(--mono); transition: background .15s, border-color .15s;
     white-space: nowrap; width: 26px; height: 22px;
     display: inline-flex; align-items: center; justify-content: center;
   }
@@ -1787,10 +1801,10 @@
     user-select: none;
   }
   .cat-badge-btn:hover { border-color: var(--accent); color: var(--text); }
-  .cat-badge-btn.cat-media    { background: rgba(139,92,246,.12); border-color: rgba(139,92,246,.4); color: #a78bfa; }
-  .cat-badge-btn.cat-performance { background: rgba(249,115,22,.12); border-color: rgba(249,115,22,.4); color: var(--orange); }
-  .cat-badge-btn.cat-utilities { background: rgba(6,182,212,.12); border-color: rgba(6,182,212,.4); color: var(--cyan); }
-  .cat-badge-btn.cat-system   { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.4); color: var(--green); }
+  .cat-badge-btn.cat-media    { background: transparent; border-color: rgba(139,92,246,.45); color: #a78bfa; }
+  .cat-badge-btn.cat-performance { background: transparent; border-color: rgba(249,115,22,.45); color: var(--orange); }
+  .cat-badge-btn.cat-utilities { background: transparent; border-color: rgba(6,182,212,.45); color: var(--cyan); }
+  .cat-badge-btn.cat-system   { background: transparent; border-color: rgba(34,197,94,.45); color: var(--green); }
 
   /* ─── Category dropdown ─────────────────────────────────── */
   .cat-dropdown {
@@ -2511,39 +2525,32 @@
   </button>
   <div class="sidebar-nav">
     <div class="sidebar-section">
-      <button class="sidebar-item active" onclick="switchTabFromSidebar('containers')">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#4f8ef7"><i data-lucide="box"></i></span>
+      <div class="sidebar-system-label" style="padding-top:16px;">Resources</div>
+      <button class="sidebar-item active" data-tab="containers" data-icon="box"        data-idle-color="#6b7fa3" data-active-color="#4f8ef7" onclick="switchTabFromSidebar('containers')">
         <span class="sidebar-item-text">Container Monitoring</span>
       </button>
-      <button class="sidebar-item" onclick="switchTabFromSidebar('processes')">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#22c55e"><i data-lucide="cpu"></i></span>
+      <button class="sidebar-item" data-tab="processes" data-icon="cpu"         data-idle-color="#6b7fa3" data-active-color="#22c55e" onclick="switchTabFromSidebar('processes')">
         <span class="sidebar-item-text">System Processes</span>
       </button>
-      <button class="sidebar-item" onclick="switchTabFromSidebar('disk')">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#eab308"><i data-lucide="server"></i></span>
+      <button class="sidebar-item" data-tab="disk" data-icon="server"      data-idle-color="#6b7fa3" data-active-color="#eab308" onclick="switchTabFromSidebar('disk')">
         <span class="sidebar-item-text">Disk Usage</span>
       </button>
-      <button class="sidebar-item" onclick="switchTabFromSidebar('network')">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#8b5cf6"><i data-lucide="network"></i></span>
+      <button class="sidebar-item" data-tab="network" data-icon="network"     data-idle-color="#6b7fa3" data-active-color="#8b5cf6" onclick="switchTabFromSidebar('network')">
         <span class="sidebar-item-text">Network Utilization</span>
       </button>
     </div>
     <div class="sidebar-section bottom">
-      <button class="sidebar-item" onclick="switchTabFromSidebar('categories')">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f97316"><i data-lucide="folder-open"></i></span>
+      <button class="sidebar-item" data-tab="categories" data-icon="folder-open" data-idle-color="#6b7fa3" data-active-color="#f97316" onclick="switchTabFromSidebar('categories')">
         <span class="sidebar-item-text">Categories</span>
       </button>
       <div class="sidebar-system-label">System</div>
-      <button class="sidebar-item" onclick="openSettingsModal(); closeSidebar();">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f2ffff"><i data-lucide="settings"></i></span>
+      <button class="sidebar-item" data-icon="settings"   data-idle-color="#6b7fa3" data-active-color="#f2ffff" onclick="openSettingsModal(); closeSidebar();">
         <span class="sidebar-item-text">Settings</span>
       </button>
-      <button class="sidebar-item" onclick="openCredentialsModal(); closeSidebar();">
-        <span class="sidebar-item-icon" data-idle-color="#6b7fa3" data-active-color="#f2ffff"><i data-lucide="key-round"></i></span>
+      <button class="sidebar-item" data-icon="key-round"  data-idle-color="#6b7fa3" data-active-color="#f2ffff" onclick="openCredentialsModal(); closeSidebar();">
         <span class="sidebar-item-text">Credentials</span>
       </button>
-      <button class="sidebar-item" onclick="logout()">
-        <span class="sidebar-item-icon" data-idle-color="#ef4444" data-active-color="#ef4444"><i data-lucide="log-out"></i></span>
+      <button class="sidebar-item" data-icon="log-out"    data-idle-color="#ef4444" data-active-color="#ef4444" onclick="logout()">
         <span class="sidebar-item-text">Logout</span>
       </button>
     </div>
@@ -2951,15 +2958,32 @@
 </div>
 
 <script>
-lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
-// Set initial sidebar icon colors (idle = muted gray, active item = its accent color)
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+// Build sidebar icons and stamp per-item CSS variables once at init
 document.querySelectorAll('.sidebar-item').forEach(b => {
-  const icon = b.querySelector('.sidebar-item-icon');
-  if (!icon) return;
-  const isActive = b.classList.contains('active');
-  icon.style.color = isActive ? icon.dataset.activeColor : icon.dataset.idleColor;
-  if (isActive) b.style.background = `${icon.dataset.activeColor}1e`;
+  if (!b.dataset.icon) return;
+  const span = document.createElement('span');
+  span.className = 'sidebar-item-icon';
+  const i = document.createElement('i');
+  i.setAttribute('data-lucide', b.dataset.icon);
+  span.appendChild(i);
+  b.prepend(span);
+  // Stamp CSS variables used by the active/idle CSS rules
+  b.style.setProperty('--sidebar-active-color', b.dataset.activeColor);
+  b.style.setProperty('--sidebar-idle-color', b.dataset.idleColor);
+  b.style.setProperty('--sidebar-active-bg', hexToRgba(b.dataset.activeColor, 0.12));
 });
+lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+// Toggle .active class only — CSS handles colors via the stamped variables
+function applySidebarColors(activeTab) {
+  document.querySelectorAll('.sidebar-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === activeTab);
+  });
+}
+applySidebarColors(sessionStorage.getItem('nas-monitor-tab') || 'containers');
 // ─── State ────────────────────────────────────────────────────────────────────
 let allData = { processes: [], containers: [], summary: {} };
 let currentTab = sessionStorage.getItem('nas-monitor-tab') || 'containers';
@@ -3051,17 +3075,7 @@ function logout() {
 function switchTab(name) {
   currentTab = name;
   sessionStorage.setItem('nas-monitor-tab', name);
-  const tabNames = ['containers', 'processes', 'disk', 'network', 'categories'];
-  document.querySelectorAll('.sidebar-item').forEach((b, i) => {
-    const isActive = tabNames[i] === name;
-    b.classList.toggle('active', isActive);
-    const icon = b.querySelector('.sidebar-item-icon');
-    if (icon) {
-      const color = isActive ? icon.dataset.activeColor : icon.dataset.idleColor;
-      icon.style.color = color || '';
-      b.style.background = isActive ? `${icon.dataset.activeColor}1e` : '';
-    }
-  });
+  applySidebarColors(name);
   document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab-' + name);
   });
