@@ -13,7 +13,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/addon-fit.min.js"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="/modules/utils.js"></script>
-<script src="/modules/state.js"></script>
 <link rel="stylesheet" href="/styles.css"/>
 </head>
 <body>
@@ -360,7 +359,7 @@
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
         <span style="color:var(--text3);">·</span>
-        <span id="s-nw-out" style="color:var(--accent);">↑ – KB/s</span>
+        <span id="s-nw-out" style="color:var(--lavender);">↑ – KB/s</span>
       </div>
     </div>
   </div>
@@ -610,13 +609,10 @@
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <!-- Toolbar -->
       <div class="toolbar">
-        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);">🗂 Container Categories</span>
+        <button class="expand-all-btn" onclick="openCatMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">⚙ Manage Categories</button>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
           <span class="toolbar-label" id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
-          <span class="toolbar-sep">|</span>
-          <span class="toolbar-label" style="font-family:var(--mono);font-size:11px;color:var(--text3);">Click a category badge on a container to assign it</span>
-          <button class="expand-all-btn" onclick="openCatMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">⚙ Manage Categories</button>
           <span class="toolbar-sep">|</span>
           <span class="toolbar-label last-update" id="last-update-categories">–</span>
           <div class="filter-box">
@@ -935,8 +931,8 @@ function drawSummaryNwSparkline() {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  drawLine(summaryNwRx, 'rgb(34,197,94)');    // --green
-  drawLine(summaryNwTx, 'rgb(79,142,247)');   // --blue
+  drawLine(summaryNwRx, 'rgb(34,197,94)');      // --green
+  drawLine(summaryNwTx, 'rgb(139,92,246)');    // --lavender
 }
 
 function drawDiskPie(fraction, colorName) {
@@ -2771,7 +2767,7 @@ function renderNetworkLeft() {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="display:flex;align-items:baseline;gap:8px;">
           <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${esc(n.iface)}</span>
-          ${n.dockerNetName ? `<span style="font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:var(--cyan);">${esc(n.dockerNetName)}</span>` : ''}
+          ${n.dockerNetName ? `<span style="font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);color:var(--lavender);">${esc(n.dockerNetName)}</span>` : ''}
         </div>
         <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtBytes(n.rxBytes)} rx · ${fmtBytes(n.txBytes)} tx</span>
       </div>
@@ -2781,7 +2777,7 @@ function renderNetworkLeft() {
           <line x1="0" y1="${H/2}" x2="${W}" y2="${H/2}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
           <line x1="0" y1="0" x2="${W}" y2="0" stroke="var(--border)" stroke-width="0.5"/>
           ${sparkArea(h.rx, W, H, 'var(--green)')}
-          ${sparkArea(h.tx, W, H, 'var(--cyan)')}
+          ${sparkArea(h.tx, W, H, 'var(--lavender)')}
         </svg>
         <!-- Current values -->
         <div style="display:flex;flex-direction:column;gap:8px;min-width:90px;">
@@ -2792,7 +2788,7 @@ function renderNetworkLeft() {
           </div>
           <div>
             <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↑ OUT</div>
-            <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--cyan);">${txKBs}</div>
+            <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--lavender);">${txKBs}</div>
             <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">KB/s</div>
           </div>
         </div>
@@ -2800,7 +2796,7 @@ function renderNetworkLeft() {
       <!-- Legend -->
       <div style="margin-top:6px;display:flex;gap:14px;">
         <span style="font-size:10px;color:var(--green);font-family:var(--mono);">── IN</span>
-        <span style="font-size:10px;color:var(--cyan);font-family:var(--mono);">── OUT</span>
+        <span style="font-size:10px;color:var(--lavender);font-family:var(--mono);">── OUT</span>
         <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">60s window</span>
       </div>
       ${containerSection}
@@ -5926,6 +5922,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 }
 
 </script>
+<script src="/modules/state.js"></script>
 <script src="/modules/menu-ui.js"></script>
 <script src="/modules/setting.js"></script>
 </body>

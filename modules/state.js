@@ -16,46 +16,6 @@ let pidContainerMap = {};
 let streamEs = null;
 let streamReconnectTimer = null;
 
-// ─── Sidebar init ─────────────────────────────────────────────────────────────
-document.querySelectorAll('.sidebar-item').forEach(b => {
-  if (!b.dataset.icon) return;
-  const span = document.createElement('span');
-  span.className = 'sidebar-item-icon';
-  const i = document.createElement('i');
-  i.setAttribute('data-lucide', b.dataset.icon);
-  span.appendChild(i);
-  b.prepend(span);
-  b.style.setProperty('--sidebar-active-color', b.dataset.activeColor);
-  b.style.setProperty('--sidebar-idle-color', b.dataset.idleColor);
-  b.style.setProperty('--sidebar-active-bg', hexToRgba(b.dataset.activeColor, 0.12));
-  const label = b.querySelector('.sidebar-item-text')?.textContent;
-  if (label) b.setAttribute('title', label);
-});
-lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
-
-function applySidebarColors(activeTab) {
-  document.querySelectorAll('.sidebar-item').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === activeTab);
-  });
-}
-applySidebarColors(currentTab);
-
-// Restore tab panel visibility on page load
-document.querySelectorAll('.tab-panel').forEach(p => {
-  p.classList.toggle('active', p.id === 'tab-' + currentTab);
-});
-
-function updateSidebarToggleLabel() {
-  const label = document.getElementById('sidebar-toggle-label');
-  if (!label) return;
-  label.textContent = document.body.classList.contains('sidebar-expanded') ? '<<' : '>>';
-}
-
-if (sessionStorage.getItem('sidebar-expanded') === 'true') {
-  document.body.classList.add('sidebar-expanded');
-  document.getElementById('sidebar').classList.add('expanded');
-  updateSidebarToggleLabel();
-}
 
 // ─── SSE stream ───────────────────────────────────────────────────────────────
 function startStream() {
