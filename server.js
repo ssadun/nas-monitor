@@ -535,46 +535,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname === '/modules/menu.js') {
-    const menuScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu.js'), 'utf8');
-    header.sendJavaScript(res, menuScript);
-    return;
-  }
-
-  if (url.pathname === '/modules/setting.js') {
-    const settingScript = fs.readFileSync(path.join(__dirname, 'modules', 'setting.js'), 'utf8');
-    header.sendJavaScript(res, settingScript);
-    return;
-  }
-
-  if (url.pathname === '/modules/menu-ui.js') {
-    const menuUiScript = fs.readFileSync(path.join(__dirname, 'modules', 'menu-ui.js'), 'utf8');
-    header.sendJavaScript(res, menuUiScript);
-    return;
-  }
-
-  if (url.pathname === '/modules/utils.js') {
-    const script = fs.readFileSync(path.join(__dirname, 'modules', 'utils.js'), 'utf8');
-    header.sendJavaScript(res, script);
-    return;
-  }
-
-  if (url.pathname === '/modules/state.js') {
-    const script = fs.readFileSync(path.join(__dirname, 'modules', 'state.js'), 'utf8');
-    header.sendJavaScript(res, script);
-    return;
-  }
-
-  const FRONTEND_MODULES = [
+  const UI_FILES = new Set([
+    'utils.js', 'state.js', 'menu.js', 'menu-ui.js', 'setting.js',
     'render.js', 'disk-ui.js', 'network-ui.js', 'prune-ui.js',
     'containers-ui.js', 'compose-ui.js', 'console-ui.js',
     'credentials-ui.js', 'volumes-ui.js', 'networks-ui.js',
-  ];
-  const modMatch = FRONTEND_MODULES.find(m => url.pathname === `/modules/${m}`);
-  if (modMatch) {
-    const script = fs.readFileSync(path.join(__dirname, 'modules', modMatch), 'utf8');
-    header.sendJavaScript(res, script);
-    return;
+  ]);
+  if (url.pathname.startsWith('/ui/')) {
+    const file = url.pathname.slice(4); // strip leading '/ui/'
+    if (UI_FILES.has(file)) {
+      const script = fs.readFileSync(path.join(__dirname, 'ui', file), 'utf8');
+      header.sendJavaScript(res, script);
+      return;
+    }
   }
 
   if (url.pathname === '/styles.css') {
