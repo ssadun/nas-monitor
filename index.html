@@ -64,7 +64,7 @@
   /* ─── Header ────────────────────────────────────────────── */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 24px;
+    padding: 4px 16px;
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
@@ -94,15 +94,15 @@
     flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
-    height: 72px;
+    height: 64px;
     box-sizing: border-box;
-    transition: background .15s;
+    transition: background .15s, transform .15s, border-color .15s;
     cursor: pointer;
   }
-  .metric-card:hover { background: var(--bg4); }
-  .metric-label { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 6px; }
+  .metric-card:hover { background: var(--bg4); transform: translateY(-1px); border-color: var(--border2); }
+  .metric-label { display: flex; align-items: center; gap: 5px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text3); font-family: var(--mono); white-space: nowrap; margin-bottom: 4px; }
   .metric-label svg { width: 13px; height: 13px; flex-shrink: 0; stroke-width: 2; }
-  .metric-value { font-size: 18px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; color: var(--accent); }
+  .metric-value { font-size: 16px; font-weight: 700; font-family: var(--mono); line-height: 1.1; white-space: nowrap; color: var(--accent); }
   .metric-value.green { color: var(--green); }
   .metric-value.yellow { color: var(--yellow); }
   .metric-value.red { color: var(--red); }
@@ -116,7 +116,7 @@
   /* ─── Tabs ──────────────────────────────────────────────── */
   .tab-bar {
     display: flex; align-items: center; gap: 5px;
-    padding: 6px 16px;
+    padding: 4px 12px;
     background: var(--bg);
     border-bottom: 2px solid var(--border);
     flex-shrink: 0;
@@ -184,7 +184,7 @@
   }
   /* NOTE: sidebar now overlays the left header area; if sidebar width or header layout changes, update header margin-left values accordingly */
   .sidebar.expanded {
-    width: 240px;
+    width: 200px;
   }
   header {
     margin-left: 60px;
@@ -200,7 +200,7 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    height: 72px;
+    height: 64px;
     background: rgba(79,142,247,.10);
     border-bottom: 1px solid rgba(79,142,247,.22);
     cursor: pointer;
@@ -301,6 +301,7 @@
     overflow-x: hidden;
     min-height: 0;
     padding-top: 8px;
+    padding-bottom: 1px;
   }
   .sidebar-section {
     display: flex;
@@ -314,8 +315,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 10px;
-    margin: 1px 6px;
+    padding: 7px 8px;
+    margin: 5px 6px;
     border-radius: 8px;
     background: none;
     border: none;
@@ -332,7 +333,7 @@
     box-sizing: border-box;
   }
   .sidebar-item:hover {
-    background: var(--bg3);
+    background: var(--sidebar-active-bg);
     color: var(--text);
   }
   .sidebar-item.active {
@@ -349,7 +350,7 @@
     color: var(--sidebar-idle-color, #6b7fa3);
     line-height: 1;
   }
-  .sidebar-item.active .sidebar-item-icon {
+  .sidebar-item.active .sidebar-item-icon, .sidebar-item:hover .sidebar-item-icon {
     color: var(--sidebar-active-color);
   }
   .sidebar-item-icon svg { width: 20px; height: 20px; color: inherit; display: block; }
@@ -374,12 +375,12 @@
   body:not(.sidebar-expanded) .sidebar-item {
     justify-content: center;
     width: 44px;
-    margin: 1px 8px;
+    margin: 6px 8px;
     padding: 10px;
     gap: 0;
   }
   body.sidebar-expanded main {
-    margin-left: 240px;
+    margin-left: 200px;
   }
   body:not(.sidebar-expanded) main {
     margin-left: 60px;
@@ -455,7 +456,7 @@
     position: sticky; top: 0; z-index: 10;
   }
   th {
-    padding: 9px 12px; text-align: left;
+    padding: 6px 10px; text-align: left;
     font-size: 12px; font-weight: 600; letter-spacing: 1px;
     text-transform: uppercase; color: var(--text3);
     white-space: nowrap; cursor: pointer; user-select: none;
@@ -496,7 +497,7 @@
   tbody tr.expanded-row { background: var(--bg3); }
 
   td {
-    padding: 7px 12px; vertical-align: middle;
+    padding: 5px 10px; vertical-align: middle;
     color: var(--text2); white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -569,7 +570,8 @@
     border-radius: 50%; margin-right: 6px;
     flex-shrink: 0;
   }
-  .status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); animation: status-pulse 2s infinite; }
+  @keyframes status-pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
   .status-dot.stopped,.status-dot.exited { background: var(--red); }
   .status-dot.created { background: var(--text3); }
   .status-dot.paused { background: var(--yellow); }
@@ -1684,7 +1686,7 @@
   /* ─── Toolbar row above table ───────────────────────────── */
   .toolbar, .container-toolbar {
     display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
-    padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 6px 12px; background: var(--bg2); border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     overflow-x: auto;
     min-height: 0;
@@ -2502,7 +2504,7 @@
     </div>
     <div class="metric-card network" style="flex:18 1 120px;" onclick="switchTab('network')">
       <div class="metric-label"><i data-lucide="network" style="color:var(--lavender)"></i>Network</div>
-        <canvas id="s-nw-canvas" style="width:100%;height:28px;display:block;margin-top:2px;"></canvas>
+        <canvas id="s-nw-canvas" style="width:100%;height:22px;display:block;margin-top:0;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
         <span style="color:var(--text3);">·</span>
@@ -2975,6 +2977,10 @@ document.querySelectorAll('.sidebar-item').forEach(b => {
   b.style.setProperty('--sidebar-active-color', b.dataset.activeColor);
   b.style.setProperty('--sidebar-idle-color', b.dataset.idleColor);
   b.style.setProperty('--sidebar-active-bg', hexToRgba(b.dataset.activeColor, 0.12));
+  
+  // Add title for accessibility when sidebar is collapsed
+  const label = b.querySelector('.sidebar-item-text')?.textContent;
+  if (label) b.setAttribute('title', label);
 });
 lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
 // Toggle .active class only — CSS handles colors via the stamped variables
@@ -3283,7 +3289,7 @@ function drawSummaryNwSparkline() {
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.offsetWidth || 120;
-  const H = canvas.offsetHeight || 28;
+  const H = canvas.offsetHeight || 22;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   ctx.scale(dpr, dpr);
@@ -3600,9 +3606,6 @@ function renderContainers() {
           <button class="action-btn logs" title="Logs"
             ${stateClass !== 'running' ? 'disabled' : ''}
             onclick="openLogs('${c.id}','${esc(c.name)}')">📋</button>
-          <button class="action-btn archive" title="${canArchiveFromList ? 'Archive compose config' : 'Archive (non-registered only)'}"
-            ${canArchiveFromList ? '' : 'disabled'}
-            onclick="openActionModal('archive','${c.id}','${esc(c.name)}',{project:'${esc(c.composeProject || '')}'})">📦</button>
         </div>
       </td>
       <td class="col-process" onclick="event.stopPropagation()">
@@ -8422,7 +8425,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 }
 
 </script>
-<script src="/modules/menu.js"></script>
+<script src="/modules/menu-ui.js"></script>
 <script src="/modules/setting.js"></script>
 </body>
 </html>

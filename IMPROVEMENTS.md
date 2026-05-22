@@ -49,16 +49,40 @@
 - **Extract Configuration**  
   Move configuration into a separate `config.js` file for better maintainability
 
-- **Modularize Codebase**  
-  Split `server.js` into modules: `auth.js`, `api.js`, `header.js`, `docker.js`, `categories.js`, `monitor.js`, `disk.js`, `network.js`, `web.js`
-  - `auth.js` for authentication & session handling
-  - `api.js` for API routing and handlers
-  - `header.js` for HTTP headers, static assets, and page metadata
-  - `docker.js` for container action and volume/network management
-  - `categories.js` for container category logic
-  - `monitor.js` for processes tab and system statistics workers
-  - `disk.js` for disk usage, history, and filesystem monitoring
-  - `network.js` for interface/network statistics and charts
+- **Modularize server.js**  
+  Split `server.js` into focused backend modules served from `modules/`:
+  - `api.js` — API routing and REST endpoint handlers
+  - `monitor.js` — `/proc`-based process and system statistics collection
+  - `disk.js` — disk usage, history ring buffer, filesystem monitoring
+  - `network.js` — interface/network statistics collection
+
+  > `auth.js`, `docker.js`, `categories.js`, `header.js` already exist as modules.
+
+- **Modularize index.html frontend (5,470-line inline script)**  
+  Extract the inline `<script>` block into external files loaded via `<script src="/modules/...">`.  
+  The server already serves `modules/menu.js` and `modules/setting.js` — same pattern.  
+  Globals (`allData`, `el()`, `render()`, etc.) stay in `state.js`; modules load in dependency order.
+
+  Proposed split (all in `modules/`):
+
+  | File | ~Lines | Content |
+  |---|---|---|
+  | `state.js` | 80 | State vars, SSE/polling, tab switching, sort, filter |
+  | `render.js` | 400 | Summary bar, container table, process table, main render, helpers |
+  | `disk-ui.js` | 335 | Disk Usage tab renderer |
+  | `network-ui.js` | 150 | Network Utilization tab + sparklines |
+  | `containers-ui.js` | 600 | Container detail modal, depends_on grouping, container actions modal |
+  | `compose-ui.js` | 870 | New Compose modal, Archive Browser, Data Folder, Restart Policy |
+  | `prune-ui.js` | 290 | Prune modal |
+  | `console-ui.js` | 115 | Console modal (xterm.js) |
+  | `credentials-ui.js` | 160 | Credentials modal |
+  | `volumes-ui.js` | 265 | Docker Volumes Manager tab |
+  | `networks-ui.js` | 200 | Network Management tab |
+
+  > `categories.js` already exists for category badge, dropdown, tab renderer, and manager modal.
+
+  CSS (2,150 lines) and HTML modals (795 lines) could later be extracted to `styles.css` and
+  partial templates, but require server assembly — lower priority than the JS split.
 
 ## Documentation & Packaging
 
