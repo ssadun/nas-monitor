@@ -12,6 +12,7 @@ const header = require('./modules/header.js');
 const docker = require('./modules/docker.js');
 const categories = require('./modules/categories.js');
 const disk = require('./modules/disk.js');
+const network = require('./modules/network.js');
 const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 const crypto = require('crypto');
@@ -307,11 +308,6 @@ function formatBytes(bytes) {
   return `${bytes.toFixed(1)}${units[i]}`;
 }
 
-// ─── Network rate tracking ────────────────────────────────────────────────────
-let prevNetSnapshot = {};         // iface  → { rxBytes, txBytes, ts }
-let prevContainerNetSnapshot = {}; // fullId → { rxBytes, txBytes, ts }
-let ifaceToDockerNet = {};         // hostIface → docker network name (e.g. "docker-c5c36d39" → "nas")
-
 docker.setDependencies({
   appSettings,
   logError,
@@ -321,27 +317,9 @@ docker.setDependencies({
   formatBytes,
   getCache: () => cache,
   refreshCache,
-  ifaceToDockerNet,
-  prevContainerNetSnapshot,
+  ifaceToDockerNet: network.ifaceToDockerNet,
+  prevContainerNetSnapshot: network.prevContainerNetSnapshot,
 });
-
-// Read network stats from inside a container's net namespace via /proc/<pid>/net/dev.
-// Each process's /proc/<pid>/net/dev shows the network interfaces visible from that
-// process's network namespace — i.e. the container's own eth0/lo/etc., not the host's.
-function readContainerNetDev(pid) {
-  const raw = readFile(`/proc/${pid}/net/dev`);
-  if (!raw) return null;
-  let rxBytes = 0, txBytes = 0;
-  const lines = raw.split('\n').slice(2).filter(Boolean);
-  for (const l of lines) {
-    const parts = l.trim().split(/\s+/);
-    const iface = parts[0].replace(':', '');
-    if (iface === 'lo') continue;          // skip loopback
-    rxBytes += parseInt(parts[1]) || 0;   // column 2  = RX bytes
-    txBytes += parseInt(parts[9]) || 0;   // column 10 = TX bytes
-  }
-  return { rxBytes, txBytes };
-}
 
 // ─── System summary ───────────────────────────────────────────────────────────
 
@@ -408,36 +386,7 @@ async function collectSystemSummary() {
     }
   } catch {}
 
-  // Network
-  const netLines = readFile('/proc/net/dev').split('\n').slice(2).filter(Boolean);
-  const nets = netLines.map(l => {
-    const parts = l.trim().split(/\s+/);
-    const iface = parts[0].replace(':', '');
-    return {
-      iface,
-      rxBytes: parseInt(parts[1]),
-      txBytes: parseInt(parts[9]),
-      dockerNetName: ifaceToDockerNet[iface] || '', // e.g. "nas" for docker-c5c36d39
-    };
-  }).filter(n => n.iface !== 'lo');
-
-  // Compute per-interface KB/s rates using previous snapshot
-  const now = Date.now();
-  let totalRxKBs = 0;
-  let totalTxKBs = 0;
-  const netsWithRate = nets.map(n => {
-    const prev = prevNetSnapshot[n.iface];
-    let rxKBs = 0, txKBs = 0;
-    if (prev && now > prev.ts) {
-      const dtSec = (now - prev.ts) / 1000;
-      rxKBs = Math.max(0, (n.rxBytes - prev.rxBytes) / 1024 / dtSec);
-      txKBs = Math.max(0, (n.txBytes - prev.txBytes) / 1024 / dtSec);
-    }
-    prevNetSnapshot[n.iface] = { rxBytes: n.rxBytes, txBytes: n.txBytes, ts: now };
-    totalRxKBs += rxKBs;
-    totalTxKBs += txKBs;
-    return { ...n, rxKBs: parseFloat(rxKBs.toFixed(2)), txKBs: parseFloat(txKBs.toFixed(2)) };
-  });
+  const { nets: netsWithRate, netInKBs, netOutKBs } = network.collectNetRates();
 
   return {
     memTotal: memTotal * 1024,
@@ -453,8 +402,8 @@ async function collectSystemSummary() {
     diskTotal: diskTotalBytes,
     diskUsed: diskUsedBytes,
     nets: netsWithRate,
-    netInKBs: parseFloat(totalRxKBs.toFixed(2)),
-    netOutKBs: parseFloat(totalTxKBs.toFixed(2)),
+    netInKBs,
+    netOutKBs,
   };
 }
 
