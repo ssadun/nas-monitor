@@ -11,6 +11,7 @@ const auth = require('./modules/auth.js');
 const header = require('./modules/header.js');
 const docker = require('./modules/docker.js');
 const categories = require('./modules/categories.js');
+const disk = require('./modules/disk.js');
 const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
@@ -543,28 +544,7 @@ async function collectSystemSummary() {
 
 // ─── Cache layer ──────────────────────────────────────────────────────────────
 
-const DISK_HISTORY_FILE = path.join(__dirname, 'data', 'disk-history.json');
-const DISK_HISTORY_MAX = 20;
-
-
-function loadDiskHistory() {
-  try {
-    const raw = fs.readFileSync(DISK_HISTORY_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function saveDiskHistory(history) {
-  try {
-    fs.writeFileSync(DISK_HISTORY_FILE, JSON.stringify(history), 'utf8');
-  } catch (e) {
-    logError('Failed to save disk history file', { error: e.message });
-  }
-}
-
-let diskScanHistory = loadDiskHistory();
+let diskScanHistory = disk.loadHistory();
 logInfo('Disk history loaded from disk', { scans: diskScanHistory.length });
 
 let cache = {
@@ -602,87 +582,8 @@ function resetRefreshTimer() {
   refreshTimer = setInterval(refreshCache, appSettings.refreshIntervalSeconds * 1000);
 }
 
-// ─── Disk usage scanner ───────────────────────────────────────────────────────
-
-const fsp = require('fs').promises;
-
-async function diskWalkTree(dirPath, depth, maxDepth) {
-  const node = { path: dirPath, name: dirPath.split('/').pop() || dirPath, sizeBytes: 0, children: [] };
-  let entries;
-  try { entries = await fsp.readdir(dirPath, { withFileTypes: true }); } catch { return node; }
-
-  for (const e of entries) {
-    const full = dirPath.replace(/\/$/, '') + '/' + e.name;
-    try {
-      if (e.isSymbolicLink()) continue;
-      if (e.isFile()) {
-        const st = await fsp.stat(full);
-        node.sizeBytes += st.size;
-      } else if (e.isDirectory()) {
-        if (depth < maxDepth) {
-          const child = await diskWalkTree(full, depth + 1, maxDepth);
-          node.sizeBytes += child.sizeBytes;
-          node.children.push(child);
-        } else {
-          // At max depth: count size without going deeper in tree
-          const sz = await diskCountSize(full);
-          node.sizeBytes += sz;
-          node.children.push({ path: full, name: e.name, sizeBytes: sz, children: [] });
-        }
-      }
-    } catch {}
-  }
-  node.children.sort((a, b) => b.sizeBytes - a.sizeBytes);
-  return node;
-}
-
-async function diskCountSize(dirPath) {
-  let total = 0;
-  let entries;
-  try { entries = await fsp.readdir(dirPath, { withFileTypes: true }); } catch { return 0; }
-  for (const e of entries) {
-    const full = dirPath.replace(/\/$/, '') + '/' + e.name;
-    try {
-      if (e.isSymbolicLink()) continue;
-      if (e.isFile()) {
-        const st = await fsp.stat(full);
-        total += st.size;
-      } else if (e.isDirectory()) {
-        total += await diskCountSize(full);
-      }
-    } catch {}
-  }
-  return total;
-}
-
-async function diskCollectFiles(dirPath, fileList, depth, maxDepth) {
-  if (depth > maxDepth) return;
-  let entries;
-  try { entries = await fsp.readdir(dirPath, { withFileTypes: true }); } catch { return; }
-  for (const e of entries) {
-    const full = dirPath.replace(/\/$/, '') + '/' + e.name;
-    try {
-      if (e.isSymbolicLink()) continue;
-      if (e.isFile()) {
-        const st = await fsp.stat(full);
-        fileList.push({ path: full, name: e.name, sizeBytes: st.size, mtime: st.mtimeMs });
-      } else if (e.isDirectory()) {
-        await diskCollectFiles(full, fileList, depth + 1, maxDepth);
-      }
-    } catch {}
-  }
-}
-
 async function collectDiskUsage(scanPath, maxDepth = 4) {
-  const results = { path: scanPath, scannedAt: Date.now(), tree: null, topFiles: [], error: null };
-  try {
-    results.tree = await diskWalkTree(scanPath, 0, maxDepth);
-    const allFiles = [];
-    await diskCollectFiles(scanPath, allFiles, 0, maxDepth + 2);
-    results.topFiles = allFiles.sort((a, b) => b.sizeBytes - a.sizeBytes).slice(0, 50);
-  } catch (e) {
-    results.error = e.message;
-  }
+  const results = await disk.collectUsage(scanPath, maxDepth);
   return results;
 }
 
@@ -925,8 +826,8 @@ const server = http.createServer(async (req, res) => {
       const data = await collectDiskUsage(safe, maxDepth);
       // Store scan in history (keep last 20)
       diskScanHistory.unshift({ ...data, id: Date.now() });
-      if (diskScanHistory.length > DISK_HISTORY_MAX) diskScanHistory.pop();
-      saveDiskHistory(diskScanHistory);
+      if (diskScanHistory.length > disk.DISK_HISTORY_MAX) diskScanHistory.pop();
+      disk.saveHistory(diskScanHistory);
       res.end(JSON.stringify(data));
     } catch (e) {
       res.end(JSON.stringify({ error: e.message, tree: null, topFiles: [] }));
@@ -970,7 +871,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      saveDiskHistory(diskScanHistory);
+      disk.saveHistory(diskScanHistory);
       logInfo('Disk scan history entry deleted', { user: reqUser, scanId: id, remaining: diskScanHistory.length });
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify({ ok: true, remaining: diskScanHistory.length }));
