@@ -893,6 +893,10 @@ function startStream() {
     render();
     updateSortHeaders();
     document.getElementById('loading').classList.add('done');
+    if (diskHistory.length && !diskHistoryColorsReady && allData.summary?.diskTotal > 0) {
+      diskHistoryColorsReady = true;
+      renderDiskHistory();
+    }
     const t = new Date(allData.lastUpdate);
     document.querySelectorAll('.last-update').forEach(el => {
       el.textContent = 'Updated ' + t.toLocaleTimeString();
@@ -1447,8 +1451,8 @@ function renderContainers() {
       <td class="col-net-in green-text" title="Docker cumulative: ${esc(c.netIn)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethRxKBs?c.vethRxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
       <td class="col-net-out accent-text" title="Docker cumulative: ${esc(c.netOut)}">${c.netMode==='host'?'<span class="muted" style="font-size:12px">host-net</span>':c.netMode==='compose'?'<span class="muted">–</span>':c.vethTxKBs?c.vethTxKBs.toFixed(2)+' KB/s':'<span class="muted">–</span>'}</td>
       <td class="col-img-size muted">${esc(c.imageSize||'–')}</td>
-      <td class="col-networks muted" style="white-space:normal;line-height:1.8">${renderNetworks(c.networks)}</td>
-      <td class="col-ports" style="white-space:normal;line-height:1.8">${renderPorts(c.ports)}</td>
+      <td class="col-networks muted">${renderNetworks(c.networks)}</td>
+      <td class="col-ports">${renderPorts(c.ports)}</td>
       <td class="col-actions" onclick="event.stopPropagation()">
         <div class="container-actions" style="display:flex;gap:4px;">
           <button class="action-btn start" title="${startTitle}"
@@ -1518,7 +1522,7 @@ function renderNetworks(networks) {
              padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
              color:${color};white-space:nowrap;cursor:default;"
     >${esc(n.name)}${n.driver ? ' ' + '<span style="opacity:.55;">'+esc(n.driver)+'</span>' : ''}${n.ip ? ': '+esc(n.ip) : ''}</span>`;
-  }).join('');
+  }).join('<br>');
 }
 
 function toggleContainerRow(id, evt) {
@@ -2634,7 +2638,8 @@ let diskCollapsed = new Set();
 let diskScanning = false;
 let diskAllExpanded = false;
 let diskHistory = []; // stored locally too
-let diskActiveHistoryIdx = 0;
+let diskActiveHistoryIdx = -1;
+let diskHistoryColorsReady = false;
 
 function updateDiskDeleteButtonVisibility() {
   const btn = el('disk-delete-btn');
@@ -2733,15 +2738,14 @@ async function loadHistoryScan(idx) {
   renderDiskFiles();
 }
 
-function renderDiskHistory(activeIdx = 0) {
+function renderDiskHistory(activeIdx) {
   if (typeof activeIdx === 'number') {
     diskActiveHistoryIdx = activeIdx;
   }
-  if (diskActiveHistoryIdx < 0) diskActiveHistoryIdx = 0;
   if (diskHistory.length && diskActiveHistoryIdx >= diskHistory.length) {
     diskActiveHistoryIdx = diskHistory.length - 1;
   }
-  const selectedIdx = diskHistory.length ? diskActiveHistoryIdx : -1;
+  const selectedIdx = diskActiveHistoryIdx;
   const list = el('disk-history-list');
   if (!diskHistory.length) {
     list.innerHTML = `<div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
@@ -2786,8 +2790,7 @@ async function deleteSelectedDiskScan() {
     return;
   }
   const deleteBtn = el('disk-delete-btn');
-  const oldText = deleteBtn ? deleteBtn.textContent : '';
-  if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = '🗑 Deleting…'; }
+  if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.querySelector('span').textContent = 'Deleting…'; }
   try {
     const res = await fetch(`/api/disk/history/${encodeURIComponent(target.id)}`, { method: 'DELETE' });
     const data = await res.json();
@@ -2797,7 +2800,7 @@ async function deleteSelectedDiskScan() {
     }
     diskHistory.splice(idx, 1);
     if (!diskHistory.length) {
-      diskActiveHistoryIdx = 0;
+      diskActiveHistoryIdx = -1;
       diskCurrentData = null;
       // el('disk-scan-info').textContent ='Scan deleted';
       el('disk-tree-root').textContent = '';
@@ -2815,7 +2818,7 @@ async function deleteSelectedDiskScan() {
   } catch (e) {
     // el('disk-scan-info').textContent ='⚠ ' + e.message;
   } finally {
-    if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.textContent = oldText || '🗑 Delete'; }
+    if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.querySelector('span').textContent = 'Delete'; }
   }
 }
 

@@ -507,6 +507,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  td.col-ports, td.col-networks {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
 
   /* ─── Process tree indentation ──────────────────────────── */
   .proc-name {
