@@ -13,12 +13,16 @@ const docker = require('./modules/docker.js');
 const categories = require('./modules/categories.js');
 const disk = require('./modules/disk.js');
 const network = require('./modules/network.js');
+const monitor = require('./modules/monitor.js');
+const sysInfo = require('./modules/process.js');
+const logger = require('./modules/logger.js');
+const prune  = require('./modules/prune.js');
 const { exec, execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 const crypto = require('crypto');
 const {
-  PORT, SETTINGS_FILE, LOG_LEVELS, DEFAULT_SETTINGS,
-  normalizeSettings, loadSettings, saveSettingsFile,
+  PORT, SETTINGS_FILE,
+  loadSettings, saveSettingsFile,
 } = require('./modules/config.js');
 
 const execAsync = promisify(exec);
@@ -26,6 +30,10 @@ const execFileAsync = promisify(execFile);
 
 /** @type {AppSettings} */
 let appSettings = loadSettings();
+
+logger.setDependencies({ getSettings: () => appSettings });
+const { logDebug, logInfo, logWarn, logError, getClientIp, auditLog, warnThresholdMs } = logger;
+
 if (!fs.existsSync(SETTINGS_FILE)) {
   try { appSettings = saveSettingsFile(appSettings); }
   catch (e) { logError('Failed to initialize settings file', { error: e.message || 'unknown error' }); }
@@ -35,263 +43,9 @@ if (!fs.existsSync(SETTINGS_FILE)) {
 auth.setDependencies(appSettings, logError);
 categories.setDependencies(logError);
 
-function shouldLog(level) {
-  const current = LOG_LEVELS[String(appSettings.logLevel || 'INFO').toUpperCase()] ?? LOG_LEVELS.INFO;
-  const incoming = LOG_LEVELS[level] ?? LOG_LEVELS.INFO;
-  return incoming >= current;
-}
-
-function formatMeta(meta) {
-  const entries = Object.entries(meta || {}).filter(([, v]) => v !== undefined && v !== null && v !== '');
-  if (!entries.length) return '';
-  return ' ' + entries.map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ');
-}
-
-function writeLog(level, message, meta = {}) {
-  if (!shouldLog(level)) return;
-  const ts = new Date().toISOString();
-  const line = `[${ts}] [${level}] ${message}${formatMeta(meta)}`;
-  if (level === 'ERROR') console.error(line);
-  else console.log(line);
-}
-
-function logDebug(message, meta) { writeLog('DEBUG', message, meta); }
-function logInfo(message, meta) { writeLog('INFO', message, meta); }
-function logWarn(message, meta) { writeLog('WARN', message, meta); }
-function logError(message, meta) { writeLog('ERROR', message, meta); }
-
-function getClientIp(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-         req.headers['x-real-ip'] ||
-         req.socket.remoteAddress || 'unknown';
-}
-
-function auditLog(action, details, req) {
-  const ts = new Date().toISOString();
-  const ip = getClientIp(req);
-  const user = details.user || 'unknown';
-  const status = details.status || 'success';
-  const auditLine = JSON.stringify({
-    timestamp: ts,
-    action,
-    user,
-    ip,
-    status,
-    details: details.details || ''
-  });
-
-  try {
-    fs.appendFileSync(path.join(__dirname, 'logs', 'audit.log'), auditLine + '\n');
-  } catch (e) {
-    logError('Failed to write audit log', { error: e.message });
-  }
-}
-
-
-function warnThresholdMs() {
-  return Math.max(0, Number(appSettings.warnThresholdSeconds || 3) * 1000);
-}
-
-// ─── /proc helpers ───────────────────────────────────────────────────────────
-
-function readFile(p) {
-  try { return fs.readFileSync(p, 'utf8'); } catch { return ''; }
-}
-
-function getTotalMemKB() {
-  const line = readFile('/proc/meminfo').split('\n').find(l => l.startsWith('MemTotal:'));
-  return line ? parseInt(line.split(/\s+/)[1]) : 1;
-}
-
-function getBootTime() {
-  const line = readFile('/proc/stat').split('\n').find(l => l.startsWith('btime'));
-  return line ? parseInt(line.split(' ')[1]) : 0;
-}
-
-const BOOT_TIME = getBootTime();
-const TOTAL_MEM_KB = getTotalMemKB();
-const CLK_TCK = 100; // Hz – standard Linux
-
-function parseProcStat(pid) {
-  try {
-    const raw = readFile(`/proc/${pid}/stat`);
-    if (!raw) return null;
-    // comm is between first ( and last ) to handle spaces
-    const commStart = raw.indexOf('(');
-    const commEnd = raw.lastIndexOf(')');
-    const comm = raw.slice(commStart + 1, commEnd);
-    const rest = raw.slice(commEnd + 2).split(' ');
-    return {
-      state: rest[0],
-      ppid: parseInt(rest[1]),
-      utime: parseInt(rest[11]),
-      stime: parseInt(rest[12]),
-      starttime: parseInt(rest[19]),
-      comm,
-    };
-  } catch { return null; }
-}
-
-function parseProcStatus(pid) {
-  const lines = readFile(`/proc/${pid}/status`).split('\n');
-  const get = (key) => {
-    const l = lines.find(x => x.startsWith(key + ':'));
-    return l ? l.split(':')[1].trim() : '';
-  };
-  return {
-    name: get('Name'),
-    uid: get('Uid').split('\t')[0],
-    vmRSS: parseInt(get('VmRSS')) || 0,
-    threads: parseInt(get('Threads')) || 1,
-  };
-}
-
-function getOwner(uid) {
-  try {
-    const passwd = fs.readFileSync('/etc/passwd', 'utf8');
-    const line = passwd.split('\n').find(l => l.split(':')[2] === String(uid));
-    return line ? line.split(':')[0] : String(uid);
-  } catch { return String(uid); }
-}
-
-function getCmdline(pid) {
-  try {
-    return readFile(`/proc/${pid}/cmdline`).replace(/\0/g, ' ').trim();
-  } catch { return ''; }
-}
-
-function parseProcIO(pid) {
-  // /proc/<pid>/io requires root on most kernels; returns null if unreadable
-  try {
-    const raw = readFile(`/proc/${pid}/io`);
-    if (!raw) return null;
-    const get = (key) => {
-      const line = raw.split('\n').find(l => l.startsWith(key + ':'));
-      return line ? parseInt(line.split(':')[1].trim()) : 0;
-    };
-    return {
-      readBytes:  get('read_bytes'),
-      writeBytes: get('write_bytes'),
-    };
-  } catch { return null; }
-}
-
-// CPU snapshots for delta calculations
-let prevCpuSnapshot = {};
-let prevSystemCpu = 0;
-let prevDiskSnapshot = {}; // pid -> { readBytes, writeBytes, ts }
-
-function getSystemCpuTotal() {
-  const line = readFile('/proc/stat').split('\n')[0];
-  const parts = line.split(/\s+/).slice(1).map(Number);
-  return parts.reduce((a, b) => a + b, 0);
-}
-
-function snapshotProcCpu(pid) {
-  const stat = parseProcStat(pid);
-  if (!stat) return 0;
-  return stat.utime + stat.stime;
-}
-
-// ─── Collect all processes ────────────────────────────────────────────────────
-
-function getAllPids() {
-  return fs.readdirSync('/proc')
-    .filter(d => /^\d+$/.test(d))
-    .map(Number);
-}
-
-async function collectProcesses() {
-  const pids = getAllPids();
-  const systemCpu = getSystemCpuTotal();
-  const systemDelta = Math.max(systemCpu - prevSystemCpu, 1);
-  const uptime = parseFloat(readFile('/proc/uptime').split(' ')[0]);
-  const nowTs = Date.now();
-
-  const processes = [];
-
-  for (const pid of pids) {
-    const stat = parseProcStat(pid);
-    if (!stat) continue;
-    const status = parseProcStatus(pid);
-
-    const procCpu = stat.utime + stat.stime;
-    const isFirstSnapshot = prevCpuSnapshot[pid] === undefined;
-    const prevCpu = isFirstSnapshot ? procCpu : prevCpuSnapshot[pid];
-    const cpuDelta = isFirstSnapshot ? 0 : Math.max(0, procCpu - prevCpu);
-    const cpuPercent = parseFloat(((cpuDelta / systemDelta) * 100).toFixed(2));
-
-    prevCpuSnapshot[pid] = procCpu;
-
-    const memPercent = parseFloat(((status.vmRSS / TOTAL_MEM_KB) * 100).toFixed(2));
-    const startEpoch = BOOT_TIME + (stat.starttime / CLK_TCK);
-    const startDate = new Date(startEpoch * 1000).toISOString();
-
-    const cmdline = getCmdline(pid);
-    // Mark our own process (nas-monitor server.js) and its children
-    const isSelf = pid === process.pid || stat.ppid === process.pid ||
-      (cmdline.includes(__dirname) && cmdline.includes('server.js'));
-
-    // Disk I/O rate from /proc/<pid>/io
-    let diskReadKBs = 0, diskWriteKBs = 0;
-    const io = parseProcIO(pid);
-    if (io) {
-      const prev = prevDiskSnapshot[pid];
-      if (prev && nowTs > prev.ts) {
-        const dtSec = (nowTs - prev.ts) / 1000;
-        diskReadKBs  = parseFloat(Math.max(0, (io.readBytes  - prev.readBytes)  / 1024 / dtSec).toFixed(2));
-        diskWriteKBs = parseFloat(Math.max(0, (io.writeBytes - prev.writeBytes) / 1024 / dtSec).toFixed(2));
-      }
-      prevDiskSnapshot[pid] = { readBytes: io.readBytes, writeBytes: io.writeBytes, ts: nowTs };
-    }
-
-    processes.push({
-      pid,
-      ppid: stat.ppid,
-      name: status.name || stat.comm,
-      owner: getOwner(status.uid),
-      cpu: Math.max(0, cpuPercent),
-      mem: memPercent,
-      memKB: status.vmRSS,
-      status: stat.state,
-      start: startDate,
-      cmdline,
-      threads: status.threads,
-      isSelf,
-      diskReadKBs,
-      diskWriteKBs,
-    });
-  }
-
-  prevSystemCpu = systemCpu;
-
-  return processes;
-}
-
 // ─── Docker helpers ───────────────────────────────────────────────────────────
 
-const DOCKER_PATHS = [
-  '/usr/bin/docker',
-  '/usr/local/bin/docker',
-  '/bin/docker',
-  '/usr/syno/bin/docker',
-  '/var/packages/ContainerManager/target/usr/bin/docker',
-  '/var/packages/Docker/target/usr/bin/docker',
-];
-
-function findDocker() {
-  for (const p of DOCKER_PATHS) {
-    if (fs.existsSync(p)) return p;
-  }
-  return 'docker'; // fallback to PATH
-}
-
-const DOCKER = findDocker();
-const DOCKER_COMPOSE_PATHS = [
-  '/usr/bin/docker-compose',
-  '/usr/local/bin/docker-compose',
-  '/bin/docker-compose',
-];
+const DOCKER = docker.findDocker();
 const FAVICON_FILE = path.join(__dirname, 'favicon.ico');
 const PWA_DIR = path.join(__dirname, 'pwa');
 const MANIFEST_FILE = path.join(PWA_DIR, 'manifest.webmanifest');
@@ -313,7 +67,6 @@ docker.setDependencies({
   logError,
   logInfo,
   auditLog,
-  readFile,
   formatBytes,
   getCache: () => cache,
   refreshCache,
@@ -321,91 +74,10 @@ docker.setDependencies({
   prevContainerNetSnapshot: network.prevContainerNetSnapshot,
 });
 
-// ─── System summary ───────────────────────────────────────────────────────────
-
-async function collectSystemSummary() {
-  const meminfo = readFile('/proc/meminfo');
-  const getMemVal = (key) => {
-    const l = meminfo.split('\n').find(x => x.startsWith(key));
-    return l ? parseInt(l.split(/\s+/)[1]) : 0;
-  };
-
-  const memTotal = getMemVal('MemTotal:');
-  const memAvail = getMemVal('MemAvailable:');
-  const memUsed = memTotal - memAvail;
-
-  // CPU overall
-  const statLines = readFile('/proc/stat').split('\n');
-  const cpuLine = statLines[0].split(/\s+/).slice(1).map(Number);
-  const idle = cpuLine[3] + (cpuLine[4] || 0);
-  const total = cpuLine.reduce((a, b) => a + b, 0);
-
-  // Load average
-  const loadavg = readFile('/proc/loadavg').split(' ');
-
-  // Uptime
-  const uptime = parseFloat(readFile('/proc/uptime').split(' ')[0]);
-
-  // Disk info via df
-  let diskInfo = [];
-  let diskTotalBytes = 0;
-  let diskUsedBytes = 0;
-  try {
-    const { stdout } = await execAsync('df -k --output=source,size,used,avail,pcent,target 2>/dev/null | tail -n +2');
-    diskInfo = stdout.trim().split('\n').map(l => {
-      const [source, size, used, avail, pcent, target] = l.trim().split(/\s+/);
-      return { source, size: parseInt(size), used: parseInt(used), avail: parseInt(avail), pcent, target };
-    }).filter(d => d.target && !d.target.startsWith('/sys') && !d.target.startsWith('/proc') && !d.target.startsWith('/dev/shm'));
-
-    // On Synology, /volume1 and all its sub-mounts (/volume1/@docker, /volume1/@appstore, etc.)
-    // share the same underlying device and report the same total size — summing them causes
-    // massive overcounting. Only keep exact top-level /volumeN mount points.
-    const volumeMounts = diskInfo.filter(d => /^\/volume\d+$/.test(d.target));
-
-    if (volumeMounts.length > 0) {
-      // Deduplicate by source device in case the same device appears twice
-      const seen = new Set();
-      for (const d of volumeMounts) {
-        if (seen.has(d.source)) continue;
-        seen.add(d.source);
-        diskTotalBytes += (d.size || 0) * 1024;
-        diskUsedBytes  += (d.used || 0) * 1024;
-      }
-    } else {
-      // Non-Synology fallback: largest single real disk (no summing to avoid double-count)
-      const real = diskInfo
-        .filter(d => !d.target.startsWith('/dev') && d.size > 1024 * 1024)
-        .sort((a, b) => b.size - a.size);
-      const seen = new Set();
-      for (const d of real) {
-        if (seen.has(d.source)) continue;
-        seen.add(d.source);
-        diskTotalBytes += (d.size || 0) * 1024;
-        diskUsedBytes  += (d.used || 0) * 1024;
-      }
-    }
-  } catch {}
-
-  const { nets: netsWithRate, netInKBs, netOutKBs } = network.collectNetRates();
-
-  return {
-    memTotal: memTotal * 1024,
-    memUsed: memUsed * 1024,
-    memAvail: memAvail * 1024,
-    cpuIdle: idle,
-    cpuTotal: total,
-    load1: parseFloat(loadavg[0]),
-    load5: parseFloat(loadavg[1]),
-    load15: parseFloat(loadavg[2]),
-    uptimeSeconds: uptime,
-    disks: diskInfo,
-    diskTotal: diskTotalBytes,
-    diskUsed: diskUsedBytes,
-    nets: netsWithRate,
-    netInKBs,
-    netOutKBs,
-  };
-}
+sysInfo.setDependencies({
+  readFile: monitor.readFile,
+  collectNetRates: network.collectNetRates,
+});
 
 // ─── Cache layer ──────────────────────────────────────────────────────────────
 
@@ -426,9 +98,9 @@ async function refreshCache() {
   collecting = true;
   try {
     const [processes, containers, summary] = await Promise.all([
-      collectProcesses(),
+      monitor.collectProcesses(),
       docker.collectContainers(),
-      collectSystemSummary(),
+      sysInfo.collectSystemSummary(),
     ]);
     cache = { processes, containers, summary, lastUpdate: Date.now() };
   } catch (e) {
@@ -446,6 +118,14 @@ function resetRefreshTimer() {
   clearInterval(refreshTimer);
   refreshTimer = setInterval(refreshCache, appSettings.refreshIntervalSeconds * 1000);
 }
+
+prune.setDependencies({
+  logError,
+  logInfo,
+  runDocker: docker.runDocker,
+  DOCKER,
+  getSettings: () => appSettings,
+});
 
 async function collectDiskUsage(scanPath, maxDepth = 4) {
   const results = await disk.collectUsage(scanPath, maxDepth);
@@ -537,7 +217,7 @@ const server = http.createServer(async (req, res) => {
 
   const UI_FILES = new Set([
     'utils.js', 'state.js', 'menu.js', 'menu-ui.js', 'setting.js',
-    'render.js', 'disk-ui.js', 'network-ui.js', 'prune-ui.js',
+    'render.js', 'processes-ui.js', 'disk-ui.js', 'network-ui.js', 'prune-ui.js',
     'containers-ui.js', 'compose-ui.js', 'console-ui.js',
     'credentials-ui.js', 'volumes-ui.js', 'networks-ui.js',
   ]);
@@ -783,7 +463,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/prune/scan') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     try {
-      const data = await scanUnused();
+      const data = await prune.scanUnused();
       res.end(JSON.stringify(data));
     } catch (e) {
       res.end(JSON.stringify({ error: e.message }));
@@ -798,7 +478,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       try {
         const selected = JSON.parse(body);
-        const summary = await runPrune(selected);
+        const summary = await prune.runPrune(selected);
         auditLog('prune_run', { user: reqUser, details: Object.keys(selected).filter(k => selected[k]).join(','), status: 'success' }, req);
         res.end(JSON.stringify({ ok: true, summary }));
       } catch (e) {
@@ -812,7 +492,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/prune/log') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     try {
-      const raw = fs.existsSync(PRUNE_LOG_FILE) ? fs.readFileSync(PRUNE_LOG_FILE, 'utf8') : '';
+      const raw = fs.existsSync(prune.PRUNE_LOG_FILE) ? fs.readFileSync(prune.PRUNE_LOG_FILE, 'utf8') : '';
       res.end(JSON.stringify({ log: raw }));
     } catch (e) {
       logError('Failed to read prune log file', { error: e.message });
@@ -865,7 +545,7 @@ const server = http.createServer(async (req, res) => {
           });
         }
         if (previous.pruneIntervalHours !== appSettings.pruneIntervalHours) {
-          scheduleAutoPrune();
+          prune.scheduleAutoPrune();
           logInfo('Auto-prune interval changed', {
             previousHours: previous.pruneIntervalHours,
             currentHours: appSettings.pruneIntervalHours,
@@ -1209,241 +889,7 @@ async function healthCheck(req, res) {
   }
 }
 
-const PRUNE_LOG_FILE = path.join(__dirname, 'logs', 'prune.log');
-const PRUNE_LOG_RETAIN_DAYS = 30;
-
-function appendPruneLog(lines) {
-  try {
-    const now = new Date().toISOString();
-    const text = lines.map(l => `[${now}] ${l}`).join('\n') + '\n';
-    fs.appendFileSync(PRUNE_LOG_FILE, text, 'utf8');
-    // Trim entries older than 30 days
-    const raw = fs.readFileSync(PRUNE_LOG_FILE, 'utf8');
-    const cutoff = Date.now() - PRUNE_LOG_RETAIN_DAYS * 86400000;
-    const kept = raw.split('\n').filter(line => {
-      const m = line.match(/^\[(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\]/);
-      if (!m) return false;
-      return new Date(m[1]).getTime() > cutoff;
-    });
-    fs.writeFileSync(PRUNE_LOG_FILE, kept.join('\n') + (kept.length ? '\n' : ''), 'utf8');
-  } catch (e) {
-    logError('Failed to append prune log', { error: e.message });
-  }
-}
-
-async function scanUnused() {
-  const result = { images: [], networks: [], volumes: [], buildCache: [], buildCacheTotal: '', buildCacheReclaimable: '' };
-
-  // ── Images: port of the shell script approach ────────────────────────────
-  try {
-    // Get all image details in one batch call first
-    const allImgOut = await runDocker(`images --format '{{json .}}'`);
-    const imageMap = {}; // shortId → detail object
-    if (allImgOut) {
-      allImgOut.split('\n').filter(Boolean).forEach(l => {
-        try {
-          const img = JSON.parse(l);
-          // Store by both short ID (first 12) and full ID variants
-          const shortId = (img.ID || '').replace('sha256:', '').slice(0, 12);
-          imageMap[shortId] = img;
-          imageMap[img.ID]  = img;
-        } catch {}
-      });
-    }
-
-    // Get unique short IDs (same as docker images -q | sort -u)
-    const imgIdsOut = await runDocker(`images -q`);
-    if (imgIdsOut) {
-      const shortIds = [...new Set(imgIdsOut.split('\n').filter(Boolean))];
-
-      for (const imgId of shortIds) {
-        // Count containers using this image (running + stopped)
-        const countOut = await runDocker(`ps -a -q --filter "ancestor=${imgId}"`);
-        const count = countOut ? countOut.split('\n').filter(Boolean).length : 0;
-        if (count === 0) {
-          const img = imageMap[imgId] || imageMap[imgId.slice(0,12)] || {};
-          const repository = img.Repository || '';
-          const tag        = img.Tag        || '';
-          const size       = img.Size       || '';
-          const created    = img.CreatedSince || '';
-          const name       = (repository && repository !== '<none>')
-            ? `${repository}:${tag}`
-            : '<dangling>';
-          result.images.push({
-            id: imgId, name, repository, tag, size, created,
-            reason: name === '<dangling>' ? 'dangling' : 'unused',
-          });
-        }
-      }
-    }
-  } catch {}
-
-  // ── Networks: inspect each non-builtin network and check Containers field ──
-  try {
-    const netLs = await runDocker(`network ls --format '{{json .}}'`);
-    if (netLs) {
-      const nets = netLs.split('\n').filter(Boolean).map(l => {
-        try { return JSON.parse(l); } catch { return null; }
-      }).filter(Boolean).filter(n => !['bridge','host','none'].includes(n.Name));
-
-      for (const net of nets) {
-        try {
-          const inspectOut = await runDocker(`network inspect ${net.ID} --format '{{json .}}'`);
-          if (!inspectOut) continue;
-          const ni = JSON.parse(inspectOut);
-          const containerCount = ni.Containers ? Object.keys(ni.Containers).length : 0;
-          if (containerCount === 0) {
-            result.networks.push({ id: net.ID, name: net.Name, driver: net.Driver, scope: net.Scope, reason: 'unused' });
-          }
-        } catch {}
-      }
-    }
-  } catch {}
-
-  // ── Volumes: port of the shell script — check each volume against ps -a ──
-  try {
-    const volNamesOut = await runDocker(`volume ls -q`);
-    if (volNamesOut) {
-      const volNames = volNamesOut.split('\n').filter(Boolean);
-      for (const vol of volNames) {
-        const usedOut = await runDocker(`ps -a -q --filter "volume=${vol}"`);
-        const isUsed  = usedOut && usedOut.split('\n').filter(Boolean).length > 0;
-        if (!isUsed) {
-          const detailOut = await runDocker(`volume inspect --format '{{json .}}' ${vol}`);
-          let driver = '', mountpoint = '', created = '';
-          if (detailOut) {
-            try {
-              const v   = JSON.parse(detailOut);
-              driver     = v.Driver     || '';
-              mountpoint = v.Mountpoint || '';
-              // CreatedAt is like "2024-01-15T10:23:45Z"
-              if (v.CreatedAt) {
-                try { created = new Date(v.CreatedAt).toLocaleDateString(); } catch { created = v.CreatedAt; }
-              }
-            } catch {}
-          }
-          result.volumes.push({ id: vol, name: vol, driver, mountpoint, created, reason: 'unused' });
-        }
-      }
-    }
-  } catch {}
-
-  // ── Build cache: docker builder du --verbose ──────────────────────────────
-  try {
-    // Use without --verbose since the table format is the same and more reliable
-    const { stdout } = await execAsync(`"${DOCKER}" builder du 2>/dev/null`, { timeout: 15000 });
-    if (stdout) {
-      const lines = stdout.trim().split('\n');
-
-      // Extract summary lines (Shared/Private/Reclaimable/Total at the bottom)
-      const totalLine = lines.find(l => /^Total:/i.test(l.trim()));
-      if (totalLine) result.buildCacheTotal = totalLine.replace(/^Total:\s*/i, '').trim();
-      const reclaimableLine = lines.find(l => /^Reclaimable:/i.test(l.trim()));
-      if (reclaimableLine) result.buildCacheReclaimable = reclaimableLine.replace(/^Reclaimable:\s*/i, '').trim();
-
-      // Parse the table rows — skip header line and summary lines
-      // Summary lines start with: Shared: Private: Reclaimable: Total:
-      const summaryPrefixes = /^(Shared|Private|Reclaimable|Total):/i;
-
-      let headerFound = false;
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        // Header line starts with "ID"
-        if (/^ID\s+RECLAIMABLE/i.test(trimmed)) { headerFound = true; continue; }
-        if (!headerFound) continue;
-        // Skip summary lines
-        if (summaryPrefixes.test(trimmed)) continue;
-        // Split on 2+ spaces — handles variable-width columns
-        const cols = trimmed.split(/\s{2,}/);
-        if (cols.length >= 3) {
-          result.buildCache.push({
-            id:           cols[0] || '',
-            reclaimable:  cols[1] || '',
-            size:         cols[2] || '',
-            lastAccessed: cols[3] || '',
-          });
-        }
-      }
-    }
-  } catch {}
-
-  return result;
-}
-
-async function runPrune(selected) {
-  const logLines = [`=== Prune started ===`];
-  const summary = { images: 0, networks: 0, volumes: 0, errors: [], pruneOutput: '' };
-
-  if (selected.pruneSystem) {
-    // ── Step 1: system prune (images, containers, networks, build cache) ──
-    try {
-      const { stdout, stderr } = await execAsync(
-        `"${DOCKER}" system prune -a --force`, { timeout: 120000 }
-      );
-      const out = (stdout + stderr).trim();
-      logLines.push(`SYSTEM PRUNE:\n${out}`);
-      summary.pruneOutput = out;
-    } catch (e) {
-      const msg = `SYSTEM PRUNE FAILED: ${e.message}`;
-      logLines.push(msg); summary.errors.push(msg);
-    }
-
-    // ── Step 2: volume prune separately (--volumes flag not supported on older Docker) ──
-    try {
-      const { stdout, stderr } = await execAsync(
-        `"${DOCKER}" volume prune -a --force`, { timeout: 60000 }
-      );
-      const volOut = (stdout + stderr).trim();
-      logLines.push(`VOLUME PRUNE:\n${volOut}`);
-      summary.pruneOutput += (summary.pruneOutput ? '\n' : '') + volOut;
-    } catch (e) {
-      const msg = `VOLUME PRUNE FAILED: ${e.message}`;
-      logLines.push(msg); summary.errors.push(msg);
-    }
-  }
-
-  logLines.push(`=== Done. ${summary.errors.length} errors. ===`);
-  appendPruneLog(logLines);
-  return summary;
-}
-
-// ─── Auto-prune scheduler ─────────────────────────────────────────────────────
-let autoPruneTimer = null;
-
-function getPruneIntervalMs() {
-  const hours = Number(appSettings.pruneIntervalHours || DEFAULT_SETTINGS.pruneIntervalHours);
-  return Math.max(1, hours) * 60 * 60 * 1000;
-}
-
-function scheduleAutoPrune() {
-  if (autoPruneTimer) {
-    clearTimeout(autoPruneTimer);
-    autoPruneTimer = null;
-  }
-  const intervalMs = getPruneIntervalMs();
-  autoPruneTimer = setTimeout(async () => {
-    try {
-      appendPruneLog(['=== Scheduled auto-prune triggered ===']);
-      const found = await scanUnused();
-      const total = found.images.length + found.networks.length + found.volumes.length;
-      if (total > 0) {
-        await runPrune({ pruneSystem: true });
-      } else {
-        appendPruneLog(['Nothing to prune.']);
-      }
-    } catch (e) {
-      appendPruneLog([`Auto-prune error: ${e.message}`]);
-    }
-    // Schedule next interval
-    scheduleAutoPrune();
-  }, intervalMs);
-  logInfo('Auto-prune scheduled', {
-    everyHours: Number((intervalMs / 3600000).toFixed(2)),
-    nextRunInMinutes: Math.round(intervalMs / 60000),
-  });
-}
-scheduleAutoPrune();
+prune.scheduleAutoPrune();
 
 // ─── WebSocket console (docker exec PTY) ─────────────────────────────────────
 // Minimal WebSocket server using Node's built-in http upgrade — no external deps.
@@ -1577,7 +1023,7 @@ server.listen(PORT, '0.0.0.0', () => {
   logInfo('NAS Monitor backend started', {
     bind: `http://0.0.0.0:${PORT}`,
     dockerBinary: DOCKER,
-    totalRamGb: Number((TOTAL_MEM_KB / 1024 / 1024).toFixed(1)),
+    totalRamGb: Number((monitor.TOTAL_MEM_KB / 1024 / 1024).toFixed(1)),
   });
   logInfo('Runtime settings loaded', {
     logLevel: appSettings.logLevel,

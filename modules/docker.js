@@ -10,12 +10,15 @@ let appSettings = {};
 let logError = () => {};
 let logInfo = () => {};
 let auditLog = () => {};
-let readFile = () => '';
 let formatBytes = (bytes) => (bytes === 0 ? '0B' : `${bytes}B`);
 let getCache = () => ({ containers: [] });
 let refreshCache = async () => {};
 let ifaceToDockerNet = {};
 let prevContainerNetSnapshot = {};
+
+function readFile(p) {
+  try { return fs.readFileSync(p, 'utf8'); } catch { return ''; }
+}
 
 const DOCKER_PATHS = [
   '/usr/bin/docker',
@@ -44,7 +47,6 @@ function setDependencies(deps = {}) {
   logError = deps.logError || logError;
   logInfo = deps.logInfo || logInfo;
   auditLog = deps.auditLog || auditLog;
-  readFile = deps.readFile || readFile;
   formatBytes = deps.formatBytes || formatBytes;
   getCache = deps.getCache || getCache;
   refreshCache = deps.refreshCache || refreshCache;
@@ -2084,6 +2086,7 @@ async function handleApi(req, res, url, reqUser) {
 
 module.exports = {
   setDependencies,
+  findDocker,
   collectContainers,
   collectDockerVolumes,
   getComposeSyntheticDetail,

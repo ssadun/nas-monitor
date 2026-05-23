@@ -67,7 +67,8 @@ function renderNetworkLeft() {
     '↓ ' + (s.netInKBs || 0).toFixed(2) + ' KB/s  ↑ ' + (s.netOutKBs || 0).toFixed(2) + ' KB/s';
 
   if (!nets.length) {
-    el('net-ifaces').innerHTML = `<div class="empty-state" style="width:100%"><div class="emoji">🌐</div>No interfaces</div>`;
+    el('net-ifaces').innerHTML = `<div class="empty-state" style="width:100%"><div class="emoji"><i data-lucide="network" style="width:40px;height:40px;stroke-width:1.5;"></i></div>No interfaces</div>`;
+    lucide.createIcons({ nodes: [el('net-ifaces')] });
     return;
   }
 
