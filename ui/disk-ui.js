@@ -175,6 +175,10 @@ async function deleteSelectedDiskScan() {
       el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>`;
       el('disk-file-count').textContent = '';
       el('disk-file-tbody').innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="emoji">📄</div>Click Scan to start</div></td></tr>`;
+      const filesPanel = el('disk-files-panel');
+      if (filesPanel) filesPanel.style.display = 'none';
+      const treePanel = el('disk-tree-panel');
+      if (treePanel) treePanel.style.display = 'none';
       const expandBtn = el('disk-expand-all-btn');
       if (expandBtn) expandBtn.style.display = 'none';
       renderDiskHistory();
@@ -234,7 +238,12 @@ function toggleAllDiskNodes() {
 }
 
 function renderDiskTree() {
-  if (!diskCurrentData || !diskCurrentData.tree) return;
+  const treePanel = el('disk-tree-panel');
+  if (!diskCurrentData || !diskCurrentData.tree) {
+    if (treePanel) treePanel.style.display = 'none';
+    return;
+  }
+  if (treePanel) treePanel.style.display = 'flex';
   const root = diskCurrentData.tree;
   const maxSize = root.sizeBytes || 1;
   let html = '<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">';
@@ -291,7 +300,12 @@ function sortDisk(key) {
 }
 
 function renderDiskFiles() {
-  if (!diskCurrentData) return;
+  const panel = el('disk-files-panel');
+  if (!diskCurrentData) {
+    if (panel) panel.style.display = 'none';
+    return;
+  }
+  if (panel) panel.style.display = 'flex';
   const files = [...(diskCurrentData.topFiles || [])].sort((a, b) => {
     const av = a[diskFileSort.key], bv = b[diskFileSort.key];
     return (av > bv ? 1 : av < bv ? -1 : 0) * diskFileSort.dir;

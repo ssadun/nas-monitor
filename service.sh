@@ -14,7 +14,7 @@ LOG_FILE="${SCRIPT_DIR}/logs/nas-monitor.log"
 SERVER_SCRIPT="${SCRIPT_DIR}/server.js"
 
 SERVICE_NAME="NAS Monitor"
-SERVICE_ICON="🐋"
+SERVICE_ICON="⛵"
 
 # Verify whether a PID belongs to this NAS Monitor instance
 is_our_server_pid() {

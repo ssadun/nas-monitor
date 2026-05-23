@@ -4,113 +4,121 @@
 
 ## Security & Reliability
 
-- **HTTPS Support**  
+- 🔴 **HTTPS Support**  
   Add optional HTTPS via environment variables (`HTTPS_KEY`, `HTTPS_CERT`) for encrypted access without reverse proxies
 
-- **Rate Limiting**  
+- 🔴 **Rate Limiting**  
   Protect `/login` against brute-force attempts with IP-based rate limiting (e.g. 5 attempts per 15 minutes, then lockout)
 
 - ✅ **Audit Logging**  
   Implemented in `server.js` via `auditLog()` and writing user actions to `logs/audit.log`
 
-- **Log Rotation**  
+- 🔴 **Log Rotation**  
   Implement automatic log rotation for `nas-monitor.log` to prevent disk space issues; compress old logs and keep 10 latest files
 
 ## Features & Monitoring
 
-- **Historical Metrics**  
+- 🔴 **Historical Metrics**  
   Store time-series snapshots in `metrics-history.json` (24h at 5-min intervals) for trending and charts
 
-- **Alerting System**  
+- 🔴 **Alerting System**  
   Add configurable alerts for high CPU, low memory, disk full; expose at `/api/alerts` with status indicators
 
-- **Container Health Checks**  
+- 🔴 **Container Health Checks**  
   Display Docker health check status in the container table for services that report their own health
 
-- **Self-Monitoring Endpoint**  
+- 🔴 **Self-Monitoring Endpoint**  
   `/api/monitor/self` - expose the monitor's own CPU/memory/uptime metrics
 
-- **Terminal into Containers**  
-  Re-enable WebSocket terminal for interactive container console access with xterm.js
+- ✅ **Terminal into Containers**  
+  WebSocket terminal implemented via xterm.js at `/ws/console/:id`
 
-- **Health Check Endpoint** (partial - started)  
+- 🟡 **Health Check Endpoint** (partial - started)  
   `/api/health` - check Docker availability, credential file existence, disk space, and memory usage
 
 ## Error Handling
 
-- **Graceful Shutdown**  
+- 🔴 **Graceful Shutdown**  
   Handle `SIGTERM` and `SIGINT` signals for clean shutdown (stop collection, close server, save state)
 
-- **Retry Logic for Docker Commands**  
+- 🔴 **Retry Logic for Docker Commands**  
   Add retry with backoff for Docker CLI operations that may fail transiently
 
 ## Code Organization
 
-- **Extract Configuration**  
+- ✅ **Extract Configuration**  
   Move configuration into a separate `config.js` file for better maintainability
 
-- **Modularize server.js**  
-  Split `server.js` into focused backend modules served from `modules/`:
-  - `api.js` — API routing and REST endpoint handlers
-  - `monitor.js` — `/proc`-based process and system statistics collection
-  - `disk.js` — disk usage, history ring buffer, filesystem monitoring
-  - `network.js` — interface/network statistics collection
+- 🟡 **Modularize server.js**  
+  Split `server.js` into focused backend modules under `modules/`.
 
-  > `auth.js`, `docker.js`, `categories.js`, `header.js` already exist as modules.
-
-- **Modularize index.html frontend (5,470-line inline script)**  
-  Extract the inline `<script>` block into external files loaded via `<script src="/modules/...">`.  
-  The server already serves `modules/menu.js` and `modules/setting.js` — same pattern.  
-  Globals (`allData`, `el()`, `render()`, etc.) stay in `state.js`; modules load in dependency order.
-
-  Proposed split (all in `modules/`):
-
-  | File | ~Lines | Content |
+  | File | Status | Content |
   |---|---|---|
-  | `state.js` | 80 | State vars, SSE/polling, tab switching, sort, filter |
-  | `render.js` | 400 | Summary bar, container table, process table, main render, helpers |
-  | `disk-ui.js` | 335 | Disk Usage tab renderer |
-  | `network-ui.js` | 150 | Network Utilization tab + sparklines |
-  | `containers-ui.js` | 600 | Container detail modal, depends_on grouping, container actions modal |
-  | `compose-ui.js` | 870 | New Compose modal, Archive Browser, Data Folder, Restart Policy |
-  | `prune-ui.js` | 290 | Prune modal |
-  | `console-ui.js` | 115 | Console modal (xterm.js) |
-  | `credentials-ui.js` | 160 | Credentials modal |
-  | `volumes-ui.js` | 265 | Docker Volumes Manager tab |
-  | `networks-ui.js` | 200 | Network Management tab |
+  | `auth.js` | ✅ | PBKDF2 password hashing, session create/validate/expiry, cookie management |
+  | `config.js` | ✅ | PORT, DEFAULT_SETTINGS, normalizeSettings, loadSettings, saveSettingsFile |
+  | `disk.js` | ✅ | Disk usage scan, history ring buffer, filesystem monitoring |
+  | `network.js` | ✅ | Host interface rate tracking, container net namespace reads |
+  | `docker.js` | ✅ | Container/volume/network operations, Compose project management |
+  | `categories.js` | ✅ | Container category CRUD, route registration |
+  | `header.js` | ✅ | HTTP response helpers (sendJavaScript, sendFile, sendNotFound) |
+  | `monitor.js` | ✅ | `/proc`-based process collection, disk I/O tracking, `readFile` helper |
+  | `process.js` | ✅ | `collectSystemSummary` — CPU, memory, load, uptime, disk, network from `/proc` |
+  | `prune.js` | ✅ | scanUnused, runPrune, appendPruneLog, auto-prune scheduler |
+  | `logger.js` | ✅ | writeLog, logDebug/Info/Warn/Error, auditLog, getClientIp |
+  | `api.js` | ✅ | All HTTP route handlers: data, stream, disk, logs, prune, settings, credentials, networks, health |
 
-  > `categories.js` already exists for category badge, dropdown, tab renderer, and manager modal.
+- ✅ **Modularize index.html frontend**  
+  Extract the inline `<script>` block into external files under `ui/`.
+
+  | File | Status | Content |
+  |---|---|---|
+  | `utils.js` | ✅ | Formatting helpers, color utilities |
+  | `state.js` | ✅ | State vars, SSE/polling, tab switching, sort, filter |
+  | `menu-ui.js` | ✅ | Sidebar init, tab switching, toggle |
+  | `categories.js` | ✅ | Category badge, dropdown, tab renderer, manager modal |
+  | `setting.js` | ✅ | Settings modal |
+  | `render.js` | ✅ | Summary bar, container table, sub-process table, main render |
+  | `processes-ui.js` | ✅ | Process table (flat/tree), collapse toggle, process detail modal |
+  | `disk-ui.js` | ✅ | Disk Usage tab renderer |
+  | `network-ui.js` | ✅ | Network Utilization tab + sparklines |
+  | `containers-ui.js` | ✅ | Container detail modal, container actions |
+  | `compose-ui.js` | ✅ | New Compose modal, Archive Browser, Restart Policy |
+  | `prune-ui.js` | ✅ | Prune modal |
+  | `console-ui.js` | ✅ | Console modal (xterm.js) |
+  | `credentials-ui.js` | ✅ | Credentials modal |
+  | `volumes-ui.js` | ✅ | Docker Volumes Manager |
+  | `networks-ui.js` | ✅ | Network Management tab |
 
   CSS (2,150 lines) and HTML modals (795 lines) could later be extracted to `styles.css` and
   partial templates, but require server assembly — lower priority than the JS split.
 
 ## Documentation & Packaging
 
-- **API Versioning**  
+- 🔴 **API Versioning**  
   Add `/api/v1/` prefix to prevent breaking changes in future releases
 
-- **Docker Compose Example**  
+- 🔴 **Docker Compose Example**  
   Create `docker-compose.yml` for those who prefer container-based deployment
 
-- **Synology Package Integration**  
+- 🔴 **Synology Package Integration**  
   Create `package_info.json` for DSM Package Center
 
 ## User Experience
 
-- **Dark Mode Toggle**  
+- 🔴 **Dark Mode Toggle**  
   Add light theme option with theme preference cookie
 
-- **Keyboard Shortcuts**  
+- 🔴 **Keyboard Shortcuts**  
   Add quick access shortcuts (e.g. `f` for filter, `r` for refresh, `l` for logout)
 
 ## Synology-Specific
 
-- **DSM Integration**  
+- 🔴 **DSM Integration**  
   Read Synology temperature sensors from `/sys/class/thermal/` and display CPU temperature
 
-- **Package Center Support**  
+- 🔴 **Package Center Support**  
   Create SPK package for easy installation via Synology UI
 
 ---
 
-> **Status Legend**: 🟢 Not Started | 🟡 In Progress | ✅ Completed
+> **Status Legend**: 🔴 Not Started | 🟡 In Progress | ✅ Completed

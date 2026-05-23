@@ -1689,7 +1689,8 @@
     z-index: 9999; gap: 16px; transition: opacity .3s;
   }
   #loading.done { opacity: 0; pointer-events: none; }
-  #loading .icon { font-size: 56px; animation: float 2s ease-in-out infinite; }
+  #loading .icon { line-height: 1; animation: float 2s ease-in-out infinite; }
+  #loading .icon svg { color: var(--accent); }
   @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
   #loading p { color: var(--text3); font-family: var(--mono); font-size: 13px; }
 
