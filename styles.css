@@ -457,7 +457,7 @@
     transition: opacity .15s, height .15s;
   }
   .sidebar-subitem:hover::before { opacity: 1; height: 75%; }
-  .sidebar-subitem:hover { background: rgba(79,142,247,.07); color: var(--text); }
+  .sidebar-subitem:hover { background: color-mix(in srgb, var(--item-color, var(--accent)) 12%, transparent); color: var(--text); }
   .sidebar-subitem:hover .subitem-icon { color: var(--item-color, var(--accent)); opacity: 1; }
 
   .subitem-icon {
@@ -952,9 +952,8 @@
     padding: 7px 14px;
     cursor: pointer;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    line-height: 1.1;
     transition: all .15s;
   }
   .action-modal-btn:disabled {
@@ -1470,9 +1469,8 @@
     padding: 7px 14px;
     cursor: pointer;
     font-family: var(--sans);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    line-height: 1.1;
     transition: all .15s;
   }
   .newcompose-btn:disabled {
@@ -1481,11 +1479,12 @@
     pointer-events: none;
   }
   .newcompose-btn.template {
-    color: #477ed9;
+    color: var(--lavender);
+    border-color: rgba(139,92,246,.45);
   }
   .newcompose-btn.template:hover:not(:disabled) {
-    background: rgba(71,126,217,.12);
-    border-color: #477ed9;
+    background: rgba(139,92,246,.12);
+    border-color: var(--lavender);
   }
   .newcompose-btn.cancel {
     color: var(--red);

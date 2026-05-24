@@ -282,7 +282,7 @@
 <div class="newcompose-backdrop" id="newcompose-modal">
   <div class="newcompose-modal">
     <div class="newcompose-header">
-      <span class="newcompose-header-title">📄 New compose.yaml</span>
+      <span class="newcompose-header-title"><i data-lucide="file-plus" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--green)"></i>New compose.yaml</span>
       <button class="modal-close" onclick="closeNewComposeModal()">✕</button>
     </div>
     <div class="newcompose-body">
@@ -313,14 +313,14 @@
     </div>
     <div class="newcompose-footer">
       <div class="newcompose-footer-left">
-        <button id="newcompose-compose-apply-btn" class="newcompose-btn template" onclick="applyComposeImportToTemplate()">Apply Compose</button>
-        <button id="newcompose-run-apply-btn" class="newcompose-btn template" onclick="applyDockerRunToTemplate()">Apply Docker Run</button>
-        <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()">Save Template</button>
+        <button id="newcompose-compose-apply-btn" class="newcompose-btn template" onclick="applyComposeImportToTemplate()"><i data-lucide="file-input" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Apply Compose</button>
+        <button id="newcompose-run-apply-btn" class="newcompose-btn template" onclick="applyDockerRunToTemplate()"><i data-lucide="terminal" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Apply Docker Run</button>
+        <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()"><i data-lucide="bookmark" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Save Template</button>
         <span id="newcompose-status" class="newcompose-status"></span>
       </div>
       <div class="newcompose-footer-right">
-        <button class="newcompose-btn cancel" onclick="closeNewComposeModal()">Cancel</button>
-        <button id="newcompose-save-btn" class="action-modal-btn ok" onclick="saveNewCompose()">Save</button>
+        <button class="newcompose-btn cancel" onclick="closeNewComposeModal()"><i data-lucide="x" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Cancel</button>
+        <button id="newcompose-save-btn" class="action-modal-btn ok" onclick="saveNewCompose()"><i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Save</button>
       </div>
     </div>
   </div>
@@ -429,13 +429,13 @@
             <span class="subitem-icon"><i data-lucide="archive"></i></span>
             <span class="subitem-text">Archive</span>
           </button>
-          <button class="sidebar-subitem" style="--item-color:#f97316" onclick="switchTabFromSidebar('categories')">
+          <button class="sidebar-subitem" style="--item-color:var(--coral)" onclick="switchTabFromSidebar('categories')">
             <span class="subitem-icon"><i data-lucide="folder-open"></i></span>
             <span class="subitem-text">Categories</span>
           </button>
           <button class="sidebar-subitem" style="--item-color:#eab308" onclick="openDockerVolumesModal()">
             <span class="subitem-icon"><i data-lucide="hard-drive"></i></span>
-            <span class="subitem-text">Docker Volumes</span>
+            <span class="subitem-text">Volumes</span>
           </button>
           <button class="sidebar-subitem" style="--item-color:#8b5cf6" onclick="openImageUpdatesModal()">
             <span class="subitem-icon"><i data-lucide="arrow-up-circle"></i></span>
@@ -461,7 +461,7 @@
           <span class="sidebar-item-chevron"><i data-lucide="chevron-down"></i></span>
         </button>
         <div class="sidebar-submenu closed" id="network-submenu">
-          <button class="sidebar-subitem" style="--item-color:#4f8ef7" onclick="openNetworkMgr()">
+          <button class="sidebar-subitem" style="--item-color:var(--coral)" onclick="openNetworkMgr()">
             <span class="subitem-icon"><i data-lucide="cable"></i></span>
             <span class="subitem-text">Manage Networks</span>
           </button>
@@ -840,7 +840,7 @@
 <div class="catmgr-backdrop" id="catmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg> Manage Categories</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--coral)"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg> Manage Categories</div>
       <button class="modal-close" onclick="closeCatMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="catmgr-body"></div>
@@ -854,7 +854,7 @@
 <div class="catmgr-backdrop" id="volmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()" style="width:900px;max-width:98vw;">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg> Docker Volumes</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--yellow)"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg> Volumes</div>
       <button class="modal-close" onclick="closeDockerVolumesModal()">✕</button>
     </div>
     <div class="catmgr-body" id="volmgr-body"></div>
@@ -868,7 +868,7 @@
 <div class="catmgr-backdrop" id="netmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1h4v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1h-4v-1a2 2 0 0 0-2-2z"/><path d="M6 5v4"/><path d="M18 5v4"/><path d="M6 15v4"/><path d="M18 15v4"/></svg> Manage Docker Networks</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--coral)"><path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1h4v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1h-4v-1a2 2 0 0 0-2-2z"/><path d="M6 5v4"/><path d="M18 5v4"/><path d="M6 15v4"/><path d="M18 15v4"/></svg> Manage Docker Networks</div>
       <button class="modal-close" onclick="closeNetworkMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="netmgr-body"></div>

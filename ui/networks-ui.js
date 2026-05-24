@@ -30,7 +30,7 @@ function renderNetworkMgrList() {
   }
   body.innerHTML = allNetworks.map((net, i) => `
     <div class="catmgr-row" id="netmgr-row-${i}">
-      <div class="catmgr-row-icon">🔌</div>
+      <div class="catmgr-row-icon" style="color:var(--coral)"><i data-lucide="cable"></i></div>
       <div class="catmgr-row-label" style="flex:1;">
         <div style="color:var(--text1);font-weight:500;">${esc(net.name)}</div>
         <div style="color:var(--text3);font-size:11px;margin-top:2px;">${esc(net.driver || 'unknown')} · ${net.containers ? net.containers.length + ' containers' : 'no containers'}</div>
@@ -41,6 +41,7 @@ function renderNetworkMgrList() {
       </div>
     </div>
   `).join('');
+  lucide.createIcons({ nodes: [body] });
 }
 
 function openNetworkEditForm(idx) {

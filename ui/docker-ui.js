@@ -69,8 +69,8 @@ async function openCDetailModal(id, name, stateClass) {
     function kvHtml(key, html, cls='') {
       return `<div class="cdetail-kv ${cls}"><div class="cdetail-key">${esc(key)}</div><div class="cdetail-val">${html}</div></div>`;
     }
-    function section(emoji, title, content) {
-      return `<div class="cdetail-section"><div class="cdetail-section-title">${emoji} ${esc(title)}</div>${content}</div>`;
+    function section(icon, title, content) {
+      return `<div class="cdetail-section"><div class="cdetail-section-title"><i data-lucide="${icon}" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"></i>${esc(title)}</div>${content}</div>`;
     }
     function table(headers, rows, emptyMsg='No entries') {
       if (!rows.length) return `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">${esc(emptyMsg)}</div>`;
@@ -120,7 +120,7 @@ async function openCDetailModal(id, name, stateClass) {
     const totalVolBytes = (d.volumes||[]).reduce((sum, v) => sum + parseSize(v.sizeOnDisk), 0);
     const totalVolStr = totalVolBytes > 0 ? fmtSizeBytes(totalVolBytes) : '–';
 
-    const statusSection = section('📊', 'Container Status', statusCard + `
+    const statusSection = section('bar-chart-2', 'Container Status', statusCard + `
       <div class="cdetail-grid">
         ${kv('ID',            d.id)}
         ${kv('Name',          d.name)}
@@ -146,7 +146,7 @@ async function openCDetailModal(id, name, stateClass) {
       </div>`);
 
     // ── Container Details section ──
-    const detailSection = section('📋', 'Container Details', `
+    const detailSection = section('clipboard-list', 'Container Details', `
       <div class="cdetail-grid" style="margin-bottom:12px;">
         ${kv('Image',      d.image)}
         ${kv('Image Hash', d.imageHash || '–')}
@@ -175,7 +175,7 @@ async function openCDetailModal(id, name, stateClass) {
       </div>`);
 
     // ── Volumes section ──
-    const volumesSection = section('💾', 'Volumes', table(
+    const volumesSection = section('hard-drive', 'Volumes', table(
       ['Type','Source','Container Path','Mode','RW','SIZE'],
       (d.volumes||[]).map(v=>`<tr>
         <td style="color:var(--text3);">${esc(v.type)}</td>
@@ -188,7 +188,7 @@ async function openCDetailModal(id, name, stateClass) {
       'No volumes mounted'));
 
     // ── Networks section ──
-    const networksSection = section('🌐', 'Connected Networks', table(
+    const networksSection = section('network', 'Connected Networks', table(
       ['Network Name','IP Address','Gateway','MAC Address'],
       (d.networks||[]).map(n=>`<tr>
         <td style="color:var(--accent);font-weight:600;">${esc(n.name)}</td>
@@ -210,9 +210,9 @@ async function openCDetailModal(id, name, stateClass) {
       : statusSection + detailSection + volumesSection + networksSection;
 
     const tabBar = `<div class="cdetail-tabs">
-      <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')">Container Status</button>
-      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')">Compose File</button>` : ''}
-      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')">Folders</button>
+      <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Container Status</button>
+      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')"><i data-lucide="file-code" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Compose File</button>` : ''}
+      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Folders</button>
     </div>`;
 
     el('cdetail-body').innerHTML = tabBar
@@ -228,6 +228,8 @@ async function openCDetailModal(id, name, stateClass) {
       + `<div class="cdetail-tab-panel" id="cdetail-panel-folders" style="display:none">`
       + `<div id="folders-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`;
+
+    lucide.createIcons({ nodes: [el('cdetail-body')] });
 
     // ── Folders tab ──
     loadFoldersTab(d.name, cid);

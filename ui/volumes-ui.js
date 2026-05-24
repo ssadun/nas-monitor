@@ -46,8 +46,8 @@ function renderDockerVolumesList() {
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.createdDate || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(containerCountText)}</td>
       <td style="white-space:nowrap;">
-        <button class="catmgr-btn edit" onclick="openDockerVolumeDetail(${i})">Edit</button>
-        <button class="catmgr-btn del" onclick="deleteDockerVolume(${i})">Delete</button>
+        <button class="catmgr-btn edit" onclick="openDockerVolumeDetail(${i})"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Edit</button>
+        <button class="catmgr-btn del" onclick="deleteDockerVolume(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Delete</button>
       </td>
     </tr>`;
   }).join('');
@@ -70,6 +70,7 @@ function renderDockerVolumesList() {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+  lucide.createIcons({ nodes: [body] });
 }
 
 function openDockerVolumeCreateForm() {

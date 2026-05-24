@@ -416,7 +416,7 @@ function _renderArchiveList(backups) {
     return `<tr>
       <td title="${esc(proj.project || '')}">${esc(proj.project || '(unnamed)')}</td>
       <td class="files-col">${files.length}</td>
-      <td class="actions-col"><div class="archivebrowser-actions"><button class="archive-view-btn" onclick="toggleArchiveProject(${i})">${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}>${isRestoring ? 'Restoring…' : 'Restore'}</button><button class="archive-delete-btn" onclick="openArchiveDeleteModal('${esc(proj.project || '')}','${esc(proj.dataPath || '')}')" ${isRestoring ? 'disabled' : ''}>Delete</button></div></td>
+      <td class="actions-col"><div class="archivebrowser-actions"><button class="archive-view-btn" onclick="toggleArchiveProject(${i})"><i data-lucide="${isOpen ? 'eye-off' : 'eye'}" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>${isOpen ? 'Hide' : 'View'}</button><button class="archive-restore-btn" onclick="restoreArchiveProject(${i})" ${isRestoring ? 'disabled' : ''}><i data-lucide="archive-restore" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>${isRestoring ? 'Restoring…' : 'Restore'}</button><button class="archive-delete-btn" onclick="openArchiveDeleteModal('${esc(proj.project || '')}','${esc(proj.dataPath || '')}')" ${isRestoring ? 'disabled' : ''}><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Delete</button></div></td>
     </tr>${detailRow}`;
   }).join('');
 
@@ -424,6 +424,7 @@ function _renderArchiveList(backups) {
     <thead><tr><th>Project</th><th class="files-col">Files</th><th class="actions-col">Details</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+  lucide.createIcons({ nodes: [body] });
 }
 
 function toggleArchiveProject(i) {

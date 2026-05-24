@@ -185,8 +185,8 @@ function renderCatMgrList() {
       <div class="catmgr-row-label" style="color:${cat.color};">${esc(cat.label)}</div>
       <div class="catmgr-row-color" style="background:${cat.dot};"></div>
       <div class="catmgr-row-actions">
-        <button class="catmgr-btn edit" onclick="openCatEditForm(${i})">Edit</button>
-        <button class="catmgr-btn del"  onclick="deleteCat(${i})">Delete</button>
+        <button class="catmgr-btn edit" onclick="openCatEditForm(${i})"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Edit</button>
+        <button class="catmgr-btn del"  onclick="deleteCat(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Delete</button>
       </div>
     </div>
   `).join('');
