@@ -11,6 +11,5 @@ data/credentials.json
 data/sessions.json
 data/disk-history.json
 data/settings.json
-preview/*
 IMPROVEMENTS.md
 DESIGN.md

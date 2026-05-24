@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Color Palette Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d0f14;
+    color: #f2ffff;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    padding: 32px;
+  }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .subtitle { color: #6b7fa3; font-size: 12px; font-family: monospace; margin-bottom: 32px; }
+  h2 { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #6b7fa3;
+       font-family: monospace; margin-bottom: 14px; margin-top: 32px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 12px; }
+  .swatch {
+    width: 160px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #2a2f4a;
+  }
+  .swatch-color { height: 56px; width: 100%; }
+  .swatch-info { background: #1c2030; padding: 10px 12px; }
+  .swatch-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .swatch-hex  { font-family: monospace; font-size: 11px; color: #8892b0; }
+  .swatch-role { font-size: 10px; color: #4a5578; margin-top: 3px; }
+  .swatch.current { border-color: #353b5e; }
+  .swatch.removing { border-color: rgba(239,68,68,.5); }
+  .swatch.removing .swatch-info { background: rgba(239,68,68,.06); }
+  .swatch.candidate { border-color: rgba(79,142,247,.4); }
+  .swatch.candidate .swatch-info { background: rgba(79,142,247,.06); }
+  .tag {
+    display: inline-block; font-size: 9px; letter-spacing: .8px; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 4px; font-family: monospace; margin-top: 5px;
+  }
+  .tag.in-use  { background: rgba(34,197,94,.15);  color: #22c55e; }
+  .tag.remove  { background: rgba(239,68,68,.15);  color: #ef4444; }
+  .tag.new     { background: rgba(79,142,247,.15); color: #4f8ef7; }
+  hr { border: none; border-top: 1px solid #2a2f4a; margin: 36px 0 0; }
+
+  /* sample UI row */
+  .sample-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .sample-badge {
+    font-family: monospace; font-size: 11px; padding: 3px 10px;
+    border-radius: 20px; border: 1px solid; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>NAS Monitor — Color Palette</h1>
+<p class="subtitle">Current palette · Additional candidates</p>
+
+<h2>Current Palette</h2>
+<div class="palette">
+
+  <!-- Backgrounds -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#0d0f14;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Main BG</div>
+      <div class="swatch-hex">#0d0f14</div>
+      <div class="swatch-role">--main-bg · page background</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#141720;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Menu BG</div>
+      <div class="swatch-hex">#141720</div>
+      <div class="swatch-role">--menu-bg · sidebar</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#1c2030;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Card BG</div>
+      <div class="swatch-hex">#1c2030</div>
+      <div class="swatch-role">--card-bg · cards, modals</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <!-- Neutrals -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#f2ffff;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#0d0f14;">White</div>
+      <div class="swatch-hex">#f2ffff</div>
+      <div class="swatch-role">--white · high contrast text</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#94a3b8;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Steel</div>
+      <div class="swatch-hex">#94a3b8</div>
+      <div class="swatch-role">--steel · neutral info tone</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <!-- Blues -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#4f8ef7;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Accent Blue</div>
+      <div class="swatch-hex">#4f8ef7</div>
+      <div class="swatch-role">--accent · primary action</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#8b5cf6;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Lavender</div>
+      <div class="swatch-hex">#8b5cf6</div>
+      <div class="swatch-role">--lavender · network</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <!-- Greens -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#22c55e;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Green</div>
+      <div class="swatch-hex">#22c55e</div>
+      <div class="swatch-role">--green · running, ok</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#bef264;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#0d0f14;">Lime</div>
+      <div class="swatch-hex">#bef264</div>
+      <div class="swatch-role">--lime · yellow-green highlight</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <!-- Warm — Yellow, Orange, Red -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#eab308;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Yellow</div>
+      <div class="swatch-hex">#eab308</div>
+      <div class="swatch-role">--yellow · disk, warning</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#f97316;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Orange</div>
+      <div class="swatch-hex">#f97316</div>
+      <div class="swatch-role">--orange · restart, high-cpu</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#ef4444;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Red</div>
+      <div class="swatch-hex">#ef4444</div>
+      <div class="swatch-role">--red · error, danger</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#fb7185;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Coral</div>
+      <div class="swatch-hex">#fb7185</div>
+      <div class="swatch-role">--coral · warm red-pink</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <!-- Pinks -->
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#ec4899;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Pink</div>
+      <div class="swatch-hex">#ec4899</div>
+      <div class="swatch-role">--pink · high-mem</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+  <div class="swatch current">
+    <div class="swatch-color" style="background:#f472b6;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#f2ffff;">Rose</div>
+      <div class="swatch-hex">#f472b6</div>
+      <div class="swatch-role">--rose · lighter pink variant</div>
+      <span class="tag in-use">in use</span>
+    </div>
+  </div>
+
+</div>
+
+<hr>
+
+<h2>Additional Candidates</h2>
+<div class="palette">
+
+  <div class="swatch candidate">
+    <div class="swatch-color" style="background:#38bdf8;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#38bdf8;">Sky Blue</div>
+      <div class="swatch-hex">#38bdf8</div>
+      <div class="swatch-role">Bright, lighter than accent</div>
+      <span class="tag new">candidate</span>
+    </div>
+  </div>
+
+  <div class="swatch candidate">
+    <div class="swatch-color" style="background:#34d399;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#34d399;">Emerald</div>
+      <div class="swatch-hex">#34d399</div>
+      <div class="swatch-role">Bright mint-green, lighter than --green</div>
+      <span class="tag new">candidate</span>
+    </div>
+  </div>
+
+  <div class="swatch candidate">
+    <div class="swatch-color" style="background:#4ade80;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#4ade80;">Mint</div>
+      <div class="swatch-hex">#4ade80</div>
+      <div class="swatch-role">Yellow-green mint, warmer than --green</div>
+      <span class="tag new">candidate</span>
+    </div>
+  </div>
+
+  <div class="swatch candidate">
+    <div class="swatch-color" style="background:#d946ef;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#d946ef;">Fuchsia</div>
+      <div class="swatch-hex">#d946ef</div>
+      <div class="swatch-role">Vivid magenta, between pink and purple</div>
+      <span class="tag new">candidate</span>
+    </div>
+  </div>
+
+  <div class="swatch candidate">
+    <div class="swatch-color" style="background:#fbbf24;"></div>
+    <div class="swatch-info">
+      <div class="swatch-name" style="color:#fbbf24;">Gold</div>
+      <div class="swatch-hex">#fbbf24</div>
+      <div class="swatch-role">Warm gold, brighter than --yellow</div>
+      <span class="tag new">candidate</span>
+    </div>
+  </div>
+
+</div>
+
+<hr>
+<h2>Sample Usage — Badges (In Use)</h2>
+<div class="sample-row">
+  <span class="sample-badge" style="color:#4f8ef7;border-color:rgba(79,142,247,.4);background:rgba(79,142,247,.08);">Accent #4f8ef7</span>
+  <span class="sample-badge" style="color:#8b5cf6;border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.08);">Lavender #8b5cf6</span>
+  <span class="sample-badge" style="color:#22c55e;border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08);">Green #22c55e</span>
+  <span class="sample-badge" style="color:#eab308;border-color:rgba(234,179,8,.4);background:rgba(234,179,8,.08);">Yellow #eab308</span>
+  <span class="sample-badge" style="color:#ef4444;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);">Red #ef4444</span>
+  <span class="sample-badge" style="color:#f97316;border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.08);">Orange #f97316</span>
+  <span class="sample-badge" style="color:#ec4899;border-color:rgba(236,72,153,.4);background:rgba(236,72,153,.08);">Pink #ec4899</span>
+  <span class="sample-badge" style="color:#fb7185;border-color:rgba(251,113,133,.4);background:rgba(251,113,133,.08);">Coral #fb7185</span>
+  <span class="sample-badge" style="color:#f472b6;border-color:rgba(244,114,182,.4);background:rgba(244,114,182,.08);">Rose #f472b6</span>
+  <span class="sample-badge" style="color:#bef264;border-color:rgba(190,242,100,.4);background:rgba(190,242,100,.08);">Lime #bef264</span>
+  <span class="sample-badge" style="color:#94a3b8;border-color:rgba(148,163,184,.4);background:rgba(148,163,184,.08);">Steel #94a3b8</span>
+</div>
+
+</body>
+</html>
