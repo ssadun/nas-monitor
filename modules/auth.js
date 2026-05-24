@@ -258,8 +258,8 @@ function sendLoginPage(res, message = '') {
     pointer-events: none; opacity: .18;
   }
   .orb1 { width: 500px; height: 500px; background: #4f8ef7; top: -120px; left: -100px; }
-  .orb2 { width: 400px; height: 400px; background: #7c3aed; bottom: -80px; right: -80px; }
-  .orb3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 60%; }
+  .orb2 { width: 400px; height: 400px; background: #8b5cf6; bottom: -80px; right: -80px; }
+  .orb3 { width: 300px; height: 300px; background: #4f8ef7; top: 40%; left: 60%; }
 
   /* ── layout ── */
   .page {
@@ -352,7 +352,7 @@ function sendLoginPage(res, message = '') {
   .submit-btn {
     width: 100%; margin-top: 8px;
     padding: 12px;
-    background: linear-gradient(135deg, #4f8ef7 0%, #7c3aed 100%);
+    background: linear-gradient(135deg, #4f8ef7 0%, #8b5cf6 100%);
     border: none; border-radius: 10px;
     color: #fff; font-family: var(--sans); font-size: 15px; font-weight: 700;
     cursor: pointer; letter-spacing: .2px;

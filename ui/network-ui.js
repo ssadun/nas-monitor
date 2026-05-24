@@ -130,7 +130,7 @@ function renderNetworkLeft() {
             ${net && net.ip ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent);">${esc(net.ip)}</span>` : ''}
             ${net && net.name ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:1px 5px;border:1px solid var(--border);border-radius:3px;">${esc(net.name)}</span>` : ''}
             <span class="green-text"  style="font-family:var(--mono);font-size:11px;">↓ ${esc(rxStr)}</span>
-            <span class="cyan-text"   style="font-family:var(--mono);font-size:11px;">↑ ${esc(txStr)}</span>
+            <span class="accent-text" style="font-family:var(--mono);font-size:11px;">↑ ${esc(txStr)}</span>
           </div>`;
         }).join('') : ''}
       </div>` : `

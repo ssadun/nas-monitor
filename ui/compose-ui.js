@@ -436,7 +436,7 @@ let _archiveProjectToRestore = '';
 function openRestoreConfirmModal(project) {
   _archiveProjectToRestore = project;
   el('restore-confirm-project').textContent = project;
-  el('restore-confirm-desc').innerHTML = `Restore archive for <strong>${esc(project)}</strong>?<br><br>This moves files from <code style="color:var(--cyan)">/volume1/docker/_backups/${esc(project)}/</code> to <code style="color:var(--cyan)">/volume1/docker/_config/${esc(project)}/</code>.`;
+  el('restore-confirm-desc').innerHTML = `Restore archive for <strong>${esc(project)}</strong>?<br><br>This moves files from <code style="color:var(--accent)">/volume1/docker/_backups/${esc(project)}/</code> to <code style="color:var(--accent)">/volume1/docker/_config/${esc(project)}/</code>.`;
   el('restore-confirm-modal').classList.add('open');
 }
 
@@ -489,8 +489,8 @@ function openArchiveDeleteModal(project, dataPath) {
   el('archive-delete-confirm-desc').innerHTML =
     `<span style="color:var(--red);font-weight:600;">⚠ This cannot be undone.</span><br><br>` +
     `The following will be permanently deleted:<br><br>` +
-    `<code style="color:var(--cyan);">_backups/${esc(project)}/</code> — archived configuration files<br>` +
-    (dataPath ? `<code style="color:var(--cyan);">_data/${esc(project)}/</code> — container data folder` : `<span style="color:var(--text3);">No data folder found</span>`);
+    `<code style="color:var(--accent);">_backups/${esc(project)}/</code> — archived configuration files<br>` +
+    (dataPath ? `<code style="color:var(--accent);">_data/${esc(project)}/</code> — container data folder` : `<span style="color:var(--text3);">No data folder found</span>`);
   el('archive-delete-confirm-modal').classList.add('open');
 }
 

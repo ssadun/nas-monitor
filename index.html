@@ -90,7 +90,7 @@
   <div class="log-modal" style="width:800px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <span>📋 Prune Log</span>
+        <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;color:var(--red);"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>Prune Log</span>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
       </div>
       <button class="modal-close" onclick="closePruneLogModal()">✕</button>
@@ -261,7 +261,7 @@
   <div class="archivebrowser-modal">
     <div class="archivebrowser-header">
       <div>
-        <div class="archivebrowser-header-title">🗄 Archive Browser</div>
+        <div class="archivebrowser-header-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;color:var(--orange);"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Archive Browser</div>
         <div class="archivebrowser-header-path">/volume1/docker/_backups</div>
       </div>
       <button class="modal-close" onclick="closeArchiveBrowserModal()">✕</button>
@@ -454,9 +454,19 @@
       <button class="sidebar-item" data-tab="disk" data-icon="server"    data-idle-color="#6b7fa3" data-active-color="#eab308" onclick="switchTabFromSidebar('disk')">
         <span class="sidebar-item-text">Disk Usage</span>
       </button>
-      <button class="sidebar-item" data-tab="network" data-icon="network" data-idle-color="#6b7fa3" data-active-color="#8b5cf6" onclick="switchTabFromSidebar('network')">
-        <span class="sidebar-item-text">Network Utilization</span>
-      </button>
+      <!-- Network Utilization — expandable parent -->
+      <div class="sidebar-parent" id="network-parent">
+        <button class="sidebar-item" data-tab="network" data-icon="network" data-idle-color="#6b7fa3" data-active-color="#8b5cf6" onclick="toggleNetworkMenu()">
+          <span class="sidebar-item-text">Network Utilization</span>
+          <span class="sidebar-item-chevron"><i data-lucide="chevron-down"></i></span>
+        </button>
+        <div class="sidebar-submenu closed" id="network-submenu">
+          <button class="sidebar-subitem" style="--item-color:#4f8ef7" onclick="openNetworkMgr()">
+            <span class="subitem-icon"><i data-lucide="cable"></i></span>
+            <span class="subitem-text">Manage Networks</span>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="sidebar-section bottom">
       <button class="sidebar-item" data-icon="settings"   data-idle-color="#6b7fa3" data-active-color="#f2ffff" onclick="openSettingsModal(); closeSidebar();">
@@ -521,9 +531,24 @@
         <button class="view-btn active" id="view-flat" onclick="setView('flat')">Flat</button>
         <button class="view-btn" id="view-tree" onclick="setView('tree')">Tree</button>
       </div>
-      <button class="high-cpu-btn" id="high-cpu-btn" onclick="toggleFilter('cpu')">⚡ High CPU</button>
-      <button class="high-mem-btn" id="high-mem-btn" onclick="toggleFilter('mem')">💾 High Mem</button>
-      <button class="container-filter-btn" id="container-filter-btn" onclick="toggleFilter('container')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:-2px"><path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg> Container</button>
+      <div class="filter-by-wrap" id="filter-by-wrap">
+        <button class="filter-by-btn" id="filter-by-btn" onclick="toggleFilterDropdown(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span id="filter-by-label">Filter By</span>
+          <svg class="filter-by-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filter-by-menu" id="filter-by-menu">
+          <button id="high-cpu-btn" class="filter-by-item" onclick="toggleFilter('cpu')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:-2px;color:var(--orange)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> High CPU
+          </button>
+          <button id="high-mem-btn" class="filter-by-item" onclick="toggleFilter('mem')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:-2px;color:var(--pink)"><path d="M6 19v-3"/><path d="M10 19v-3"/><path d="M14 19v-3"/><path d="M18 19v-3"/><path d="M8 11V9"/><path d="M16 11V9"/><path d="M12 11V9"/><path d="M2 15h20"/><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837z"/></svg> High Mem
+          </button>
+          <button id="container-filter-btn" class="filter-by-item" onclick="toggleFilter('container')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="vertical-align:-2px;color:var(--accent)"><path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg> Container
+          </button>
+        </div>
+      </div>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
         <span class="toolbar-label toolbar-info" id="proc-count-info">–</span>
@@ -638,7 +663,6 @@
   <div class="tab-panel" id="tab-network">
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <div class="toolbar">
-        <button class="expand-all-btn" onclick="openNetworkMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">🔌 Manage Networks</button>
         <div style="display:flex;gap:4px;">
           <button id="net-sort-iface"    onclick="setNetSort('iface')"    class="view-btn active" style="font-size:11px;padding:3px 10px;">NAME</button>
           <button id="net-sort-rxKBs"    onclick="setNetSort('rxKBs')"    class="view-btn"        style="font-size:11px;padding:3px 10px;">IN ↕</button>
@@ -648,7 +672,7 @@
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
           <span class="toolbar-label" id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
-          <span class="toolbar-sep">|</span>
+
           <span class="toolbar-label last-update" id="last-update-network">–</span>
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
@@ -669,7 +693,6 @@
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
           <span class="toolbar-label" id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
-          <span class="toolbar-sep">|</span>
           <span class="toolbar-label last-update" id="last-update-categories">–</span>
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
@@ -817,7 +840,7 @@
 <div class="catmgr-backdrop" id="catmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title">🗂 Manage Categories</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg> Manage Categories</div>
       <button class="modal-close" onclick="closeCatMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="catmgr-body"></div>
@@ -831,7 +854,7 @@
 <div class="catmgr-backdrop" id="volmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()" style="width:900px;max-width:98vw;">
     <div class="catmgr-header">
-      <div class="catmgr-title">💾 Docker Volumes</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg> Docker Volumes</div>
       <button class="modal-close" onclick="closeDockerVolumesModal()">✕</button>
     </div>
     <div class="catmgr-body" id="volmgr-body"></div>
@@ -845,7 +868,7 @@
 <div class="catmgr-backdrop" id="netmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title">🔌 Manage Docker Networks</div>
+      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px"><path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1h4v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1h-4v-1a2 2 0 0 0-2-2z"/><path d="M6 5v4"/><path d="M18 5v4"/><path d="M6 15v4"/><path d="M18 15v4"/></svg> Manage Docker Networks</div>
       <button class="modal-close" onclick="closeNetworkMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="netmgr-body"></div>

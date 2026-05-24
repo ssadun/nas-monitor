@@ -14,7 +14,7 @@ LOG_FILE="${SCRIPT_DIR}/logs/nas-monitor.log"
 SERVER_SCRIPT="${SCRIPT_DIR}/server.js"
 
 SERVICE_NAME="NAS Monitor"
-SERVICE_ICON="⛵"
+SERVICE_ICON="🐋"
 
 # Verify whether a PID belongs to this NAS Monitor instance
 is_our_server_pid() {
@@ -150,7 +150,13 @@ do_start() {
 }
 
 # Stop the service
+# Usage: do_stop [--force]
 do_stop() {
+  local FORCE=0
+  if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+    FORCE=1
+  fi
+
   local PIDS=$(get_pid)
   if [ -z "$PIDS" ]; then
     echo "ℹ️  ${SERVICE_NAME} is not running."
@@ -174,9 +180,29 @@ do_stop() {
     echo ""
     echo "✅ ${SERVICE_NAME} stopped."
   else
-    echo ""
-    echo "⚠️  ${SERVICE_NAME} may still be running."
-    return 1
+    if [ "$FORCE" -eq 1 ]; then
+      echo ""
+      echo "⚠️  Process still running. Force killing..."
+      for PID in $STILL_RUNNING; do
+        kill -9 "$PID" 2>/dev/null && echo "✅ Force killed PID $PID" || echo "❌ Failed to force kill PID $PID"
+      done
+      sleep 0.5
+      STILL_RUNNING=$(get_pid)
+      if [ -z "$STILL_RUNNING" ]; then
+        rm -f "$PID_FILE"
+        echo ""
+        echo "✅ ${SERVICE_NAME} force stopped."
+      else
+        echo ""
+        echo "❌ ${SERVICE_NAME} could not be stopped."
+        return 1
+      fi
+    else
+      echo ""
+      echo "⚠️  ${SERVICE_NAME} may still be running."
+      echo "   Use 'bash service.sh stop --force' to force kill."
+      return 1
+    fi
   fi
 }
 
@@ -243,7 +269,7 @@ case "${1}" in
     do_start
     ;;
   stop)
-    do_stop
+    do_stop "$2"
     ;;
   status)
     do_status
@@ -258,14 +284,16 @@ case "${1}" in
     echo "Usage: bash service.sh {start|stop|status|restart}"
     echo ""
     echo "Commands:"
-    echo "  start    - Start the NAS Monitor service"
-    echo "  stop     - Stop the NAS Monitor service"
-    echo "  status   - Show current service status"
-    echo "  restart  - Restart the service"
+    echo "  start         - Start the NAS Monitor service"
+    echo "  stop          - Stop the NAS Monitor service"
+    echo "  stop --force  - Force kill if graceful stop fails"
+    echo "  status        - Show current service status"
+    echo "  restart       - Restart the service"
     echo ""
     echo "Examples:"
     echo "  bash service.sh start"
     echo "  bash service.sh status"
+    echo "  bash service.sh stop --force"
     echo "  bash service.sh restart"
     echo ""
     return 1 2>/dev/null || exit 1

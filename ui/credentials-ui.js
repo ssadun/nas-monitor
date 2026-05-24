@@ -112,7 +112,7 @@ function showCredsError(msg) {
 const DEFAULT_CATEGORIES = [
   { id: 'media',       label: 'Media',       icon: 'clapperboard', color: '#a78bfa', dot: '#8b5cf6' },
   { id: 'performance', label: 'Performance', icon: 'zap',          color: '#f97316', dot: '#f97316' },
-  { id: 'utilities',  label: 'Utilities',   icon: 'wrench',        color: '#06b6d4', dot: '#06b6d4' },
+  { id: 'utilities',  label: 'Utilities',   icon: 'wrench',        color: '#4f8ef7', dot: '#4f8ef7' },
   { id: 'system',     label: 'System',      icon: 'monitor',       color: '#22c55e', dot: '#22c55e' },
 ];
 
@@ -161,7 +161,7 @@ const ICON_PALETTE = [
   'bot','microscope','music','folder','home','cloud','flame','puzzle',
   'shield','server','wifi','terminal','cpu','layers','git-branch','box',
 ];
-const COLOR_PALETTE = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24','#4ade80','#38bdf8','#c084fc'];
+const COLOR_PALETTE = ['#ef4444','#f97316','#eab308','#22c55e','#4f8ef7','#3b82f6','#8b5cf6','#ec4899','#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24','#4ade80','#38bdf8','#c084fc'];
 
 function openCatMgr() {
   renderCatMgrList();
@@ -196,7 +196,7 @@ function renderCatMgrList() {
 function openCatEditForm(idx) {
   const isNew = idx === null;
   const cat = isNew
-    ? { id: '', label: '', icon: 'wrench', color: '#06b6d4', dot: '#06b6d4' }
+    ? { id: '', label: '', icon: 'wrench', color: '#4f8ef7', dot: '#4f8ef7' }
     : { ...CATEGORIES[idx] };
 
   const body = document.getElementById('catmgr-body');
@@ -277,7 +277,7 @@ async function saveCatEdit(idx) {
   const label  = document.getElementById('catedit-label').value.trim();
   if (!label) { document.getElementById('catedit-label').focus(); return; }
   const icon   = form.dataset.icon  || 'wrench';
-  const dot    = form.dataset.color || '#06b6d4';
+  const dot    = form.dataset.color || '#4f8ef7';
   const color  = dot; // use same for text color; slightly lightened by CSS
 
   if (idx === null) {

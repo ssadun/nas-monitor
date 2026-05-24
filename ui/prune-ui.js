@@ -56,7 +56,7 @@ function renderPruneBody() {
         <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           title="${esc(i.repository || i.name)}">${esc(i.repository || i.name)}</span>
         <span style="font-family:var(--mono);font-size:11px;color:var(--text2);width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(i.tag || '–')}</span>
-        <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:70px;text-align:right;white-space:nowrap;">${esc(i.size || '–')}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--accent);width:70px;text-align:right;white-space:nowrap;">${esc(i.size || '–')}</span>
         <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:100px;text-align:right;white-space:nowrap;">${esc(i.created || '–')}</span>
         <span style="font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);color:var(--orange);font-family:var(--mono);width:60px;text-align:center;">${esc(i.reason)}</span>
       </div>`).join('');
@@ -93,7 +93,7 @@ function renderPruneBody() {
     ${buildCache.length ? `
     <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🔨 Build Cache (${buildCache.length})</span>
-      ${buildCacheTotal ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Total: <span style="color:var(--cyan);">${esc(buildCacheTotal)}</span>${buildCacheReclaimable ? `  ·  Reclaimable: <span style="color:var(--green);">${esc(buildCacheReclaimable)}</span>` : ''}</span>` : ''}
+      ${buildCacheTotal ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Total: <span style="color:var(--accent);">${esc(buildCacheTotal)}</span>${buildCacheReclaimable ? `  ·  Reclaimable: <span style="color:var(--green);">${esc(buildCacheReclaimable)}</span>` : ''}</span>` : ''}
     </div>
     ${buildCacheRows(buildCache)}` : ''}`;
 }
@@ -135,7 +135,7 @@ function volumeRows(items) {
       <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
         title="${esc(v.name)}">${esc(v.name)}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text2);width:60px;white-space:nowrap;">${esc(v.driver || '–')}</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:90px;text-align:right;white-space:nowrap;">${esc(v.created || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent);width:90px;text-align:right;white-space:nowrap;">${esc(v.created || '–')}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:10px;"
         title="${esc(v.mountpoint)}">${esc(v.mountpoint || '–')}</span>
     </div>`).join('');
@@ -159,7 +159,7 @@ function buildCacheRows(items) {
       <span style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
         title="${esc(c.id)}">${esc(c.id)}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--green);width:90px;text-align:right;white-space:nowrap;">${esc(c.reclaimable || '–')}</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--cyan);width:70px;text-align:right;white-space:nowrap;">${esc(c.size || '–')}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent);width:70px;text-align:right;white-space:nowrap;">${esc(c.size || '–')}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:130px;text-align:right;white-space:nowrap;">${esc(c.lastAccessed || '–')}</span>
     </div>`).join('');
   const moreRow = more > 0 ? `<div style="padding:5px 16px;font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;">…and ${more} more</div>` : '';
@@ -186,7 +186,7 @@ async function confirmPrune() {
       el('prune-body').innerHTML = `<div style="padding:30px 20px;text-align:center;">
         <div style="font-size:28px;margin-bottom:10px;">✅</div>
         <div style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:${reclaimedLine?'8px':'0'};">System prune complete.</div>
-        ${reclaimedLine ? `<div style="font-size:12px;color:var(--cyan);font-family:var(--mono);">${esc(reclaimedLine.trim())}</div>` : ''}
+        ${reclaimedLine ? `<div style="font-size:12px;color:var(--accent);font-family:var(--mono);">${esc(reclaimedLine.trim())}</div>` : ''}
         ${data.summary.errors && data.summary.errors.length ? `<div style="color:var(--red);font-size:12px;margin-top:8px;">${data.summary.errors.length} error(s) — see log.</div>` : ''}
       </div>`;
       el('prune-summary').textContent = 'Prune complete.';

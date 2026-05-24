@@ -580,7 +580,7 @@ const ACTION_META = {
   start:   { icon: '▶', label: 'Start Container',   color: 'var(--green)',  btnBg: '#16a34a',
               desc: c => `Start container <strong>${esc(c)}</strong>?`,
               steps: ['Sending start command…', 'Waiting for container to start…', 'Done'] },
-  composeUp:{ icon: '▲', label: 'Compose Up',        color: 'var(--cyan)',   btnBg: '#0891b2',
+  composeUp:{ icon: '▲', label: 'Compose Up',        color: 'var(--accent)',   btnBg: '#0891b2',
               desc: c => `Run <strong>docker compose up -d</strong> for <strong>${esc(c)}</strong>?`,
               steps: ['Reading compose project…', 'Running docker compose up -d…', 'Done'] },
   restart: { icon: '↺', label: 'Restart Container', color: 'var(--yellow)', btnBg: '#ca8a04',

@@ -35,9 +35,23 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
     if (submenu) submenu.classList.add('closed');
   }
 
+  // Restore network sub-menu open state (default: closed)
+  const networkSubmenuOpen = sessionStorage.getItem('network-submenu-open') === 'true';
+  if (networkSubmenuOpen) {
+    const parent = document.getElementById('network-parent');
+    const submenu = document.getElementById('network-submenu');
+    if (parent) parent.classList.add('open');
+    if (submenu) submenu.classList.remove('closed');
+  }
+
   // Mark containers parent active when containers tab is current
   if (currentTab === 'containers') {
     const parent = document.getElementById('containers-parent');
+    if (parent) parent.querySelector('.sidebar-item')?.classList.add('active');
+  }
+  // Mark network parent active when network tab is current
+  if (currentTab === 'network') {
+    const parent = document.getElementById('network-parent');
     if (parent) parent.querySelector('.sidebar-item')?.classList.add('active');
   }
 
@@ -60,8 +74,30 @@ function toggleContainersMenu() {
   parent.classList.toggle('open', !isOpen);
   submenu.classList.toggle('closed', isOpen);
   sessionStorage.setItem('containers-submenu-open', String(!isOpen));
-  // Also switch to containers tab
+  // Collapse network menu when opening containers menu
+  if (!isOpen) {
+    const np = document.getElementById('network-parent');
+    const ns = document.getElementById('network-submenu');
+    if (np && ns) { np.classList.remove('open'); ns.classList.add('closed'); sessionStorage.setItem('network-submenu-open', 'false'); }
+  }
   switchTab('containers');
+}
+
+function toggleNetworkMenu() {
+  const parent = document.getElementById('network-parent');
+  const submenu = document.getElementById('network-submenu');
+  if (!parent || !submenu) return;
+  const isOpen = parent.classList.contains('open');
+  parent.classList.toggle('open', !isOpen);
+  submenu.classList.toggle('closed', isOpen);
+  sessionStorage.setItem('network-submenu-open', String(!isOpen));
+  // Collapse containers menu when opening network menu
+  if (!isOpen) {
+    const cp = document.getElementById('containers-parent');
+    const cs = document.getElementById('containers-submenu');
+    if (cp && cs) { cp.classList.remove('open'); cs.classList.add('closed'); sessionStorage.setItem('containers-submenu-open', 'false'); }
+  }
+  switchTab('network');
 }
 
 function logout() {
@@ -80,9 +116,29 @@ function switchTab(name) {
   });
   // Keep containers parent button highlighted when any sub-item tab is active
   const containersBtn = document.querySelector('#containers-parent > .sidebar-item');
+  const subTabs = ['containers', 'categories'];
   if (containersBtn) {
-    const subTabs = ['containers', 'categories'];
     containersBtn.classList.toggle('active', subTabs.includes(name));
+  }
+  // Collapse Docker Management submenu when switching to a non-Docker tab
+  if (!subTabs.includes(name)) {
+    const parent = document.getElementById('containers-parent');
+    const submenu = document.getElementById('containers-submenu');
+    if (parent && submenu) {
+      parent.classList.remove('open');
+      submenu.classList.add('closed');
+      sessionStorage.setItem('containers-submenu-open', 'false');
+    }
+  }
+  // Collapse Network submenu when switching to a non-network tab
+  if (name !== 'network') {
+    const np = document.getElementById('network-parent');
+    const ns = document.getElementById('network-submenu');
+    if (np && ns) {
+      np.classList.remove('open');
+      ns.classList.add('closed');
+      sessionStorage.setItem('network-submenu-open', 'false');
+    }
   }
   const filterInput = document.getElementById('filter-input');
   if (filterInput) filterInput.value = '';

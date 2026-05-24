@@ -179,11 +179,11 @@ async function openCDetailModal(id, name, stateClass) {
       ['Type','Source','Container Path','Mode','RW','SIZE'],
       (d.volumes||[]).map(v=>`<tr>
         <td style="color:var(--text3);">${esc(v.type)}</td>
-        <td style="color:var(--cyan);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.source)}">${esc(v.source)}</td>
+        <td style="color:var(--accent);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.source)}">${esc(v.source)}</td>
         <td style="color:var(--text);">${esc(v.destination)}</td>
         <td style="color:var(--text3);">${esc(v.mode)}</td>
         <td style="${v.rw?'color:var(--green)':'color:var(--red)'};">${v.rw?'RW':'RO'}</td>
-        <td style="color:var(--cyan);white-space:nowrap;">${esc(v.sizeOnDisk||'–')}</td>
+        <td style="color:var(--accent);white-space:nowrap;">${esc(v.sizeOnDisk||'–')}</td>
       </tr>`),
       'No volumes mounted'));
 
@@ -191,7 +191,7 @@ async function openCDetailModal(id, name, stateClass) {
     const networksSection = section('🌐', 'Connected Networks', table(
       ['Network Name','IP Address','Gateway','MAC Address'],
       (d.networks||[]).map(n=>`<tr>
-        <td style="color:var(--cyan);font-weight:600;">${esc(n.name)}</td>
+        <td style="color:var(--accent);font-weight:600;">${esc(n.name)}</td>
         <td style="color:var(--accent);">${esc(n.ip||'–')}</td>
         <td style="color:var(--text3);">${esc(n.gateway||'–')}</td>
         <td style="color:var(--text3);">${esc(n.mac||'–')}</td>

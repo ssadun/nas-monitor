@@ -160,7 +160,7 @@ async function openDockerVolumeDetail(idx) {
            <tbody>
              ${d.containers.map(c => `
                <tr style="border-bottom:1px solid rgba(42,47,74,.5);">
-                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--cyan);">${esc(c.name || c.id || '-')}</td>
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--accent);">${esc(c.name || c.id || '-')}</td>
                  <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(c.destination || '-')}</td>
                  <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${c.readonly === true ? 'true' : 'true'}</td>
                </tr>
@@ -212,7 +212,7 @@ async function openDockerVolumeDetail(idx) {
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
           <span style="color:var(--text3);margin-right:20px;width:120px;display:inline-block;font-weight:600;">Ownership</span>
           <span style="color:var(--text);">${esc(d.access?.owner || '-')}</span>
-          <a href="#" style="cursor:default;color:var(--cyan);margin-left:10px;font-size:11px;text-decoration:none;opacity:0.5;">Change ownership</a>
+          <a href="#" style="cursor:default;color:var(--accent);margin-left:10px;font-size:11px;text-decoration:none;opacity:0.5;">Change ownership</a>
         </div>
       </div>
 

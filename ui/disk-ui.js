@@ -132,7 +132,7 @@ function renderDiskHistory(activeIdx) {
     const size = sizeBytes ? fmtBytes(sizeBytes) : '–';
     const diskTotal = allData?.summary?.diskTotal || 0;
     const pct = diskTotal > 0 ? (sizeBytes / diskTotal) * 100 : 0;
-    const sizeColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : pct > 10 ? 'var(--pink)' : 'var(--cyan)';
+    const sizeColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : pct > 10 ? 'var(--pink)' : 'var(--steel)';
     return `<div onclick="loadHistoryScan(${i})" style="
       padding:8px 14px; cursor:pointer; border-left:3px solid ${active ? 'var(--accent)' : 'transparent'};
       background:${active ? 'rgba(79,142,247,.08)' : 'transparent'};
@@ -269,7 +269,7 @@ function renderDiskTree() {
             ? `<button onclick="toggleDiskNode(${JSON.stringify(node.path).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0 4px 0 0;flex-shrink:0">${isCollapsed ? '▶' : '▼'}</button>`
             : `<span style="display:inline-block;width:16px;flex-shrink:0"></span>`
           }
-          <span style="color:${isRoot ? 'var(--accent)' : depth===0 ? 'var(--cyan)' : 'var(--text)'}">${esc(node.name)}</span>
+          <span style="color:${isRoot ? 'var(--accent)' : depth===0 ? 'var(--accent)' : 'var(--text)'}">${esc(node.name)}</span>
         </div>
       </td>
       <td style="padding:5px 12px;color:var(--text2);white-space:nowrap">${fmtBytes(node.sizeBytes)}</td>

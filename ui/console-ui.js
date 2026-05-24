@@ -42,8 +42,8 @@ function _startConsole() {
   _consoleTerm = new Terminal({
     theme: { background: '#0d1117', foreground: '#e2e8ff', cursor: '#4f8ef7',
              black: '#0d1117', brightBlack: '#545b7a',
-             blue: '#4f8ef7',  brightBlue: '#7c3aed',
-             cyan: '#06b6d4',  green: '#22c55e',
+             blue: '#4f8ef7',  brightBlue: '#8b5cf6',
+             cyan: '#4f8ef7',  green: '#22c55e',
              red:  '#ef4444',  yellow: '#eab308',
              white: '#e2e8ff', magenta: '#ec4899' },
     fontFamily: "'JetBrains Mono', monospace",

@@ -88,7 +88,7 @@ function memColor(v) {
   if (v >= 90) return 'red';
   if (v >= 70) return 'orange';
   if (v >= 50) return 'yellow';
-  return 'cyan';
+  return 'steel';
 }
 function memColorClass(v) {
   if (v >= 80) return 'critical';

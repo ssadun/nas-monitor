@@ -51,6 +51,7 @@ const SERVICE_WORKER_FILE = path.join(PWA_DIR, 'sw.js');
 const PWA_ICON_FILE = path.join(PWA_DIR, 'pwa-icon.svg');
 const PWA_ICON_WHALE_FILE = path.join(PWA_DIR, 'pwa-icon-whale.svg');
 const STYLES_FILE = path.join(__dirname, 'styles.css');
+const PREVIEW_DIR = path.join(__dirname, 'preview');
 
 function formatBytes(bytes) {
   if (!bytes) return '0B';
@@ -308,6 +309,35 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (await docker.handleApi(req, res, url, reqUser)) {
+    return;
+  }
+
+  if (url.pathname === '/preview' || url.pathname === '/preview/') {
+    const files = fs.existsSync(PREVIEW_DIR) ? fs.readdirSync(PREVIEW_DIR).filter(f => f.endsWith('.html')).sort() : [];
+    const items = files.map(f =>
+      `<li><a href="/preview/${f}">${f}</a></li>`
+    ).join('\n');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Preview Files</title>
+<style>
+  body{background:#0d0f14;color:#f2ffff;font-family:monospace;padding:32px;font-size:14px;}
+  h1{font-size:16px;letter-spacing:1.5px;text-transform:uppercase;color:#6b7fa3;margin-bottom:20px;}
+  ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px;}
+  a{color:#4f8ef7;text-decoration:none;padding:8px 14px;border:1px solid #2a2f4a;border-radius:8px;display:inline-block;}
+  a:hover{border-color:#4f8ef7;background:rgba(79,142,247,.08);}
+</style></head><body><h1>Preview Files</h1><ul>${items}</ul></body></html>`);
+    return;
+  }
+
+  if (url.pathname.startsWith('/preview/')) {
+    const name = path.basename(url.pathname);
+    const file = path.join(PREVIEW_DIR, name);
+    if (name.endsWith('.html') && fs.existsSync(file)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(fs.readFileSync(file, 'utf8'));
+    } else {
+      header.sendNotFound(res, 'preview file not found');
+    }
     return;
   }
 

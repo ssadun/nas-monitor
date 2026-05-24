@@ -169,8 +169,31 @@ function toggleFilter(mode) {
   document.getElementById('high-cpu-btn').classList.toggle('active', filterMode === 'cpu');
   document.getElementById('high-mem-btn').classList.toggle('active', filterMode === 'mem');
   document.getElementById('container-filter-btn').classList.toggle('active', filterMode === 'container');
+  const labels = { cpu: 'High CPU', mem: 'High Mem', container: 'Container' };
+  const btn = document.getElementById('filter-by-btn');
+  const lbl = document.getElementById('filter-by-label');
+  if (btn && lbl) {
+    lbl.textContent = filterMode ? labels[filterMode] : 'Filter By';
+    btn.classList.toggle('active', !!filterMode);
+    btn.classList.remove('open');
+    document.getElementById('filter-by-menu')?.classList.remove('open');
+  }
   render();
 }
+
+function toggleFilterDropdown(e) {
+  e.stopPropagation();
+  const btn = document.getElementById('filter-by-btn');
+  const menu = document.getElementById('filter-by-menu');
+  const isOpen = menu.classList.contains('open');
+  menu.classList.toggle('open', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('filter-by-btn')?.classList.remove('open');
+  document.getElementById('filter-by-menu')?.classList.remove('open');
+});
 
 function matchesFilter(p) {
   if (filterMode === 'cpu' && p.cpu < 1) return false;
