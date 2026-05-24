@@ -99,6 +99,41 @@
   </div>
 </div>
 
+<!-- IMAGE UPDATES MODAL -->
+<div class="log-modal-backdrop" id="imgupdate-modal">
+  <div class="log-modal" style="width:860px;max-width:96vw;">
+    <div class="log-modal-header">
+      <div class="log-modal-title">
+        <i data-lucide="arrow-up-circle" style="width:18px;height:18px;stroke-width:2;vertical-align:middle;margin-right:6px;color:var(--lavender);"></i>
+        <span>Docker Image Updates</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="cdetail-action-btn logs" onclick="openImageUpdateLogModal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>View Log</span></button>
+        <button id="imgupdate-scan-btn" class="folder-nav-btn" style="padding:5px 12px;font-size:12px;" onclick="openImageUpdatesModal()"><i data-lucide="refresh-cw" style="width:13px;height:13px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Re-Scan</button>
+        <button class="modal-close" onclick="closeImageUpdatesModal()">✕</button>
+      </div>
+    </div>
+    <div class="log-body" id="imgupdate-body" style="background:var(--bg);padding:0;min-height:120px;"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
+      <span id="imgupdate-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE UPDATES LOG MODAL -->
+<div class="log-modal-backdrop" id="imgupdate-log-modal">
+  <div class="log-modal" style="width:820px;max-width:96vw;">
+    <div class="log-modal-header">
+      <div class="log-modal-title">
+        <span>📋 Image Update Log</span>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
+      </div>
+      <button class="modal-close" onclick="closeImageUpdateLogModal()">✕</button>
+    </div>
+    <pre class="log-body" id="imgupdate-log-body" style="font-family:var(--mono);font-size:12px;padding:12px 16px;white-space:pre-wrap;word-break:break-all;"></pre>
+  </div>
+</div>
+
 <!-- CONTAINER ACTION MODAL -->
 <div class="action-modal-backdrop" id="action-modal">
   <div class="action-modal">
@@ -378,28 +413,52 @@
   </button>
   <div class="sidebar-nav">
     <div class="sidebar-section">
-      <div class="sidebar-system-label" style="padding-top:16px;">Resources</div>
-      <button class="sidebar-item active" data-tab="containers" data-icon="box"        data-idle-color="#6b7fa3" data-active-color="#4f8ef7" onclick="switchTabFromSidebar('containers')">
-        <span class="sidebar-item-text">Container Monitoring</span>
-      </button>
-      <button class="sidebar-item" data-tab="processes" data-icon="cpu"         data-idle-color="#6b7fa3" data-active-color="#22c55e" onclick="switchTabFromSidebar('processes')">
+
+      <!-- Docker Management — expandable parent -->
+      <div class="sidebar-parent" id="containers-parent">
+        <button class="sidebar-item" data-tab="containers" data-icon="box" data-idle-color="#6b7fa3" data-active-color="#4f8ef7" onclick="toggleContainersMenu()">
+          <span class="sidebar-item-text">Docker Management</span>
+          <span class="sidebar-item-chevron"><i data-lucide="chevron-down"></i></span>
+        </button>
+        <div class="sidebar-submenu" id="containers-submenu">
+          <button class="sidebar-subitem" style="--item-color:#22c55e" onclick="openNewComposeModal()">
+            <span class="subitem-icon"><i data-lucide="file-plus"></i></span>
+            <span class="subitem-text">New Compose</span>
+          </button>
+          <button class="sidebar-subitem" style="--item-color:#f97316" onclick="openArchiveBrowserModal()">
+            <span class="subitem-icon"><i data-lucide="archive"></i></span>
+            <span class="subitem-text">Archive</span>
+          </button>
+          <button class="sidebar-subitem" style="--item-color:#f97316" onclick="switchTabFromSidebar('categories')">
+            <span class="subitem-icon"><i data-lucide="folder-open"></i></span>
+            <span class="subitem-text">Categories</span>
+          </button>
+          <button class="sidebar-subitem" style="--item-color:#eab308" onclick="openDockerVolumesModal()">
+            <span class="subitem-icon"><i data-lucide="hard-drive"></i></span>
+            <span class="subitem-text">Docker Volumes</span>
+          </button>
+          <button class="sidebar-subitem" style="--item-color:#8b5cf6" onclick="openImageUpdatesModal()">
+            <span class="subitem-icon"><i data-lucide="arrow-up-circle"></i></span>
+            <span class="subitem-text">Image Updates</span>
+          </button>
+          <button class="sidebar-subitem" style="--item-color:#ef4444" onclick="openPruneModal()">
+            <span class="subitem-icon"><i data-lucide="trash-2"></i></span>
+            <span class="subitem-text">Prune</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="sidebar-item" data-tab="processes" data-icon="cpu"     data-idle-color="#6b7fa3" data-active-color="#22c55e" onclick="switchTabFromSidebar('processes')">
         <span class="sidebar-item-text">System Processes</span>
       </button>
-      <button class="sidebar-item" data-tab="disk" data-icon="server"      data-idle-color="#6b7fa3" data-active-color="#eab308" onclick="switchTabFromSidebar('disk')">
+      <button class="sidebar-item" data-tab="disk" data-icon="server"    data-idle-color="#6b7fa3" data-active-color="#eab308" onclick="switchTabFromSidebar('disk')">
         <span class="sidebar-item-text">Disk Usage</span>
       </button>
-      <button class="sidebar-item" data-tab="network" data-icon="network"     data-idle-color="#6b7fa3" data-active-color="#8b5cf6" onclick="switchTabFromSidebar('network')">
+      <button class="sidebar-item" data-tab="network" data-icon="network" data-idle-color="#6b7fa3" data-active-color="#8b5cf6" onclick="switchTabFromSidebar('network')">
         <span class="sidebar-item-text">Network Utilization</span>
       </button>
     </div>
     <div class="sidebar-section bottom">
-      <button class="sidebar-item" data-icon="hard-drive" data-idle-color="#6b7fa3" data-active-color="#4f8ef7" onclick="openDockerVolumesModal(); closeSidebar();">
-        <span class="sidebar-item-text">Docker Volumes</span>
-      </button>
-      <button class="sidebar-item" data-tab="categories" data-icon="folder-open" data-idle-color="#6b7fa3" data-active-color="#f97316" onclick="switchTabFromSidebar('categories')">
-        <span class="sidebar-item-text">Categories</span>
-      </button>
-      <div class="sidebar-system-label">System</div>
       <button class="sidebar-item" data-icon="settings"   data-idle-color="#6b7fa3" data-active-color="#f2ffff" onclick="openSettingsModal(); closeSidebar();">
         <span class="sidebar-item-text">Settings</span>
       </button>
@@ -417,9 +476,6 @@
   <!--  CONTAINERS TAB  -->
   <div class="tab-panel active" id="tab-containers">
     <div class="container-toolbar">
-      <button class="toolbar-btn newcompose" onclick="openNewComposeModal()"><i data-lucide="file-plus" style="width:14px;height:14px;stroke-width:2;"></i><span>New Compose</span></button>
-      <button class="toolbar-btn archive" onclick="openArchiveBrowserModal()"><i data-lucide="archive" style="width:14px;height:14px;stroke-width:2;"></i><span>Archive</span></button>
-      <button class="toolbar-btn prune" onclick="openPruneModal()"><i data-lucide="trash-2" style="width:14px;height:14px;stroke-width:2;"></i><span>Prune</span></button>
       <button class="toolbar-btn expand" id="expand-all-btn" onclick="toggleAllContainers()"><i data-lucide="arrow-up-down" style="width:14px;height:14px;stroke-width:2;"></i><span>Expand All</span></button>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
@@ -716,6 +772,25 @@
         <div class="settings-label">Prune Interval (hours)</div>
         <input class="filter-input" type="number" id="settings-pruneIntervalHours" min="1" max="720" step="1" value="24" style="width:100px;"/>
       </div>
+      <div style="height:1px;background:var(--border);margin:2px 0;"></div>
+      <div class="catedit-row">
+        <div class="settings-label">Image Update Check (hours, 0=off)</div>
+        <input class="filter-input" type="number" id="settings-imageUpdateIntervalHours" min="0" max="720" step="1" value="24" style="width:100px;"/>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Auto-Pull Updates</div>
+        <select class="filter-input" id="settings-imageUpdateAutoApply" style="width:100px;">
+          <option value="false">Disabled</option>
+          <option value="true">Enabled</option>
+        </select>
+      </div>
+      <div class="catedit-row">
+        <div class="settings-label">Auto-Restart After Pull</div>
+        <select class="filter-input" id="settings-imageUpdateAutoRestart" style="width:100px;">
+          <option value="false">Disabled</option>
+          <option value="true">Enabled</option>
+        </select>
+      </div>
       <div class="catedit-row">
         <div class="settings-label">Compose Inactivity (seconds)</div>
         <input class="filter-input" type="number" id="settings-composeInactivityTimeoutSeconds" min="10" max="3600" step="1" value="120" style="width:100px;"/>
@@ -810,12 +885,13 @@
 <script src="/ui/disk-ui.js"></script>
 <script src="/ui/network-ui.js"></script>
 <script src="/ui/prune-ui.js"></script>
-<script src="/ui/containers-ui.js"></script>
+<script src="/ui/docker-ui.js"></script>
 <script src="/ui/compose-ui.js"></script>
 <script src="/ui/console-ui.js"></script>
 <script src="/ui/credentials-ui.js"></script>
 <script src="/ui/volumes-ui.js"></script>
 <script src="/ui/networks-ui.js"></script>
+<script src="/ui/image-updates-ui.js"></script>
 <script src="/ui/state.js"></script>
 <script src="/ui/menu-ui.js"></script>
 <script src="/ui/setting.js"></script>

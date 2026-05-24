@@ -1297,7 +1297,7 @@ function handleComposeSaveShortcut(e) {
 }
 
 el('log-modal').addEventListener('click', e => { if (e.target === el('log-modal')) closeLogModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); closeNewComposeModal(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeLogModal(); closePruneModal(); closePruneLogModal(); if (!_actionPending) closeActionModal(); closeCDetailModal(); closeConsoleModal(); closeNewComposeModal(); closeImageUpdatesModal(); closeImageUpdateLogModal(); } });
 document.addEventListener('keydown', handleComposeSaveShortcut);
 el('newcompose-modal').addEventListener('click', e => { if (e.target === el('newcompose-modal')) return; });
 

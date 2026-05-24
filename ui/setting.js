@@ -47,6 +47,9 @@ async function loadSettingsForm() {
     setSettingsInputValue('settings-sessionTimeoutHours', settings.sessionTimeoutHours ?? 4);
     setSettingsInputValue('settings-warnThresholdSeconds', settings.warnThresholdSeconds ?? 3);
     setSettingsInputValue('settings-pruneIntervalHours', settings.pruneIntervalHours ?? 24);
+    setSettingsInputValue('settings-imageUpdateIntervalHours', settings.imageUpdateIntervalHours ?? 24);
+    setSettingsInputValue('settings-imageUpdateAutoApply', String(Boolean(settings.imageUpdateAutoApply)));
+    setSettingsInputValue('settings-imageUpdateAutoRestart', String(Boolean(settings.imageUpdateAutoRestart)));
     setSettingsInputValue('settings-composeInactivityTimeoutSeconds', settings.composeInactivityTimeoutSeconds ?? 120);
     setSettingsInputValue('settings-dockerConfigFolder', settings.dockerConfigFolder || '');
     setSettingsInputValue('settings-dockerDataFolder', settings.dockerDataFolder || '');
@@ -71,6 +74,9 @@ async function submitSettingsForm() {
     sessionTimeoutHours: parseNumberField('settings-sessionTimeoutHours', 4),
     warnThresholdSeconds: parseNumberField('settings-warnThresholdSeconds', 3),
     pruneIntervalHours: parseNumberField('settings-pruneIntervalHours', 24),
+    imageUpdateIntervalHours: parseNumberField('settings-imageUpdateIntervalHours', 24),
+    imageUpdateAutoApply:   getElement('settings-imageUpdateAutoApply')?.value   === 'true',
+    imageUpdateAutoRestart: getElement('settings-imageUpdateAutoRestart')?.value === 'true',
     composeInactivityTimeoutSeconds: parseNumberField('settings-composeInactivityTimeoutSeconds', 120),
     dockerConfigFolder: getElement('settings-dockerConfigFolder')?.value || '',
     dockerDataFolder: getElement('settings-dockerDataFolder')?.value || '',
@@ -95,6 +101,9 @@ async function submitSettingsForm() {
       setSettingsInputValue('settings-sessionTimeoutHours', data.settings.sessionTimeoutHours ?? 4);
       setSettingsInputValue('settings-warnThresholdSeconds', data.settings.warnThresholdSeconds ?? 3);
       setSettingsInputValue('settings-pruneIntervalHours', data.settings.pruneIntervalHours ?? 24);
+      setSettingsInputValue('settings-imageUpdateIntervalHours', data.settings.imageUpdateIntervalHours ?? 24);
+      setSettingsInputValue('settings-imageUpdateAutoApply', String(Boolean(data.settings.imageUpdateAutoApply)));
+      setSettingsInputValue('settings-imageUpdateAutoRestart', String(Boolean(data.settings.imageUpdateAutoRestart)));
       setSettingsInputValue('settings-composeInactivityTimeoutSeconds', data.settings.composeInactivityTimeoutSeconds ?? 120);
       setSettingsInputValue('settings-dockerConfigFolder', data.settings.dockerConfigFolder || '');
       setSettingsInputValue('settings-dockerDataFolder', data.settings.dockerDataFolder || '');

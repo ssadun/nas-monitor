@@ -17,6 +17,7 @@ let _resetRefreshTimer = () => {};
 let _updateAppSettings = () => {};
 let _disk = null;
 let _prune = null;
+let _imageUpdates = null;
 let _auth = null;
 let _formatBytes = (b) => String(b);
 let _DOCKER = '';
@@ -35,6 +36,7 @@ function setDependencies(deps = {}) {
   if (deps.updateAppSettings)  _updateAppSettings  = deps.updateAppSettings;
   if (deps.disk)               _disk               = deps.disk;
   if (deps.prune)              _prune              = deps.prune;
+  if (deps.imageUpdates)       _imageUpdates       = deps.imageUpdates;
   if (deps.auth)               _auth               = deps.auth;
   if (deps.formatBytes)        _formatBytes        = deps.formatBytes;
   if (deps.DOCKER)             _DOCKER             = deps.DOCKER;
@@ -219,6 +221,57 @@ function handlePruneLog(req, res) {
   }
 }
 
+// ─── /api/image-updates ──────────────────────────────────────────────────────
+
+async function handleImageUpdateScan(req, res) {
+  try {
+    const data = await _imageUpdates.scanUpdates();
+    jsonOk(res, { ok: true, results: data });
+  } catch (e) {
+    jsonOk(res, { ok: false, error: e.message });
+  }
+}
+
+async function handleImageUpdatePull(req, res, reqUser) {
+  const body = await readBody(req);
+  try {
+    const { image, restart, containers } = JSON.parse(body);
+    if (!image) { jsonOk(res, { ok: false, error: 'image required' }); return; }
+    const result = await _imageUpdates.pullImage(image);
+    if (result.ok && restart && Array.isArray(containers)) {
+      const restartResults = [];
+      for (const ctr of containers) {
+        if (!ctr) continue;
+        try {
+          const out = await new Promise((resolve) => {
+            const docker = require('./docker.js');
+            resolve(docker.runDocker ? docker.runDocker(`restart ${ctr}`) : '');
+          });
+          restartResults.push({ container: ctr, ok: true });
+        } catch (e) {
+          restartResults.push({ container: ctr, ok: false, error: e.message });
+        }
+      }
+      result.restartResults = restartResults;
+    }
+    _auditLog('image_pull', { user: reqUser, image, restart: !!restart, status: result.ok ? 'success' : 'failed' }, req);
+    jsonOk(res, result);
+  } catch (e) {
+    jsonOk(res, { ok: false, error: e.message });
+  }
+}
+
+function handleImageUpdateLog(req, res) {
+  try {
+    const raw = fs.existsSync(_imageUpdates.UPDATE_LOG_FILE)
+      ? fs.readFileSync(_imageUpdates.UPDATE_LOG_FILE, 'utf8')
+      : '';
+    jsonOk(res, { log: raw });
+  } catch (e) {
+    jsonOk(res, { log: '' });
+  }
+}
+
 // ─── /api/settings ────────────────────────────────────────────────────────────
 
 function handleSettingsGet(req, res) {
@@ -254,6 +307,12 @@ async function handleSettingsPost(req, res, reqUser, saveSettingsFile, prune) {
     if (previous.pruneIntervalHours !== updated.pruneIntervalHours) {
       prune.scheduleAutoPrune();
       _logInfo('Auto-prune interval changed', { previousHours: previous.pruneIntervalHours, currentHours: updated.pruneIntervalHours });
+    }
+    if (previous.imageUpdateIntervalHours !== updated.imageUpdateIntervalHours ||
+        previous.imageUpdateAutoApply     !== updated.imageUpdateAutoApply ||
+        previous.imageUpdateAutoRestart   !== updated.imageUpdateAutoRestart) {
+      if (_imageUpdates) _imageUpdates.scheduleImageUpdateCheck();
+      _logInfo('Image update settings changed', { interval: updated.imageUpdateIntervalHours, autoApply: updated.imageUpdateAutoApply, autoRestart: updated.imageUpdateAutoRestart });
     }
     if (previous.composeInactivityTimeoutSeconds !== updated.composeInactivityTimeoutSeconds) {
       _logInfo('Compose inactivity timeout changed', { previousSeconds: previous.composeInactivityTimeoutSeconds, currentSeconds: updated.composeInactivityTimeoutSeconds });
@@ -495,6 +554,9 @@ async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CRED
   if (pathname === '/api/prune/scan')                                   { await handlePruneScan(req, res); return true; }
   if (pathname === '/api/prune/run' && method === 'POST')               { await handlePruneRun(req, res, reqUser); return true; }
   if (pathname === '/api/prune/log')                                    { handlePruneLog(req, res); return true; }
+  if (pathname === '/api/image-updates/scan')                           { await handleImageUpdateScan(req, res); return true; }
+  if (pathname === '/api/image-updates/pull' && method === 'POST')      { await handleImageUpdatePull(req, res, reqUser); return true; }
+  if (pathname === '/api/image-updates/log')                            { handleImageUpdateLog(req, res); return true; }
   if (pathname === '/api/settings' && method === 'GET')                 { handleSettingsGet(req, res); return true; }
   if (pathname === '/api/settings' && method === 'POST')                { await handleSettingsPost(req, res, reqUser, saveSettingsFile, prune); return true; }
   if (pathname === '/api/change-credentials' && method === 'POST')      { await handleChangeCredentials(req, res, reqUser); return true; }

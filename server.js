@@ -16,8 +16,9 @@ const network = require('./modules/network.js');
 const monitor = require('./modules/monitor.js');
 const sysInfo = require('./modules/process.js');
 const logger = require('./modules/logger.js');
-const prune  = require('./modules/prune.js');
-const api    = require('./modules/api.js');
+const prune        = require('./modules/prune.js');
+const imageUpdates = require('./modules/image-updates.js');
+const api          = require('./modules/api.js');
 const { spawn } = require('child_process');
 const crypto = require('crypto');
 const {
@@ -124,6 +125,14 @@ prune.setDependencies({
   getSettings: () => appSettings,
 });
 
+imageUpdates.setDependencies({
+  logError,
+  logInfo,
+  runDocker: docker.runDocker,
+  DOCKER,
+  getSettings: () => appSettings,
+});
+
 api.setDependencies({
   logError,
   logInfo,
@@ -135,6 +144,7 @@ api.setDependencies({
   resetRefreshTimer,
   disk,
   prune,
+  imageUpdates,
   auth,
   formatBytes,
   DOCKER,
@@ -229,8 +239,8 @@ const server = http.createServer(async (req, res) => {
   const UI_FILES = new Set([
     'utils.js', 'state.js', 'menu.js', 'menu-ui.js', 'setting.js',
     'render.js', 'processes-ui.js', 'disk-ui.js', 'network-ui.js', 'prune-ui.js',
-    'containers-ui.js', 'compose-ui.js', 'console-ui.js',
-    'credentials-ui.js', 'volumes-ui.js', 'networks-ui.js',
+    'docker-ui.js', 'compose-ui.js', 'console-ui.js',
+    'credentials-ui.js', 'volumes-ui.js', 'networks-ui.js', 'image-updates-ui.js',
   ]);
   if (url.pathname.startsWith('/ui/')) {
     const file = url.pathname.slice(4); // strip leading '/ui/'
@@ -324,6 +334,7 @@ const server = http.createServer(async (req, res) => {
 
 
 prune.scheduleAutoPrune();
+imageUpdates.scheduleImageUpdateCheck();
 
 // ─── WebSocket console (docker exec PTY) ─────────────────────────────────────
 // Minimal WebSocket server using Node's built-in http upgrade — no external deps.

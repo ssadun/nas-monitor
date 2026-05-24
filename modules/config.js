@@ -21,6 +21,9 @@ const LOG_LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
  * @property {string} dockerConfigFolder
  * @property {string} dockerDataFolder
  * @property {number} refreshIntervalSeconds
+ * @property {number} imageUpdateIntervalHours
+ * @property {boolean} imageUpdateAutoApply
+ * @property {boolean} imageUpdateAutoRestart
  */
 
 /** @type {AppSettings} */
@@ -34,6 +37,9 @@ const DEFAULT_SETTINGS = {
   dockerConfigFolder: '/volume1/docker/_config',
   dockerDataFolder: '/volume1/docker/_data',
   refreshIntervalSeconds: 3,
+  imageUpdateIntervalHours: 24,
+  imageUpdateAutoApply: false,
+  imageUpdateAutoRestart: false,
 };
 
 /** @param {object} raw @returns {AppSettings} */
@@ -53,6 +59,8 @@ function normalizeSettings(raw = {}) {
   const dockerDataFolder = String(raw.dockerDataFolder || DEFAULT_SETTINGS.dockerDataFolder).trim() || DEFAULT_SETTINGS.dockerDataFolder;
   const refreshIntervalRaw = raw.refreshIntervalSeconds ?? DEFAULT_SETTINGS.refreshIntervalSeconds;
   const refreshIntervalNum = Number(refreshIntervalRaw);
+  const imgUpdateHoursRaw = raw.imageUpdateIntervalHours ?? DEFAULT_SETTINGS.imageUpdateIntervalHours;
+  const imgUpdateHoursNum = Number(imgUpdateHoursRaw);
   /** @type {AppSettings} */
   const normalized = {
     logLevel: safeLevel,
@@ -68,6 +76,9 @@ function normalizeSettings(raw = {}) {
     refreshIntervalSeconds: Number.isFinite(refreshIntervalNum) && refreshIntervalNum >= 1 && refreshIntervalNum <= 60
       ? refreshIntervalNum
       : DEFAULT_SETTINGS.refreshIntervalSeconds,
+    imageUpdateIntervalHours: Number.isFinite(imgUpdateHoursNum) && imgUpdateHoursNum >= 0 ? imgUpdateHoursNum : DEFAULT_SETTINGS.imageUpdateIntervalHours,
+    imageUpdateAutoApply:   typeof raw.imageUpdateAutoApply   === 'boolean' ? raw.imageUpdateAutoApply   : DEFAULT_SETTINGS.imageUpdateAutoApply,
+    imageUpdateAutoRestart: typeof raw.imageUpdateAutoRestart === 'boolean' ? raw.imageUpdateAutoRestart : DEFAULT_SETTINGS.imageUpdateAutoRestart,
   };
   return normalized;
 }

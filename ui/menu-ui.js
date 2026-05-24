@@ -25,6 +25,22 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
     panel.classList.toggle('active', panel.id === 'tab-' + currentTab);
   });
 
+  // Restore containers sub-menu open state (default: open)
+  const submenuOpen = sessionStorage.getItem('containers-submenu-open') !== 'false';
+  if (submenuOpen) {
+    const parent = document.getElementById('containers-parent');
+    if (parent) parent.classList.add('open');
+  } else {
+    const submenu = document.getElementById('containers-submenu');
+    if (submenu) submenu.classList.add('closed');
+  }
+
+  // Mark containers parent active when containers tab is current
+  if (currentTab === 'containers') {
+    const parent = document.getElementById('containers-parent');
+    if (parent) parent.querySelector('.sidebar-item')?.classList.add('active');
+  }
+
   const sidebarExpanded = sessionStorage.getItem('sidebar-expanded') === 'true';
   if (sidebarExpanded) {
     document.body.classList.add('sidebar-expanded');
@@ -35,6 +51,18 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
   updateSidebarToggleLabel();
   if (window.lucide) lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
 })();
+
+function toggleContainersMenu() {
+  const parent = document.getElementById('containers-parent');
+  const submenu = document.getElementById('containers-submenu');
+  if (!parent || !submenu) return;
+  const isOpen = parent.classList.contains('open');
+  parent.classList.toggle('open', !isOpen);
+  submenu.classList.toggle('closed', isOpen);
+  sessionStorage.setItem('containers-submenu-open', String(!isOpen));
+  // Also switch to containers tab
+  switchTab('containers');
+}
 
 function logout() {
   fetch('/logout', { method: 'GET', credentials: 'same-origin' })
@@ -50,6 +78,12 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + name);
   });
+  // Keep containers parent button highlighted when any sub-item tab is active
+  const containersBtn = document.querySelector('#containers-parent > .sidebar-item');
+  if (containersBtn) {
+    const subTabs = ['containers', 'categories'];
+    containersBtn.classList.toggle('active', subTabs.includes(name));
+  }
   const filterInput = document.getElementById('filter-input');
   if (filterInput) filterInput.value = '';
   filterText = '';
