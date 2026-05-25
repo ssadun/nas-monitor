@@ -1,8 +1,10 @@
-# ⛵ NAS Monitor
+# 🐋 NAS Monitor
 
 A real-time system monitoring dashboard for **Synology NAS** (and other Linux-based systems running Docker). Built as a lightweight Node.js app with a fully modular backend — no frameworks, no build step, no Docker required to run it.
 
 ![Dashboard Preview](https://img.shields.io/badge/platform-Synology%20NAS-blue) ![Node.js](https://img.shields.io/badge/runtime-Node.js-green) ![License](https://img.shields.io/badge/license-MIT-brightgreen)
+
+![Main Screen](preview/screenshot-main.png)
 
 ---
 
@@ -21,6 +23,12 @@ A real-time system monitoring dashboard for **Synology NAS** (and other Linux-ba
 - **Restart policies** — configure container restart policies (no, always, unless-stopped, on-failure)
 - **Sub-process view** — expand containers to see child host processes with full process tree hierarchy
 
+### Docker Compose
+- **Compose editor** — view and edit Docker Compose files directly in the UI with YAML syntax highlighting (Prism.js); Edit/Apply/Save workflow with change detection
+- **Compose actions** — bring projects up/down, view boot logs, manage multiple compose files per project
+- **Archive browser** — browse and restore backed-up compose file versions
+- **Image updates** — scan compose projects for available image updates and pull new versions
+
 ### Docker Infrastructure Management
 - **Docker volumes** — full CRUD management with three-section detail view (volume details, access control, containers using volume); create volumes with custom labels
 - **Docker networks** — manage networks with driver info, scope, subnets; view connected containers; create networks with custom drivers and subnets
@@ -30,7 +38,7 @@ A real-time system monitoring dashboard for **Synology NAS** (and other Linux-ba
 - **Secure login** — session-based authentication with PBKDF2-SHA512 hashed credentials (100,000 iterations, 32-byte salt); 4-hour session expiry; sessions persisted across restarts
 - **Credential management** — change username and password from within the UI with strength indicator and 8-character minimum
 - **Audit logging** — all user actions (login, logout, container operations, settings changes) written to `logs/audit.log`
-- **Dark UI** — polished dark theme with Inter font; fully responsive design; works on desktop and mobile
+- **Dark UI** — polished dark theme with Inter font, Lucide icons, CSS variable-based color palette; fully responsive
 - **PWA support** — installable as a Progressive Web App with manifest and service worker
 
 ---
@@ -154,7 +162,9 @@ nas-monitor/
 │   ├── compose-ui.js            # New Compose modal, Archive Browser, Restart Policy
 │   ├── prune-ui.js              # Prune modal
 │   ├── console-ui.js            # Console modal (xterm.js)
-│   └── credentials-ui.js        # Credentials modal
+│   ├── credentials-ui.js        # Credentials modal
+│   ├── image-updates-ui.js      # Image update scanner UI
+│   └── syntax-highlight.js      # YAML syntax highlighting (Prism.js, blur-only toggle)
 ├── index.html                   # Frontend SPA shell — HTML structure and modal templates
 ├── styles.css                   # All CSS (~2,150 lines) — dark theme, layout, components
 ├── pwa/                         # Progressive Web App assets
@@ -216,6 +226,14 @@ Disk analysis and filesystem browser:
 - **Largest files** — Sortable table of the largest files found in the scanned path (hidden until scan is run)
 - **Scan history** — Click previous scans to view disk state at different points in time
 - **Custom paths** — Configure scan path and depth (1–6 levels) for focused analysis
+
+### Docker Compose Editor
+Compose file management for projects discovered under `COMPOSE_CONFIG_ROOT`:
+- **YAML syntax highlighting** — Prism.js highlights keys, strings, numbers, comments when not editing
+- **Edit workflow** — Click Edit to enter edit mode; Apply Compose checks syntax; Save appears only when content has changed and hides after a successful save
+- **Compose actions** — Up, Down, pull image updates, view boot logs per project
+- **Archive browser** — Browse and restore previous backups of compose files
+- **Image updates** — Scan all compose projects for newer image versions and pull them in bulk
 
 ### Docker Volumes
 Full CRUD volume management with three-section detail view:
@@ -319,7 +337,7 @@ Live data is pushed to the browser using **Server-Sent Events (SSE)** on `/api/s
 The interactive container console uses **WebSockets** (`/ws/console/:id`), spawning `docker exec -i` with a shell. The frontend renders the terminal with **xterm.js**.
 
 ### Frontend Architecture
-`index.html` is a lightweight SPA shell (~500 lines of HTML + modals). All JavaScript is split into 16 focused modules under `ui/`, served as separate files. No bundler, no framework — plain JavaScript with DOM manipulation. Lucide icons are loaded from CDN; xterm.js is loaded from cdnjs.
+`index.html` is a lightweight SPA shell (~500 lines of HTML + modals). All JavaScript is split into 18 focused modules under `ui/`, served as separate files. No bundler, no framework — plain JavaScript with DOM manipulation. Lucide icons and Prism.js are loaded from CDN; xterm.js is loaded from cdnjs.
 
 ---
 
