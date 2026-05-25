@@ -1197,10 +1197,7 @@
   .cdetail-action-btn.apply   {
     color: #477ed9;
     border-color: rgba(71,126,217,.45);
-    border-radius: 6px;
-    padding: 4px 12px;
-    font-size: 12px;
-    gap: 0;
+    padding: 3px 10px;
   }
   .cdetail-action-btn.apply:hover:not(:disabled)   { background: rgba(71,126,217,.12); border-color: #477ed9; }
   .cdetail-action-btn.restart { color: var(--orange); }
@@ -1253,14 +1250,12 @@
     background: none;
     border: 1px solid rgba(71,126,217,.45);
     border-radius: 6px;
-    padding: 4px 12px;
+    padding: 3px 10px;
     cursor: pointer;
     font-family: var(--sans);
     font-size: 12px;
-    font-weight: 600;
     color: #477ed9;
     transition: all .15s;
-    line-height: 1.2;
     white-space: nowrap;
   }
   .folder-nav-btn:hover:not(:disabled) {
@@ -1620,7 +1615,7 @@
   }
   .archivebrowser-table .files-col { color: var(--text); }
   .archive-view-btn {
-    padding: 6px 12px; border-radius: 6px;
+    padding: 3px 10px; border-radius: 6px;
     border: 1px solid rgba(71,126,217,.45);
     background: transparent;
     color: #477ed9; font-family: var(--mono); font-size: 12px;
@@ -1635,9 +1630,9 @@
     display: inline-flex; align-items: center; gap: 8px;
   }
   .archive-restore-btn {
-    padding: 6px 12px; border-radius: 6px;
+    padding: 3px 10px; border-radius: 6px;
     border: 1px solid rgba(34,197,94,.45);
-    background: rgba(34,197,94,.12);
+    background: transparent;
     color: var(--green); font-family: var(--mono); font-size: 12px;
     cursor: pointer; white-space: nowrap;
   }
@@ -1649,9 +1644,9 @@
     opacity: .55; cursor: not-allowed;
   }
   .archive-delete-btn {
-    padding: 6px 12px; border-radius: 6px;
+    padding: 3px 10px; border-radius: 6px;
     border: 1px solid rgba(239,68,68,.45);
-    background: rgba(239,68,68,.1);
+    background: transparent;
     color: var(--red); font-family: var(--mono); font-size: 12px;
     cursor: pointer; white-space: nowrap;
   }
@@ -1729,7 +1724,7 @@
     resize: vertical;
     border-radius: 10px;
     border: 1px solid var(--border2);
-    background: #0f131d;
+    background: var(--bg3);
     color: var(--text);
     font-family: var(--mono);
     font-size: 12px;
@@ -1741,6 +1736,64 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(79,142,247,.15);
   }
+
+  /* Syntax Highlighting - Blur Only */
+  .syntax-highlight-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    height: 80vh;
+    min-height: 100px;
+    max-height: 90vh;
+  }
+  .syntax-highlight-pre,
+  .syntax-highlight-pre[class*="language-"],
+  pre[class*="language-"].syntax-highlight-pre {
+    display: none;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    padding: 14px !important;
+    background: var(--bg3) !important;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    overflow: auto;
+    box-sizing: border-box;
+    cursor: text;
+  }
+  .syntax-highlight-pre.visible,
+  .syntax-highlight-pre[class*="language-"].visible,
+  pre[class*="language-"].syntax-highlight-pre.visible { display: block; }
+  .syntax-highlight-pre code,
+  .syntax-highlight-pre code.language-yaml,
+  .syntax-highlight-pre code[class*="language-"] {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text);
+    background: var(--bg3) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-shadow: none !important;
+  }
+  .compose-editor-textarea.syntax-enabled {
+    height: 100%;
+    min-height: unset;
+    resize: none;
+  }
+  .compose-editor-textarea.syntax-enabled.hidden { display: none; }
+  .syntax-highlight-pre .token.comment,
+  .syntax-highlight-pre .token.prolog { color: #545b7a; }
+  .syntax-highlight-pre .token.punctuation { color: #8891b8; }
+  .syntax-highlight-pre .token.key,
+  .syntax-highlight-pre .token.atrule { color: #4f8ef7; }
+  .syntax-highlight-pre .token.string { color: #22c55e; }
+  .syntax-highlight-pre .token.number,
+  .syntax-highlight-pre .token.boolean { color: #f97316; }
+  .syntax-highlight-pre .token.null { color: #ef4444; }
   @keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;

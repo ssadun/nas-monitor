@@ -242,6 +242,7 @@ const server = http.createServer(async (req, res) => {
     'render.js', 'processes-ui.js', 'disk-ui.js', 'network-ui.js', 'prune-ui.js',
     'docker-ui.js', 'compose-ui.js', 'console-ui.js',
     'credentials-ui.js', 'volumes-ui.js', 'networks-ui.js', 'image-updates-ui.js',
+    'syntax-highlight.js',
   ]);
   if (url.pathname.startsWith('/ui/')) {
     const file = url.pathname.slice(4); // strip leading '/ui/'

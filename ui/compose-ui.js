@@ -318,9 +318,10 @@ async function saveComposeFile(project, composeFile, editorId, saveId, statusId)
   if (!ta || !saveBtn || !status) return;
 
   saveBtn.disabled = true;
-  saveBtn.textContent = '…';
+  saveBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Saving…';
+  lucide.createIcons({ nodes: [saveBtn] });
   status.style.color = 'var(--text3)';
-  status.textContent = 'Saving…';
+  status.textContent = '';
 
   try {
     const res  = await fetch('/api/compose/file', {
@@ -333,6 +334,7 @@ async function saveComposeFile(project, composeFile, editorId, saveId, statusId)
       _composeEditorState.originalValue = ta.value;
       status.style.color = 'var(--green)';
       status.textContent = '✓ Saved';
+      saveBtn.style.display = 'none';
       setTimeout(() => { if (status) status.textContent = ''; }, 3000);
     } else {
       status.style.color = 'var(--red)';
@@ -343,7 +345,8 @@ async function saveComposeFile(project, composeFile, editorId, saveId, statusId)
     status.textContent = '✗ ' + e.message;
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Save';
+    saveBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Save';
+    lucide.createIcons({ nodes: [saveBtn] });
   }
 }
 

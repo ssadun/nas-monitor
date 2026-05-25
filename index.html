@@ -9,7 +9,10 @@
 <meta name="theme-color" content="#0d0f14"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/addon-fit.min.js"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="/ui/utils.js"></script>
@@ -216,7 +219,7 @@
   <div class="action-modal" onclick="event.stopPropagation()">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🗑</span>
+        <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--yellow);flex-shrink:0;"></i>
         <div>
           <div style="font-size:14px;font-weight:600;">Dismiss Compose Changes</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">Unsaved compose file edits</div>
@@ -231,8 +234,8 @@
       </div>
     </div>
     <div class="action-modal-footer">
-      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(false)">Cancel</button>
-      <button class="action-modal-btn confirm" data-action="delete" onclick="resolveComposeDismiss(true)">Dismiss Changes</button>
+      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(false)"><i data-lucide="x" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+      <button class="action-modal-btn confirm" data-action="delete" onclick="resolveComposeDismiss(true)"><i data-lucide="x-circle" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Dismiss Changes</button>
     </div>
   </div>
 </div>
@@ -903,6 +906,7 @@
   </div>
 </div>
 
+<script src="/ui/syntax-highlight.js"></script>
 <script src="/ui/render.js"></script>
 <script src="/ui/processes-ui.js"></script>
 <script src="/ui/disk-ui.js"></script>

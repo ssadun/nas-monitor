@@ -276,7 +276,9 @@ function confirmDismissComposeChanges() {
   if (!hasUnsavedComposeChanges()) return Promise.resolve(true);
   return new Promise(resolve => {
     _composeDismissResolver = resolve;
-    el('compose-dismiss-modal').classList.add('open');
+    const modal = el('compose-dismiss-modal');
+    modal.classList.add('open');
+    lucide.createIcons({ nodes: [modal] });
   });
 }
 

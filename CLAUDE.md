@@ -63,6 +63,8 @@ The server searches 7 known paths to find the Docker binary, supporting both sta
 
 Dark, high-contrast theme. All colors are CSS variables defined in [styles.css](styles.css):
 
+**Before using any color, read `preview/colors.html` to select the correct CSS variable.**
+
 - Backgrounds: `--main-bg` (#0d0f14), `--menu-bg` (#141720), `--card-bg` (#1c2030), `--card-hover-bg` (#242840)
 - Borders: `--border` (#2a2f4a), `--border2` (#353b5e)
 - Accent: `--accent` (#4f8ef7), `--accent2` (#7c3aed), `--green` (#22c55e), `--yellow` (#eab308), `--red` (#ef4444), `--orange` (#f97316), `--cyan` (#06b6d4), `--pink` (#ec4899), `--lavender` (#8b5cf6), `--white` (#f2ffff)
@@ -75,6 +77,8 @@ Typography: `Inter` (Google Fonts) for UI, monospace for data. Base size 15px, l
 - **UPPER CASE** — page/tab headers and table column headers only
 
 ### Button conventions
+
+**Before adding any button, read `preview/buttons.html` to select the correct class.**
 
 Every modal and form must use these shared classes — no inline styles or one-off classes:
 

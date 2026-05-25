@@ -140,7 +140,7 @@ async function openCDetailModal(id, name, stateClass) {
               value="${(d.restartPolicy&&d.restartPolicy.name)==='on-failure' ? (d.restartPolicy.maximumRetryCount||0) : ''}"
               style="display:${(d.restartPolicy&&d.restartPolicy.name)==='on-failure'?'block':'none'}"/>
             <button class="cdetail-action-btn apply" id="rp-save-${d.id}"
-              onclick="saveRestartPolicy('${d.id}')"><span>Apply</span></button>
+              onclick="saveRestartPolicy('${d.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M20 6 9 17l-5-5"/></svg><span>Apply</span></button>
             <span class="restart-policy-status" id="rp-status-${d.id}"></span>
           </div>`)}
       </div>`);
@@ -259,22 +259,28 @@ async function openCDetailModal(id, name, stateClass) {
               data-save-id="${saveId}"
               data-status-id="${statusId}"
               spellcheck="false"
-              style="width:100%;flex:1;min-height:120px;resize:none;
-                     background:var(--bg3);color:var(--text);border:1px solid var(--border);
-                     border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;
-                     line-height:1.5;box-sizing:border-box;outline:none;"
             ></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <button id="${saveId}" class="action-modal-btn ok"
-                onclick="saveComposeFile('${esc(d.composeProject)}','${esc(fd.composeFile)}','${editorId}','${saveId}','${statusId}')">Save</button>
+              <button id="${editorId}-edit" class="folder-nav-btn"
+                onclick="enableComposeEdit('${editorId}')"><i data-lucide="pencil" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Edit</button>
+              <button id="${editorId}-check" class="folder-nav-btn" style="display:none;"
+                onclick="checkComposeSyntax('${editorId}')"><i data-lucide="file-check" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Apply Compose</button>
               <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
+              <div style="flex:1;"></div>
+              <button id="${saveId}" class="action-modal-btn ok" style="display:none;"
+                onclick="saveComposeFile('${esc(d.composeProject)}','${esc(fd.composeFile)}','${editorId}','${saveId}','${statusId}')"><i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Save</button>
             </div>`;
           const ta = document.getElementById(editorId);
           if (ta) {
             const originalValue = fd.composeFileContent || '';
             ta.value = originalValue;
             _composeEditorState = { editorId, originalValue };
+            if (typeof initComposeHighlighting === 'function') {
+              ta.classList.add('syntax-enabled');
+              initComposeHighlighting(editorId);
+            }
           }
+          lucide.createIcons({ nodes: [wrap] });
         }
       } catch (e) {
         const wrap = document.getElementById(editorId + '-wrap');

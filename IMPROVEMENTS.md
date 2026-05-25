@@ -16,6 +16,12 @@
 - 🔴 **Log Rotation**  
   Implement automatic log rotation for `nas-monitor.log` to prevent disk space issues; compress old logs and keep 10 latest files
 
+- 🔴 **HTTP Access Log (`http.log`)**  
+  Dedicated HTTP request log written by the Node server with verbosity controlled by a `LOG_LEVEL` env var:
+  - `INFO` — standard logging: method, path, status code, response time
+  - `DEBUG` — all of INFO plus request headers, query params, and body size
+  - `TRACE` — full access log: everything in DEBUG plus response headers and raw request/response details
+
 ## Features & Monitoring
 
 - 🔴 **Historical Metrics**  
@@ -49,7 +55,7 @@
 - ✅ **Extract Configuration**  
   Move configuration into a separate `config.js` file for better maintainability
 
-- 🟡 **Modularize server.js**  
+- ✅ **Modularize server.js**  
   Split `server.js` into focused backend modules under `modules/`.
 
   | File | Status | Content |
@@ -92,6 +98,11 @@
   CSS (2,150 lines) and HTML modals (795 lines) could later be extracted to `styles.css` and
   partial templates, but require server assembly — lower priority than the JS split.
 
+## Integrations
+
+- 🔴 **Homepage Dashboard Widgets**  
+  Expose a widget-compatible API endpoint for [Homepage](https://gethomepage.dev) integration — surface key metrics (CPU, memory, disk, running container count) as a custom widget consumable by Homepage's service widget format
+
 ## Documentation & Packaging
 
 - 🔴 **API Versioning**  
@@ -104,6 +115,18 @@
   Create `package_info.json` for DSM Package Center
 
 ## User Experience
+
+- 🔴 **YAML Syntax Highlighting for New Files**  
+  Enable Prism.js YAML syntax highlighting in the New Compose modal (`newcompose-editor` textarea) using the same `initComposeHighlighting()` flow already implemented for the compose editor in container detail
+
+- 🔴 **Button Standardization — Container Detail Folders Tab**  
+  Audit and update all buttons in the container detail modal Folders tab to use the shared button classes (`action-modal-btn ok/cancel`, `folder-nav-btn`, etc.) per `preview/buttons.html` — no inline styles or one-off classes
+
+- 🔴 **Standardize App Colors**  
+  Audit `styles.css` to consolidate duplicate color values — same HEX used under different variable names or as inline values — into a single canonical CSS variable each. Also remove unused CSS variables and rules identified during the audit.
+
+- 🔴 **Eliminate Unused HTML & JS Code**  
+  Audit `index.html` and all `ui/*.js` modules to identify and remove dead code: unreferenced functions, orphaned HTML elements, unused event listeners, and unreachable code paths.
 
 - 🔴 **Dark Mode Toggle**  
   Add light theme option with theme preference cookie
