@@ -45,12 +45,12 @@
   <div class="log-modal">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <span class="log-live-dot"></span>
+        <i data-lucide="scroll-text" style="width:16px;height:16px;color:var(--accent);"></i>
         <span id="log-modal-title">Container Logs</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="log-autoscroll-btn on" id="log-autoscroll-btn" onclick="toggleLogAutoscroll()">⬇ Auto-scroll</button>
-        <button class="log-clear-btn" onclick="clearLogs()">✕ Clear</button>
+        <button class="list-btn autoscroll on" id="log-autoscroll-btn" onclick="toggleLogAutoscroll()"><i data-lucide="arrow-down-to-line" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Auto-Scroll</button>
+        <button class="list-btn red" onclick="clearLogs()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Clear</button>
         <button class="modal-close" onclick="closeLogModal()">✕</button>
       </div>
     </div>
@@ -69,21 +69,19 @@
   <div class="log-modal" style="width:720px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <span style="font-size:18px;">🧹</span>
+        <i data-lucide="trash-2" style="width:16px;height:16px;color:var(--red);"></i>
         <span id="prune-modal-title">Docker Cleanup — Unused Resources</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="cdetail-action-btn logs" id="prune-log-btn" onclick="openPruneLogModal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>View Prune Log</span></button>
+        <button class="list-btn blue" id="prune-log-btn" onclick="openPruneLogModal()"><i data-lucide="scroll-text" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>View Prune Log</button>
         <button class="modal-close" onclick="closePruneModal()">✕</button>
       </div>
     </div>
     <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
       <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
-      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="cdetail-action-btn logs"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg><span>Select All</span></button>
-      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn cancel">
-        🗑 System Prune
-      </button>
+      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="list-btn blue"><i data-lucide="check-circle" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Select All</button>
+      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn cancel"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
     </div>
   </div>
 </div>
@@ -848,7 +846,7 @@
     </div>
     <div class="catmgr-body" id="catmgr-body"></div>
     <div class="catmgr-footer">
-      <button class="catmgr-add-btn" onclick="openCatEditForm(null)">＋ Add new category</button>
+      <button class="catmgr-add-btn" onclick="openCatEditForm(null)"><i data-lucide="plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Add New Category</button>
     </div>
   </div>
 </div>
@@ -862,7 +860,7 @@
     </div>
     <div class="catmgr-body" id="volmgr-body"></div>
     <div class="catmgr-footer">
-      <button class="catmgr-add-btn" onclick="openDockerVolumeCreateForm()">＋ Create Volume</button>
+      <button class="catmgr-add-btn" onclick="openDockerVolumeCreateForm()"><i data-lucide="plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Create Volume</button>
     </div>
   </div>
 </div>

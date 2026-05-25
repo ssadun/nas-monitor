@@ -1064,6 +1064,17 @@
   .action-modal-btn.white:disabled {
     opacity: .35; cursor: not-allowed;
   }
+  .action-modal-btn.blue {
+    color: #477ed9;
+    border-color: rgba(71,126,217,.45);
+  }
+  .action-modal-btn.blue:hover:not(:disabled) {
+    background: rgba(71,126,217,.12);
+    border-color: #477ed9;
+  }
+  .action-modal-btn.blue:disabled {
+    opacity: .35; cursor: not-allowed;
+  }
   .action-progress { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
   .action-progress-step {
     display: flex; align-items: center; gap: 8px;
@@ -1134,18 +1145,8 @@
     background: var(--bg3); flex-shrink: 0; font-family: var(--mono); font-size: 11px;
   }
   .log-count { color: var(--text3); }
-  .log-autoscroll-btn {
-    background: none; border: 1px solid var(--border); border-radius: 4px;
-    padding: 2px 8px; cursor: pointer; font-family: var(--mono); font-size: 11px;
-    color: var(--text3); transition: all .15s;
-  }
-  .log-autoscroll-btn.on { color: var(--green); border-color: var(--green); background: rgba(34,197,94,.08); }
-  .log-clear-btn {
-    background: none; border: 1px solid var(--border); border-radius: 4px;
-    padding: 2px 8px; cursor: pointer; font-family: var(--mono); font-size: 11px;
-    color: var(--text3); transition: all .15s;
-  }
-  .log-clear-btn:hover { color: var(--red); border-color: var(--red); }
+  .list-btn.autoscroll.on { color: var(--green); border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.08); }
+  .list-btn.autoscroll.on:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
 
   /* ─── Modal / Process Detail ─────────────────────────────── */
   .modal-backdrop {
@@ -1284,8 +1285,38 @@
     cursor: not-allowed;
     pointer-events: none;
   }
+
+  /* ─── List / Table Row / In-Form Buttons ─── */
+  .list-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--mono);
+    cursor: pointer;
+    transition: all .15s;
+    border: 1px solid var(--border);
+    background: none;
+    white-space: nowrap;
+  }
+  .list-btn.blue { color: #477ed9; border-color: rgba(71,126,217,.45); }
+  .list-btn.blue:hover { background: rgba(71,126,217,.12); border-color: #477ed9; }
+  .list-btn.green { color: var(--green); border-color: rgba(34,197,94,.45); }
+  .list-btn.green:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .list-btn.red { color: var(--red); border-color: rgba(239,68,68,.45); }
+  .list-btn.red:hover { background: rgba(239,68,68,.12); border-color: var(--red); }
+  .list-btn.lavender { color: var(--lavender); border-color: rgba(139,92,246,.45); }
+  .list-btn.lavender:hover { background: rgba(139,92,246,.12); border-color: var(--lavender); }
+  .list-btn:disabled {
+    opacity: .25;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   .folder-breadcrumb-link {
-    color: #08a2bd;
+    color: var(--accent);
     font-family: var(--mono);
     font-size: 11px;
     text-decoration: underline;
@@ -1296,7 +1327,7 @@
     cursor: pointer;
   }
   .folder-breadcrumb-link:hover {
-    color: #11b9d6;
+    color: #6ba3ff;
   }
   .folder-new-input::placeholder {
     color: #545156 !important;
@@ -2219,12 +2250,13 @@
   .password-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 4px; transition: all 0.2s; }
   .password-toggle:hover { background: var(--border); color: var(--text); }
   .catedit-input {
-    background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: 7px; padding: 8px 12px; color: var(--text);
-    font-family: var(--sans); font-size: 14px; outline: none;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px 10px; color: var(--text);
+    font-family: var(--mono); font-size: 12px; outline: none;
     transition: border-color .15s; width: 100%;
   }
   .catedit-input:focus { border-color: var(--accent); }
+  .catedit-input::placeholder { color: var(--text3); }
   .catedit-icon-grid {
     display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
   }

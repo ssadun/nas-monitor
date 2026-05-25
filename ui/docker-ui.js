@@ -261,10 +261,10 @@ async function openCDetailModal(id, name, stateClass) {
               spellcheck="false"
             ></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-              <button id="${editorId}-edit" class="folder-nav-btn"
+              <button id="${editorId}-edit" class="action-modal-btn blue"
                 onclick="enableComposeEdit('${editorId}')"><i data-lucide="pencil" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Edit</button>
-              <button id="${editorId}-check" class="folder-nav-btn" style="display:none;"
-                onclick="checkComposeSyntax('${editorId}')"><i data-lucide="file-check" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Apply Compose</button>
+              <button id="${editorId}-check" class="action-modal-btn blue" style="display:none;"
+                onclick="checkComposeSyntax('${editorId}')"><i data-lucide="check" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Apply</button>
               <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
               <div style="flex:1;"></div>
               <button id="${saveId}" class="action-modal-btn ok" style="display:none;"

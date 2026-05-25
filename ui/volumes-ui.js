@@ -45,10 +45,10 @@ function renderDockerVolumesList() {
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.ownership || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.createdDate || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(containerCountText)}</td>
-      <td style="white-space:nowrap;">
-        <button class="catmgr-btn edit" onclick="openDockerVolumeDetail(${i})"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Edit</button>
-        <button class="catmgr-btn del" onclick="deleteDockerVolume(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px"></i>Delete</button>
-      </td>
+      <td style="white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:flex-end;">
+        <button class="list-btn blue" onclick="openDockerVolumeDetail(${i})"><i data-lucide="eye" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>View</button>
+        <button class="list-btn red" onclick="deleteDockerVolume(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Delete</button>
+      </div></td>
     </tr>`;
   }).join('');
 
@@ -93,10 +93,11 @@ function openDockerVolumeCreateForm() {
         <input class="filter-input netedit-input" id="volcreate-stack" placeholder="e.g. my-stack" />
       </div>
       <div class="catedit-actions">
-        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()">Cancel</button>
-        <button class="action-modal-btn ok" onclick="createDockerVolume()">Create Volume</button>
+        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+        <button class="action-modal-btn ok" onclick="createDockerVolume()"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Create Volume</button>
       </div>
     </div>`;
+  lucide.createIcons({ nodes: [body] });
 }
 
 async function createDockerVolume() {
@@ -173,10 +174,10 @@ async function openDockerVolumeDetail(idx) {
     body.innerHTML = `
       <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;">📋</span>
-          Volume details
+          <i data-lucide="clipboard-list" style="width:16px;height:16px;color:var(--accent);"></i>
+          Volume Details
         </div>
-        <button class="action-modal-btn cancel" onclick="renderDockerVolumesList()">Back</button>
+        <button class="list-btn blue" onclick="renderDockerVolumesList()"><i data-lucide="arrow-left" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Back</button>
       </div>
 
       <div style="margin-bottom:20px;">
@@ -204,8 +205,8 @@ async function openDockerVolumeDetail(idx) {
 
       <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;">
         <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;">👁</span>
-          Access control
+          <i data-lucide="shield" style="width:16px;height:16px;color:var(--accent);"></i>
+          Access Control
         </div>
       </div>
 
@@ -219,8 +220,8 @@ async function openDockerVolumeDetail(idx) {
 
       <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;">
         <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;">📦</span>
-          Containers using volume
+          <i data-lucide="package" style="width:16px;height:16px;color:var(--accent);"></i>
+          Containers Using Volume
         </div>
       </div>
 
@@ -228,6 +229,7 @@ async function openDockerVolumeDetail(idx) {
         ${containersHtml}
       </div>
     `;
+    lucide.createIcons({ nodes: [body] });
   } catch (e) {
     body.innerHTML = `<div style="text-align:center;color:var(--red);font-family:var(--mono);font-size:13px;padding:20px;">✗ ${esc(e.message)}</div>`;
   }

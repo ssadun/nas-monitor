@@ -224,20 +224,31 @@ function openCatEditForm(idx) {
         </div>
       </div>
       <div class="catedit-actions">
-        <button class="catedit-cancel" onclick="renderCatMgrList()">Cancel</button>
-        <button class="action-modal-btn ok catedit-save" onclick="saveCatEdit(${isNew ? 'null' : idx})">${isNew ? 'Add Category' : 'Save Changes'}</button>
+        <button class="action-modal-btn cancel" onclick="renderCatMgrList()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+        <button class="action-modal-btn ok" onclick="saveCatEdit(${isNew ? 'null' : idx})"><i data-lucide="check" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>${isNew ? 'Add Category' : 'Save Changes'}</button>
       </div>
     </div>`;
   // store chosen values in form dataset
   body.querySelector('.catedit-form').dataset.icon  = cat.icon;
   body.querySelector('.catedit-form').dataset.color = cat.dot;
-  lucide.createIcons({ nodes: [body.querySelector('.catedit-icon-grid')] });
+  lucide.createIcons({ nodes: [body] });
+  // apply initial color to selected icon
+  syncSelectedIconColor(cat.dot);
 }
 
 function selectCatIcon(btn, icon) {
-  document.querySelectorAll('.catedit-icon-btn').forEach(b => b.classList.remove('selected'));
+  // reset inline styles on previously selected icon
+  document.querySelectorAll('.catedit-icon-btn').forEach(b => {
+    b.classList.remove('selected');
+    b.style.borderColor = '';
+    b.style.color = '';
+    b.style.background = '';
+  });
   btn.classList.add('selected');
   document.querySelector('.catedit-form').dataset.icon = icon;
+  // apply current color to selected icon
+  const currentColor = document.querySelector('.catedit-form').dataset.color;
+  if (currentColor) syncSelectedIconColor(currentColor);
 }
 
 function selectCatColor(el, color) {
@@ -249,6 +260,17 @@ function selectCatColor(el, color) {
   const swatch   = document.getElementById('catedit-hex-swatch');
   if (hexInput) { hexInput.value = color.toUpperCase(); hexInput.classList.remove('invalid'); }
   if (swatch)   swatch.style.background = color;
+  // sync selected icon color
+  syncSelectedIconColor(color);
+}
+
+function syncSelectedIconColor(color) {
+  const selectedIcon = document.querySelector('.catedit-icon-btn.selected');
+  if (selectedIcon) {
+    selectedIcon.style.borderColor = color;
+    selectedIcon.style.color = color;
+    selectedIcon.style.background = color + '33'; // 20% opacity
+  }
 }
 
 function syncHexInput(input) {
@@ -269,6 +291,8 @@ function syncHexInput(input) {
     const match = document.querySelector(`.catedit-color-btn[style*="${full.toLowerCase()}"], .catedit-color-btn[style*="${full.toUpperCase()}"]`);
     document.querySelectorAll('.catedit-color-btn').forEach(b => b.classList.remove('selected'));
     if (match) match.classList.add('selected');
+    // sync selected icon color
+    syncSelectedIconColor(full);
   }
 }
 

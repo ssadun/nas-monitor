@@ -50,22 +50,22 @@ function renderImageUpdatesBody() {
 
   function renderRow(r) {
     const statusHtml = r.error
-      ? `<span title="${esc(r.error)}" style="color:var(--text3);font-size:12px;font-family:var(--mono);">⚠ ${esc(r.error.slice(0, 40))}${r.error.length > 40 ? '…' : ''}</span>`
+      ? `<span title="${esc(r.error)}" style="color:var(--text3);font-size:11px;font-family:var(--mono);">⚠ ${esc(r.error.slice(0, 40))}${r.error.length > 40 ? '…' : ''}</span>`
       : r.updateAvailable
-        ? `<span style="color:var(--yellow);font-family:var(--mono);font-size:12px;font-weight:600;">● Update Available</span>`
-        : `<span style="color:var(--green);font-family:var(--mono);font-size:12px;">✓ Up To Date</span>`;
+        ? `<span style="color:var(--yellow);font-family:var(--mono);font-size:11px;font-weight:600;">● Update Available</span>`
+        : `<span style="color:var(--green);font-family:var(--mono);font-size:11px;">✓ Up To Date</span>`;
 
     const ctrNames = (r.containers || []).filter(Boolean).join(', ');
 
     const actionBtns = r.updateAvailable
       ? `<div style="display:flex;gap:6px;justify-content:flex-end;">
-           <button class="action-modal-btn ok" style="padding:3px 10px;font-size:12px;" onclick="imgUpdatePull('${esc(r.image)}', false)">Pull</button>
-           <button class="action-modal-btn lavender" style="padding:3px 10px;font-size:12px;" onclick="imgUpdatePull('${esc(r.image)}', true, ${JSON.stringify(r.containers || []).replace(/"/g, '&quot;')})">Pull &amp; Restart</button>
+           <button class="list-btn green" onclick="imgUpdatePull('${esc(r.image)}', false)"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Pull</button>
+           <button class="list-btn lavender" onclick="imgUpdatePull('${esc(r.image)}', true, ${JSON.stringify(r.containers || []).replace(/"/g, '&quot;')})"><i data-lucide="refresh-cw" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Pull &amp; Restart</button>
          </div>`
       : '';
 
     return `<div class="imgupdate-row" style="display:grid;grid-template-columns:1fr 90px 90px 160px 120px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(42,47,74,.25);" title="${ctrNames ? 'Containers: ' + esc(ctrNames) : ''}">
-      <span style="font-family:var(--mono);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.image)}">${esc(r.image)}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.image)}">${esc(r.image)}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">${esc(r.registry || '–')}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--accent);">${esc(r.tag || 'latest')}</span>
       <span>${statusHtml}</span>
@@ -80,6 +80,7 @@ function renderImageUpdatesBody() {
   ].join('');
 
   el('imgupdate-body').innerHTML = header + (rows || `<div style="padding:30px;text-align:center;color:var(--text3);font-size:13px;">No images found.</div>`);
+  lucide.createIcons({ nodes: [el('imgupdate-body')] });
 }
 
 async function imgUpdatePull(image, restart, containers) {

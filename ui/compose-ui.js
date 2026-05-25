@@ -101,10 +101,11 @@ function renderFoldersTab(containerName, containerId, data) {
         <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
           No data folder found. Create it to resolve missing-volume errors during Compose Up.
         </div>
-        <button class="folder-nav-btn"
-          onclick="createDataFolderAt('${encodedName}','${containerId}','',[])">＋ Create Data Folder</button>
+        <button class="list-btn blue"
+          onclick="createDataFolderAt('${encodedName}','${containerId}','',[])"><i data-lucide="folder-plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Create Data Folder</button>
         <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>
       </div>`;
+    lucide.createIcons({ nodes: [content] });
     return;
   }
 
@@ -114,50 +115,51 @@ function renderFoldersTab(containerName, containerId, data) {
       <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
         Current folder does not exist anymore.
         <div style="margin-top:8px;">
-          <button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')">↩ Go Up</button>
+          <button class="list-btn blue" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
         </div>
       </div>
       <div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
+    lucide.createIcons({ nodes: [content] });
     return;
   }
 
   const parentPath = getFolderParentPath(currentPath);
   const controls = `
     <div style="display:flex;align-items:center;gap:8px;margin:10px 0 12px;">
-      <button class="folder-nav-btn" ${currentPath ? '' : 'disabled'} onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')">↩ Up</button>
-      <button class="folder-nav-btn" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}')">⟳ Refresh</button>
+      <button class="list-btn blue" ${currentPath ? '' : 'disabled'} onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
+      <button class="list-btn blue" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}')"><i data-lucide="refresh-cw" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Refresh</button>
                   <input id="new-subfolder-${containerId}" class="filter-input" type="text" placeholder="new folder name"
         style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;
                padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none;"
         onkeydown="if(event.key==='Enter')createDataFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[this.value])"/>
-      <button class="folder-nav-btn"
-        onclick="createDataFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[document.getElementById('new-subfolder-${containerId}').value])">＋ Add Folder</button>
+      <button class="list-btn blue"
+        onclick="createDataFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[document.getElementById('new-subfolder-${containerId}').value])"><i data-lucide="folder-plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Add Folder</button>
     </div>`;
 
   const rows = (data.entries || []).map(entry => {
     const isDir = entry.type === 'dir';
     const targetPath = joinFolderPath(currentPath, entry.name);
     const nameCellHtml = isDir
-      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder">📁 ${esc(entry.name)}</button>`
-      : `📄 ${esc(entry.name)}`;
+      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
+      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
     const openBtn = isDir
-      ? `<button class="folder-nav-btn open" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Open</button>`
+      ? `<button class="list-btn blue" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="external-link" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Open</button>`
       : '';
     const renameBtn = isDir
-      ? `<button class="folder-nav-btn rename" onclick="renameDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Rename</button>`
+      ? `<button class="list-btn blue" onclick="renameDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Rename</button>`
       : '';
     const deleteBtn = isDir
-      ? `<button class="folder-nav-btn delete" onclick="deleteDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')">Delete</button>`
+      ? `<button class="list-btn red" onclick="deleteDataFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Delete</button>`
       : '';
     const downloadBtn = !isDir
-      ? `<button class="folder-nav-btn download" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')">Download</button>`
+      ? `<button class="list-btn green" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Download</button>`
       : '';
     return `<tr>
-      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${nameCellHtml}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${isDir ? 'Folder' : 'File'}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
-      <td style="white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
+      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
+      <td style="white-space:nowrap;vertical-align:middle;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
     </tr>`;
   }).join('');
 
@@ -170,6 +172,7 @@ function renderFoldersTab(containerName, containerId, data) {
     + controls
     + tableHtml
     + `<div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
+  lucide.createIcons({ nodes: [content] });
 }
 
 async function createDataFolderAt(encodedName, containerId, encodedParentPath, subfolders) {
