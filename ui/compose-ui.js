@@ -49,6 +49,35 @@ async function loadFoldersTab(containerName, containerId, subpath = null) {
   }
 }
 
+async function loadConfigFolderTab(containerName, containerId) {
+  const content = document.getElementById(`configfolder-content-${containerId}`);
+  if (!content) return;
+  content.innerHTML = `<span style="font-family:var(--mono);font-size:13px;">⟳ Loading…</span>`;
+  try {
+    const res = await fetch('/api/container/config-folders?' + new URLSearchParams({ name: containerName }).toString());
+    const data = await res.json();
+    renderConfigFolderTab(containerId, data);
+  } catch (e) {
+    content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+function renderConfigFolderTab(containerId, data) {
+  const content = document.getElementById(`configfolder-content-${containerId}`);
+  if (!content) return;
+  if (!data || !data.ok) {
+    content.innerHTML = `<div style="color:var(--text3);font-family:var(--mono);font-size:13px;">No configuration folder configured for this container.</div>`;
+    return;
+  }
+  content.innerHTML = `
+    <div class="cdetail-key" style="margin-bottom:8px;">CONFIGURATION FOLDER</div>
+    <code style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(data.path)}</code>
+    <span class="status-dot ${data.exists ? 'running' : 'exited'}"
+      style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
+    <span style="font-family:var(--mono);font-size:12px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
+  `;
+}
+
 function openFolderPath(encodedName, containerId, encodedSubpath) {
   loadFoldersTab(decodeFolderArg(encodedName), containerId, decodeFolderArg(encodedSubpath));
 }

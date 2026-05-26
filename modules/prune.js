@@ -175,28 +175,38 @@ async function runPrune(selected) {
 
   if (selected.pruneSystem) {
     // ── Step 1: system prune (images, containers, networks, build cache) ──
+    logLines.push(`[SYSTEM PRUNE] Running: docker system prune -a --force`);
     try {
       const { stdout, stderr } = await execAsync(
         `"${DOCKER}" system prune -a --force`, { timeout: 120000 }
       );
       const out = (stdout + stderr).trim();
-      logLines.push(`SYSTEM PRUNE:\n${out}`);
+      if (out) {
+        out.split('\n').forEach(line => {
+          if (line.trim()) logLines.push(`[SYSTEM] ${line}`);
+        });
+      }
       summary.pruneOutput = out;
     } catch (e) {
-      const msg = `SYSTEM PRUNE FAILED: ${e.message}`;
+      const msg = `[SYSTEM PRUNE] FAILED: ${e.message}`;
       logLines.push(msg); summary.errors.push(msg);
     }
 
     // ── Step 2: volume prune separately (--volumes flag not supported on older Docker) ──
+    logLines.push(`[VOLUME PRUNE] Running: docker volume prune -a --force`);
     try {
       const { stdout, stderr } = await execAsync(
         `"${DOCKER}" volume prune -a --force`, { timeout: 60000 }
       );
       const volOut = (stdout + stderr).trim();
-      logLines.push(`VOLUME PRUNE:\n${volOut}`);
+      if (volOut) {
+        volOut.split('\n').forEach(line => {
+          if (line.trim()) logLines.push(`[VOLUME] ${line}`);
+        });
+      }
       summary.pruneOutput += (summary.pruneOutput ? '\n' : '') + volOut;
     } catch (e) {
-      const msg = `VOLUME PRUNE FAILED: ${e.message}`;
+      const msg = `[VOLUME PRUNE] FAILED: ${e.message}`;
       logLines.push(msg); summary.errors.push(msg);
     }
   }

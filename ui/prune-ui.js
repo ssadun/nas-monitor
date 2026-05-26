@@ -21,10 +21,10 @@ function renderPruneBody() {
   const total = images.length + networks.length + volumes.length + buildCache.length;
 
   el('prune-confirm-btn').disabled = total === 0;
-  el('prune-select-all-btn').style.display = 'none';
 
   if (total === 0) {
-    el('prune-body').innerHTML = `<div style="padding:40px;text-align:center;font-size:28px;">✅<br><span style="font-size:14px;color:var(--green);font-family:var(--mono);">Nothing to clean up!</span></div>`;
+    el('prune-body').innerHTML = `<div style="padding:40px;text-align:center;"><i data-lucide="circle-check" style="width:32px;height:32px;color:var(--green);"></i><br><span style="font-size:14px;color:var(--green);font-family:var(--mono);">Nothing to clean up!</span></div>`;
+    lucide.createIcons({ nodes: [el('prune-body')] });
     el('prune-summary').textContent = 'Everything is tidy.';
     return;
   }
@@ -77,25 +77,26 @@ function renderPruneBody() {
     </div>
     ${images.length ? `
     <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
-      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🖼 Images (${images.length})</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:6px;"><i data-lucide="layers" style="width:12px;height:12px;color:var(--lavender);"></i>Images (${images.length})</span>
     </div>
     ${imageRows(images)}` : ''}
     ${networks.length ? `
     <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
-      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🌐 Networks (${networks.length})</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:6px;"><i data-lucide="cable" style="width:12px;height:12px;color:var(--coral);"></i>Networks (${networks.length})</span>
     </div>
     ${networkRows(networks)}` : ''}
     ${volumes.length ? `
     <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);">
-      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">💾 Volumes (${volumes.length})</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:6px;"><i data-lucide="hard-drive" style="width:12px;height:12px;color:var(--yellow);"></i>Volumes (${volumes.length})</span>
     </div>
     ${volumeRows(volumes)}` : ''}
     ${buildCache.length ? `
     <div style="padding:8px 16px 4px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">🔨 Build Cache (${buildCache.length})</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:6px;"><i data-lucide="hammer" style="width:12px;height:12px;color:var(--orange);"></i>Build Cache (${buildCache.length})</span>
       ${buildCacheTotal ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Total: <span style="color:var(--accent);">${esc(buildCacheTotal)}</span>${buildCacheReclaimable ? `  ·  Reclaimable: <span style="color:var(--green);">${esc(buildCacheReclaimable)}</span>` : ''}</span>` : ''}
     </div>
     ${buildCacheRows(buildCache)}` : ''}`;
+  lucide.createIcons({ nodes: [el('prune-body')] });
 }
 
 function networkRows(items) {
@@ -184,11 +185,12 @@ async function confirmPrune() {
       const out = data.summary.pruneOutput || '';
       const reclaimedLine = out.split('\n').find(l => l.toLowerCase().includes('reclaimed')) || '';
       el('prune-body').innerHTML = `<div style="padding:30px 20px;text-align:center;">
-        <div style="font-size:28px;margin-bottom:10px;">✅</div>
+        <div style="margin-bottom:10px;"><i data-lucide="circle-check" style="width:32px;height:32px;color:var(--green);"></i></div>
         <div style="font-size:14px;color:var(--green);font-family:var(--mono);margin-bottom:${reclaimedLine?'8px':'0'};">System prune complete.</div>
         ${reclaimedLine ? `<div style="font-size:12px;color:var(--accent);font-family:var(--mono);">${esc(reclaimedLine.trim())}</div>` : ''}
         ${data.summary.errors && data.summary.errors.length ? `<div style="color:var(--red);font-size:12px;margin-top:8px;">${data.summary.errors.length} error(s) — see log.</div>` : ''}
       </div>`;
+      lucide.createIcons({ nodes: [el('prune-body')] });
       el('prune-summary').textContent = 'Prune complete.';
       el('prune-confirm-btn').textContent = '✓ Done';
       el('prune-confirm-btn').disabled = false;
@@ -206,7 +208,6 @@ function closePruneModal() {
   el('prune-confirm-btn').textContent = '🗑 System Prune';
   el('prune-confirm-btn').disabled = false;
   el('prune-confirm-btn').onclick = confirmPrune;
-  el('prune-select-all-btn').textContent = '☑ Select All';
 }
 
 async function openPruneLogModal() {
@@ -223,7 +224,17 @@ async function openPruneLogModal() {
     el('prune-log-body').innerHTML = lines.map(line => {
       const isSep    = line.includes('===');
       const isErr    = line.toLowerCase().includes('fail') || line.toLowerCase().includes('error');
-      const color    = isSep ? 'var(--accent)' : isErr ? 'var(--red)' : 'var(--text)';
+      const isSystem = line.includes('[SYSTEM');
+      const isVolume = line.includes('[VOLUME');
+      const isDeleted = line.toLowerCase().includes('deleted') || line.toLowerCase().includes('removed');
+      const isReclaim = line.toLowerCase().includes('reclaim') || line.toLowerCase().includes('total');
+      let color = 'var(--text)';
+      if (isSep) color = 'var(--accent)';
+      else if (isErr) color = 'var(--red)';
+      else if (isSystem) color = 'var(--lavender)';
+      else if (isVolume) color = 'var(--yellow)';
+      else if (isDeleted) color = 'var(--green)';
+      else if (isReclaim) color = 'var(--cyan)';
       return `<div style="color:${color};padding:1px 0;border-bottom:1px solid rgba(42,47,74,.2);">${esc(line)}</div>`;
     }).join('');
   } catch (e) {
@@ -235,14 +246,6 @@ function closePruneLogModal() {
   el('prune-log-modal').classList.remove('open');
 }
 
-el('prune-modal').addEventListener('click', e => { if (e.target === el('prune-modal')) closePruneModal(); });
-el('prune-log-modal').addEventListener('click', e => { if (e.target === el('prune-log-modal')) closePruneLogModal(); });
-el('cdetail-modal').addEventListener('click', e => {
-  if (e.target !== el('cdetail-modal')) return;
-  const composePanel = el('cdetail-panel-compose');
-  if (composePanel && composePanel.style.display !== 'none') return;
-  closeCDetailModal();
-});
 
 let _composeEditorState = { editorId: '', originalValue: '' };
 let _composeDismissResolver = null;

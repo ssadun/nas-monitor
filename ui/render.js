@@ -577,22 +577,22 @@ let _actionPending = null; // { action, id, name }
 let _composeUpAbortController = null;
 
 const ACTION_META = {
-  start:   { icon: '▶', label: 'Start Container',   color: 'var(--green)',  btnBg: '#16a34a',
+  start:   { icon: 'play',       label: 'Start Container',   color: 'var(--green)',  btnClass: 'ok',
               desc: c => `Start container <strong>${esc(c)}</strong>?`,
               steps: ['Sending start command…', 'Waiting for container to start…', 'Done'] },
-  composeUp:{ icon: '▲', label: 'Compose Up',        color: 'var(--accent)',   btnBg: '#0891b2',
+  composeUp:{ icon: 'arrow-up-circle', label: 'Compose Up',  color: 'var(--accent)', btnClass: 'ok',
               desc: c => `Run <strong>docker compose up -d</strong> for <strong>${esc(c)}</strong>?`,
               steps: ['Reading compose project…', 'Running docker compose up -d…', 'Done'] },
-  restart: { icon: '↺', label: 'Restart Container', color: 'var(--yellow)', btnBg: '#ca8a04',
+  restart: { icon: 'rotate-cw',  label: 'Restart Container', color: 'var(--orange)', btnClass: 'restart',
               desc: c => `Restart container <strong>${esc(c)}</strong>? It will briefly go offline.`,
               steps: ['Sending restart command…', 'Waiting for container to come back up…', 'Done'] },
-  stop:    { icon: '■', label: 'Stop Container',    color: 'var(--orange)', btnBg: '#ea580c',
+  stop:    { icon: 'square',     label: 'Stop Container',    color: 'var(--yellow)', btnClass: 'stop',
               desc: c => `Stop container <strong>${esc(c)}</strong>? Running processes inside will be terminated.`,
               steps: ['Sending stop command…', 'Waiting for container to stop…', 'Done'] },
-  archive: { icon: '🗄', label: 'Archive Compose',   color: 'var(--accent)', btnBg: '#2563eb',
+  archive: { icon: 'archive',    label: 'Archive Compose',   color: 'var(--orange)', btnClass: 'ok',
               desc: c => `Archive compose config for <strong>${esc(c)}</strong>?<br><span style="font-size:12px;">This moves files from <code>/volume1/docker/_config/&lt;project&gt;</code> to <code>/volume1/docker/_backups/&lt;project&gt;</code>.</span>`,
               steps: ['Preparing archive target…', 'Moving compose files to backup…', 'Done'] },
-  delete:  { icon: '🗑', label: 'Delete Container',  color: 'var(--red)',    btnBg: '#dc2626',
+  delete:  { icon: 'trash-2',    label: 'Delete Container',  color: 'var(--red)',    btnClass: 'cancel',
               desc: c => `Permanently delete container <strong>${esc(c)}</strong>?<br><span style="color:var(--red);font-size:12px;">⚠ This cannot be undone. The container will be stopped and removed.</span>`,
               steps: ['Stopping container…', 'Removing container…', 'Done'] },
 };
@@ -762,20 +762,29 @@ function openActionModal(action, id, name, extra = {}) {
   const meta = ACTION_META[action];
   const isDeleteAction = action === 'delete';
   el('action-modal').classList.toggle('composeup-large', action === 'composeUp');
-  el('action-modal-icon').textContent    = meta.icon;
+
+  // Set title icon using lucide
+  const iconEl = el('action-modal-icon');
+  iconEl.innerHTML = `<i data-lucide="${meta.icon}" style="width:16px;height:16px;color:${meta.color};"></i>`;
+
   el('action-modal-title').textContent   = meta.label;
   el('action-modal-container').textContent = name + '  ·  ' + id;
   el('action-modal-desc').innerHTML      = meta.desc(name);
-  el('action-modal-confirm').textContent = meta.label;
-  el('action-modal-confirm').dataset.action = action;
-  el('action-modal-confirm').style.background = '';
-  el('action-modal-confirm').style.borderColor = isDeleteAction ? 'var(--red)' : '';
-  el('action-modal-confirm').style.color = isDeleteAction ? 'var(--red)' : '';
-  el('action-modal-confirm').disabled    = false;
+
+  // Set confirm button with icon and proper class
+  const confirmBtn = el('action-modal-confirm');
+  confirmBtn.className = `action-modal-btn ${meta.btnClass}`;
+  confirmBtn.innerHTML = `<i data-lucide="${meta.icon}" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>${meta.label}`;
+  confirmBtn.dataset.action = action;
+  confirmBtn.disabled = false;
+
   el('action-modal-cancel').style.display = isDeleteAction ? 'none' : '';
   el('action-modal-close').style.display  = '';
   el('action-progress').innerHTML = '';
   el('action-modal').classList.add('open');
+
+  // Initialize lucide icons in the modal
+  lucide.createIcons({ nodes: [el('action-modal')] });
 }
 
 function addProgressStep(text, state = 'active') {

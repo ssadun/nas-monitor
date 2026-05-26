@@ -90,6 +90,20 @@ Every modal and form must use these shared classes — no inline styles or one-o
 - **Lavender**: `class="action-modal-btn lavender"` — #8b5cf6 tint border/hover
 - **White**: `class="action-modal-btn white"` — #f2ffff tint border/hover
 
+### Module icons
+
+Each module has a designated lucide icon. **When changing a module's icon, update ALL occurrences**: sidebar item, modal title(s), and any related log modals.
+
+| Module | Icon | Color | Locations |
+|--------|------|-------|-----------|
+| New Compose | `file-plus` | green | sidebar |
+| Archive Browser | `archive` | orange | sidebar, modal title |
+| Categories | `folder-open` | coral | sidebar, modal title |
+| Volumes | `hard-drive` | yellow | sidebar, modal title |
+| Image Updates | `arrow-up-circle` | lavender | sidebar, modal title, log modal |
+| Prune | `archive-x` | red | sidebar, modal title, log modal |
+| Networks | `cable` | coral | sidebar, modal title |
+
 ## Planned improvements (IMPROVEMENTS.md)
 
 Pending items to be aware of when working on related areas:

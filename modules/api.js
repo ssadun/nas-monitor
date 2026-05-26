@@ -223,11 +223,16 @@ function handlePruneLog(req, res) {
 
 // ─── /api/image-updates ──────────────────────────────────────────────────────
 
-async function handleImageUpdateScan(req, res) {
+async function handleImageUpdateScan(req, res, reqUser) {
+  _imageUpdates.appendLog([`USER SCAN  user=${reqUser || 'unknown'}`]);
   try {
     const data = await _imageUpdates.scanUpdates();
+    const updates = data.filter(r => r.updateAvailable).length;
+    const errors = data.filter(r => r.error).length;
+    _imageUpdates.appendLog([`SCAN OK    ${data.length} images checked, ${updates} updates, ${errors} errors`]);
     jsonOk(res, { ok: true, results: data });
   } catch (e) {
+    _imageUpdates.appendLog([`SCAN FAIL  ${e.message}`]);
     jsonOk(res, { ok: false, error: e.message });
   }
 }
@@ -237,6 +242,8 @@ async function handleImageUpdatePull(req, res, reqUser) {
   try {
     const { image, restart, containers } = JSON.parse(body);
     if (!image) { jsonOk(res, { ok: false, error: 'image required' }); return; }
+    const action = restart ? 'PULL+RESTART' : 'PULL';
+    _imageUpdates.appendLog([`USER ${action}  user=${reqUser || 'unknown'} image=${image}`]);
     const result = await _imageUpdates.pullImage(image);
     if (result.ok && restart && Array.isArray(containers)) {
       const restartResults = [];
@@ -248,8 +255,10 @@ async function handleImageUpdatePull(req, res, reqUser) {
             resolve(docker.runDocker ? docker.runDocker(`restart ${ctr}`) : '');
           });
           restartResults.push({ container: ctr, ok: true });
+          _imageUpdates.appendLog([`RESTART OK  container=${ctr}`]);
         } catch (e) {
           restartResults.push({ container: ctr, ok: false, error: e.message });
+          _imageUpdates.appendLog([`RESTART FAIL  container=${ctr} error=${e.message}`]);
         }
       }
       result.restartResults = restartResults;
@@ -257,6 +266,7 @@ async function handleImageUpdatePull(req, res, reqUser) {
     _auditLog('image_pull', { user: reqUser, image, restart: !!restart, status: result.ok ? 'success' : 'failed' }, req);
     jsonOk(res, result);
   } catch (e) {
+    _imageUpdates.appendLog([`PULL ERROR  image=${image || 'unknown'} error=${e.message}`]);
     jsonOk(res, { ok: false, error: e.message });
   }
 }
@@ -298,8 +308,8 @@ async function handleSettingsPost(req, res, reqUser, saveSettingsFile, prune) {
       warnThresholdSeconds: updated.warnThresholdSeconds,
       pruneIntervalHours: updated.pruneIntervalHours,
       composeInactivityTimeoutSeconds: updated.composeInactivityTimeoutSeconds,
-      dockerConfigFolder: updated.dockerConfigFolder,
-      dockerDataFolder: updated.dockerDataFolder,
+      configFolders: updated.configFolders,
+      dataFolders: updated.dataFolders,
     });
     if (previous.authenticationType !== updated.authenticationType) {
       _logInfo('Authentication mode changed', { previous: previous.authenticationType, current: updated.authenticationType });
@@ -554,7 +564,7 @@ async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CRED
   if (pathname === '/api/prune/scan')                                   { await handlePruneScan(req, res); return true; }
   if (pathname === '/api/prune/run' && method === 'POST')               { await handlePruneRun(req, res, reqUser); return true; }
   if (pathname === '/api/prune/log')                                    { handlePruneLog(req, res); return true; }
-  if (pathname === '/api/image-updates/scan')                           { await handleImageUpdateScan(req, res); return true; }
+  if (pathname === '/api/image-updates/scan')                           { await handleImageUpdateScan(req, res, reqUser); return true; }
   if (pathname === '/api/image-updates/pull' && method === 'POST')      { await handleImageUpdatePull(req, res, reqUser); return true; }
   if (pathname === '/api/image-updates/log')                            { handleImageUpdateLog(req, res); return true; }
   if (pathname === '/api/settings' && method === 'GET')                 { handleSettingsGet(req, res); return true; }

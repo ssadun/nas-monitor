@@ -212,7 +212,8 @@ async function openCDetailModal(id, name, stateClass) {
     const tabBar = `<div class="cdetail-tabs">
       <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Container Status</button>
       ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')"><i data-lucide="file-code" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Compose File</button>` : ''}
-      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Folders</button>
+      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Data Folders</button>
+      <button class="cdetail-tab" data-tab="configfolder" onclick="switchCDetailTab('configfolder')"><i data-lucide="settings" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Configuration Folder</button>
     </div>`;
 
     el('cdetail-body').innerHTML = tabBar
@@ -227,12 +228,16 @@ async function openCDetailModal(id, name, stateClass) {
           : '')
       + `<div class="cdetail-tab-panel" id="cdetail-panel-folders" style="display:none">`
       + `<div id="folders-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `</div>`
+      + `<div class="cdetail-tab-panel" id="cdetail-panel-configfolder" style="display:none">`
+      + `<div id="configfolder-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`;
 
     lucide.createIcons({ nodes: [el('cdetail-body')] });
 
-    // ── Folders tab ──
+    // ── Folders tabs ──
     loadFoldersTab(d.name, cid);
+    loadConfigFolderTab(d.name, cid);
 
     // ── compose.yaml editor (compose-managed containers only) ──
     if (composeBacked) {

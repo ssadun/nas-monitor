@@ -18,8 +18,8 @@ const LOG_LEVELS = { DEBUG: 10, INFO: 20, WARN: 30, ERROR: 40 };
  * @property {number} warnThresholdSeconds
  * @property {number} pruneIntervalHours
  * @property {number} composeInactivityTimeoutSeconds
- * @property {string} dockerConfigFolder
- * @property {string} dockerDataFolder
+ * @property {string[]} configFolders
+ * @property {string[]} dataFolders
  * @property {number} refreshIntervalSeconds
  * @property {number} imageUpdateIntervalHours
  * @property {boolean} imageUpdateAutoApply
@@ -34,8 +34,8 @@ const DEFAULT_SETTINGS = {
   warnThresholdSeconds: 3,
   pruneIntervalHours: 24,
   composeInactivityTimeoutSeconds: 120,
-  dockerConfigFolder: '/volume1/docker/_config',
-  dockerDataFolder: '/volume1/docker/_data',
+  configFolders: [],
+  dataFolders: [],
   refreshIntervalSeconds: 3,
   imageUpdateIntervalHours: 24,
   imageUpdateAutoApply: false,
@@ -55,8 +55,18 @@ function normalizeSettings(raw = {}) {
   const pruneHoursNum = Number(pruneHoursRaw);
   const composeInactivityRaw = raw.composeInactivityTimeoutSeconds ?? DEFAULT_SETTINGS.composeInactivityTimeoutSeconds;
   const composeInactivityNum = Number(composeInactivityRaw);
-  const dockerConfigFolder = String(raw.dockerConfigFolder || DEFAULT_SETTINGS.dockerConfigFolder).trim() || DEFAULT_SETTINGS.dockerConfigFolder;
-  const dockerDataFolder = String(raw.dockerDataFolder || DEFAULT_SETTINGS.dockerDataFolder).trim() || DEFAULT_SETTINGS.dockerDataFolder;
+  // Handle folder arrays with backward compatibility for old single-folder settings
+  let configFolders = Array.isArray(raw.configFolders) ? raw.configFolders.filter(f => typeof f === 'string' && f.trim()) : [];
+  let dataFolders = Array.isArray(raw.dataFolders) ? raw.dataFolders.filter(f => typeof f === 'string' && f.trim()) : [];
+  // Migrate old single-folder settings
+  if (!configFolders.length && raw.dockerConfigFolder) {
+    const folder = String(raw.dockerConfigFolder).trim();
+    if (folder) configFolders = [folder];
+  }
+  if (!dataFolders.length && raw.dockerDataFolder) {
+    const folder = String(raw.dockerDataFolder).trim();
+    if (folder) dataFolders = [folder];
+  }
   const refreshIntervalRaw = raw.refreshIntervalSeconds ?? DEFAULT_SETTINGS.refreshIntervalSeconds;
   const refreshIntervalNum = Number(refreshIntervalRaw);
   const imgUpdateHoursRaw = raw.imageUpdateIntervalHours ?? DEFAULT_SETTINGS.imageUpdateIntervalHours;
@@ -71,8 +81,8 @@ function normalizeSettings(raw = {}) {
     composeInactivityTimeoutSeconds: Number.isFinite(composeInactivityNum) && composeInactivityNum > 0
       ? composeInactivityNum
       : DEFAULT_SETTINGS.composeInactivityTimeoutSeconds,
-    dockerConfigFolder,
-    dockerDataFolder,
+    configFolders,
+    dataFolders,
     refreshIntervalSeconds: Number.isFinite(refreshIntervalNum) && refreshIntervalNum >= 1 && refreshIntervalNum <= 60
       ? refreshIntervalNum
       : DEFAULT_SETTINGS.refreshIntervalSeconds,

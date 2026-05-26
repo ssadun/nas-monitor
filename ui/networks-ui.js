@@ -36,8 +36,8 @@ function renderNetworkMgrList() {
         <div style="color:var(--text3);font-size:11px;margin-top:2px;">${esc(net.driver || 'unknown')} · ${net.containers ? net.containers.length + ' containers' : 'no containers'}</div>
       </div>
       <div class="catmgr-row-actions">
-        <button class="catmgr-btn edit" onclick="openNetworkEditForm(${i})">Edit</button>
-        <button class="catmgr-btn del"  onclick="openNetworkDeleteModal(${i})">Delete</button>
+        <button class="catmgr-btn edit" onclick="openNetworkEditForm(${i})"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Edit</button>
+        <button class="catmgr-btn del"  onclick="openNetworkDeleteModal(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Delete</button>
       </div>
     </div>
   `).join('');
@@ -69,11 +69,12 @@ function openNetworkEditForm(idx) {
         <input class="filter-input netedit-input" id="netedit-subnet" placeholder="e.g. 172.20.0.0/16" value="${esc(net.subnet || '')}"/>
       </div>
       <div class="catedit-actions">
-        <button class="action-modal-btn cancel" onclick="renderNetworkMgrList()">Cancel</button>
-        <button class="action-modal-btn ok" onclick="saveNetwork(${isNew ? 'null' : idx})">${isNew ? 'Create Network' : 'Update Network'}</button>
+        <button class="action-modal-btn cancel" onclick="renderNetworkMgrList()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+        <button class="action-modal-btn ok" onclick="saveNetwork(${isNew ? 'null' : idx})"><i data-lucide="${isNew ? 'plus' : 'save'}" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>${isNew ? 'Create Network' : 'Update Network'}</button>
       </div>
     </div>
   `;
+  lucide.createIcons({ nodes: [body] });
 }
 
 async function saveNetwork(idx) {
@@ -119,10 +120,11 @@ function openNetworkDeleteModal(idx) {
   el('net-delete-desc').innerHTML = `Permanently delete network <strong>${esc(net.name)}</strong>?<br><span style="color:var(--red);font-size:12px;">⚠ This cannot be undone.${containers > 0 ? ` ${containers} connected container(s) will be disconnected.` : ''}</span>`;
   el('net-delete-progress').innerHTML = '';
   const btn = el('net-delete-confirm');
-  btn.textContent = 'Delete Network';
+  btn.innerHTML = '<i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Delete Permanently';
   btn.disabled = false;
   btn.dataset.mode = 'delete';
   el('net-delete-modal').classList.add('open');
+  lucide.createIcons({ nodes: [btn] });
 }
 
 function closeNetworkDeleteModal(e) {
@@ -154,25 +156,28 @@ async function confirmDeleteNetwork() {
     
     if (!res.ok || !data.ok) {
       updateStep(step, 'error', data.error || 'Failed to delete network');
-      btn.textContent = 'Close';
+      btn.innerHTML = '<i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Close';
       btn.dataset.mode = 'close';
       btn.disabled = false;
+      lucide.createIcons({ nodes: [btn] });
       return;
     }
 
     updateStep(step, 'done', 'Network deleted');
-    btn.textContent = 'Close';
+    btn.innerHTML = '<i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Close';
     btn.dataset.mode = 'close';
     btn.disabled = false;
-    
+    lucide.createIcons({ nodes: [btn] });
+
     // Reload and refresh UI
     await openNetworkMgr();
   } catch (e) {
     console.error('Failed to delete network:', e);
     updateStep(step, 'error', 'Error deleting network: ' + e.message);
-    btn.textContent = 'Close';
+    btn.innerHTML = '<i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Close';
     btn.dataset.mode = 'close';
     btn.disabled = false;
+    lucide.createIcons({ nodes: [btn] });
   }
 }
 

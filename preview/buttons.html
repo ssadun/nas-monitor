@@ -78,6 +78,14 @@
     color: var(--white); border-color: rgba(242,255,255,.45);
   }
   .action-modal-btn.white:hover { background: rgba(242,255,255,.12); border-color: var(--white); }
+  .action-modal-btn.restart {
+    color: var(--orange); border-color: rgba(249,115,22,.45);
+  }
+  .action-modal-btn.restart:hover { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .action-modal-btn.stop {
+    color: var(--yellow); border-color: rgba(234,179,8,.45);
+  }
+  .action-modal-btn.stop:hover { background: rgba(234,179,8,.12); border-color: var(--yellow); }
 
   .newcompose-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -161,6 +169,16 @@
     <button class="action-modal-btn cancel"><i data-lucide="x" class="icon-style"></i>Cancel</button>
     <button class="action-modal-btn cancel"><i data-lucide="trash-2" class="icon-style"></i>Delete</button>
     <button class="action-modal-btn cancel"><i data-lucide="x-circle" class="icon-style"></i>Dismiss</button>
+  </div>
+
+  <h3>Orange — Restart</h3>
+  <div class="row">
+    <button class="action-modal-btn restart"><i data-lucide="rotate-cw" class="icon-style"></i>Restart Container</button>
+  </div>
+
+  <h3>Yellow — Stop</h3>
+  <div class="row">
+    <button class="action-modal-btn stop"><i data-lucide="square" class="icon-style"></i>Stop Container</button>
   </div>
 
   <h3>Lavender / White — Secondary</h3>

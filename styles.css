@@ -1025,6 +1025,22 @@
     background: rgba(239,68,68,.12);
     border-color: var(--red);
   }
+  .action-modal-btn.restart {
+    color: var(--orange);
+    border-color: rgba(249,115,22,.45);
+  }
+  .action-modal-btn.restart:hover:not(:disabled) {
+    background: rgba(249,115,22,.12);
+    border-color: var(--orange);
+  }
+  .action-modal-btn.stop {
+    color: var(--yellow);
+    border-color: rgba(234,179,8,.45);
+  }
+  .action-modal-btn.stop:hover:not(:disabled) {
+    background: rgba(234,179,8,.12);
+    border-color: var(--yellow);
+  }
   /* Positive actions: save, restore, start, open, download */
   .action-modal-btn.ok {
     color: var(--green);
@@ -1145,8 +1161,9 @@
     background: var(--bg3); flex-shrink: 0; font-family: var(--mono); font-size: 11px;
   }
   .log-count { color: var(--text3); }
-  .list-btn.autoscroll.on { color: var(--green); border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.08); }
-  .list-btn.autoscroll.on:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .list-btn.autoscroll { color: var(--green); border-color: rgba(34,197,94,.45); }
+  .list-btn.autoscroll:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .list-btn.autoscroll.on { background: rgba(34,197,94,.12); border-color: var(--green); }
 
   /* ─── Modal / Process Detail ─────────────────────────────── */
   .modal-backdrop {

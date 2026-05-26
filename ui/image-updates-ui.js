@@ -1,11 +1,14 @@
 // ─── Image Updates ────────────────────────────────────────────────────────────
 let _imgUpdateResults = [];
+let _imgUpdateSelected = new Set();
 
 async function openImageUpdatesModal() {
   el('imgupdate-modal').classList.add('open');
   el('imgupdate-body').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;"><span class="spin" style="font-size:20px;">⟳</span><br><br>Checking registries for updates…</div>`;
   el('imgupdate-summary').textContent = 'Scanning…';
   el('imgupdate-scan-btn').disabled = true;
+  _imgUpdateSelected.clear();
+  updateImgUpdateBulkButtons();
 
   try {
     const res = await fetch('/api/image-updates/scan');
@@ -26,6 +29,7 @@ function renderImageUpdatesBody() {
   if (!results.length) {
     el('imgupdate-body').innerHTML = `<div style="padding:40px;text-align:center;font-size:28px;">🐋<br><span style="font-size:14px;color:var(--text3);font-family:var(--mono);">No running containers found.</span></div>`;
     el('imgupdate-summary').textContent = 'No images to check.';
+    updateImgUpdateBulkButtons();
     return;
   }
 
@@ -39,13 +43,16 @@ function renderImageUpdatesBody() {
   if (errors.length) summary += ` · <span style="color:var(--red);">${errors.length} error${errors.length !== 1 ? 's' : ''}</span>`;
   el('imgupdate-summary').innerHTML = summary;
 
+  const allUpdatable = updates.map(r => r.image);
+  const allChecked = allUpdatable.length > 0 && allUpdatable.every(img => _imgUpdateSelected.has(img));
+
   const header = `
-    <div style="display:grid;grid-template-columns:1fr 90px 90px 160px 120px;gap:8px;align-items:center;padding:6px 16px;background:var(--card-bg);border-bottom:1px solid var(--border2);">
+    <div style="display:grid;grid-template-columns:28px 1fr 90px 90px 160px;gap:8px;align-items:center;padding:6px 16px;background:var(--card-bg);border-bottom:1px solid var(--border2);">
+      <span style="text-align:center;"><input type="checkbox" id="imgupdate-select-all" onchange="imgUpdateSelectAll(this.checked)" ${allChecked && allUpdatable.length > 0 ? 'checked' : ''} ${allUpdatable.length === 0 ? 'disabled' : ''} title="Select All Updates" style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);"></span>
       <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);">IMAGE</span>
       <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);">REGISTRY</span>
       <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);">TAG</span>
       <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);">STATUS</span>
-      <span style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);text-align:right;">ACTIONS</span>
     </div>`;
 
   function renderRow(r) {
@@ -57,19 +64,17 @@ function renderImageUpdatesBody() {
 
     const ctrNames = (r.containers || []).filter(Boolean).join(', ');
 
-    const actionBtns = r.updateAvailable
-      ? `<div style="display:flex;gap:6px;justify-content:flex-end;">
-           <button class="list-btn green" onclick="imgUpdatePull('${esc(r.image)}', false)"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Pull</button>
-           <button class="list-btn lavender" onclick="imgUpdatePull('${esc(r.image)}', true, ${JSON.stringify(r.containers || []).replace(/"/g, '&quot;')})"><i data-lucide="refresh-cw" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Pull &amp; Restart</button>
-         </div>`
-      : '';
+    const isUpdatable = r.updateAvailable;
+    const checkboxHtml = isUpdatable
+      ? `<input type="checkbox" data-image="${esc(r.image)}" data-containers="${esc(JSON.stringify(r.containers || []))}" onchange="imgUpdateToggleSelect('${esc(r.image)}', this.checked)" ${_imgUpdateSelected.has(r.image) ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);">`
+      : `<input type="checkbox" disabled style="width:14px;height:14px;cursor:not-allowed;opacity:0.3;">`;
 
-    return `<div class="imgupdate-row" style="display:grid;grid-template-columns:1fr 90px 90px 160px 120px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(42,47,74,.25);" title="${ctrNames ? 'Containers: ' + esc(ctrNames) : ''}">
+    return `<div class="imgupdate-row" style="display:grid;grid-template-columns:28px 1fr 90px 90px 160px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(42,47,74,.25);" title="${ctrNames ? 'Containers: ' + esc(ctrNames) : ''}">
+      <span style="text-align:center;">${checkboxHtml}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.image)}">${esc(r.image)}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">${esc(r.registry || '–')}</span>
       <span style="font-family:var(--mono);font-size:11px;color:var(--accent);">${esc(r.tag || 'latest')}</span>
       <span>${statusHtml}</span>
-      <span>${actionBtns}</span>
     </div>`;
   }
 
@@ -81,36 +86,7 @@ function renderImageUpdatesBody() {
 
   el('imgupdate-body').innerHTML = header + (rows || `<div style="padding:30px;text-align:center;color:var(--text3);font-size:13px;">No images found.</div>`);
   lucide.createIcons({ nodes: [el('imgupdate-body')] });
-}
-
-async function imgUpdatePull(image, restart, containers) {
-  const ctrs = Array.isArray(containers) ? containers : [];
-  const btn = event.currentTarget || event.target;
-  const origText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin">⟳</span>';
-
-  try {
-    const res = await fetch('/api/image-updates/pull', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image, restart, containers: ctrs }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast(`Pulled ${image}${restart ? ' and restarted containers' : ''}`, 'ok', 3000);
-      // Re-scan to refresh statuses
-      await openImageUpdatesModal();
-    } else {
-      showToast(`Pull failed: ${data.error || 'unknown error'}`, 'err', 4000);
-      btn.disabled = false;
-      btn.innerHTML = origText;
-    }
-  } catch (e) {
-    showToast(`Pull error: ${e.message}`, 'err', 4000);
-    btn.disabled = false;
-    btn.innerHTML = origText;
-  }
+  updateImgUpdateBulkButtons();
 }
 
 function closeImageUpdatesModal() {
@@ -129,10 +105,11 @@ async function openImageUpdateLogModal() {
     } else {
       const lines = raw.split('\n').reverse();
       el('imgupdate-log-body').innerHTML = lines.map(line => {
-        if (line.startsWith('───')) return `<span style="color:var(--accent);opacity:.5;">${esc(line)}</span>`;
-        if (/PULL FAIL|PULL ERROR|Scan failed|Restart failed/.test(line)) return `<span style="color:var(--red);">${esc(line)}</span>`;
+        if (line.startsWith('───') || /Scheduled scan started/.test(line)) return `<span style="color:var(--accent);opacity:.5;">${esc(line)}</span>`;
+        if (/PULL FAIL|PULL ERROR|SCAN FAIL|Scan failed|RESTART FAIL|Restart failed/.test(line)) return `<span style="color:var(--red);">${esc(line)}</span>`;
         if (/UPDATE AVAILABLE/.test(line)) return `<span style="color:var(--yellow);">${esc(line)}</span>`;
-        if (/PULL OK|Auto-restarted|all up to date/.test(line)) return `<span style="color:var(--green);">${esc(line)}</span>`;
+        if (/PULL OK|RESTART OK|Auto-restarted|all up to date|SCAN OK/.test(line)) return `<span style="color:var(--green);">${esc(line)}</span>`;
+        if (/USER SCAN|USER PULL/.test(line)) return `<span style="color:var(--cyan);">${esc(line)}</span>`;
         return `<span style="color:var(--text3);">${esc(line)}</span>`;
       }).join('\n');
     }
@@ -143,4 +120,85 @@ async function openImageUpdateLogModal() {
 
 function closeImageUpdateLogModal() {
   el('imgupdate-log-modal').classList.remove('open');
+}
+
+// ─── Bulk selection helpers ──────────────────────────────────────────────────
+
+function imgUpdateToggleSelect(image, checked) {
+  if (checked) _imgUpdateSelected.add(image);
+  else _imgUpdateSelected.delete(image);
+  updateImgUpdateBulkButtons();
+  updateSelectAllCheckbox();
+}
+
+function imgUpdateSelectAll(checked) {
+  const updates = _imgUpdateResults.filter(r => r.updateAvailable);
+  if (checked) {
+    updates.forEach(r => _imgUpdateSelected.add(r.image));
+  } else {
+    _imgUpdateSelected.clear();
+  }
+  document.querySelectorAll('#imgupdate-body input[type="checkbox"][data-image]').forEach(cb => {
+    cb.checked = checked;
+  });
+  updateImgUpdateBulkButtons();
+}
+
+function updateSelectAllCheckbox() {
+  const selectAllCb = el('imgupdate-select-all');
+  if (!selectAllCb) return;
+  const updates = _imgUpdateResults.filter(r => r.updateAvailable);
+  if (updates.length === 0) {
+    selectAllCb.checked = false;
+    selectAllCb.disabled = true;
+  } else {
+    selectAllCb.disabled = false;
+    selectAllCb.checked = updates.every(r => _imgUpdateSelected.has(r.image));
+  }
+}
+
+function updateImgUpdateBulkButtons() {
+  const pullRestartBtn = el('imgupdate-bulk-pull-restart');
+  if (!pullRestartBtn) return;
+  const count = _imgUpdateSelected.size;
+  pullRestartBtn.disabled = count === 0;
+  pullRestartBtn.innerHTML = `<i data-lucide="refresh-cw" style="width:13px;height:13px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Pull &amp; Restart${count > 0 ? ` (${count})` : ''}`;
+  lucide.createIcons({ nodes: [pullRestartBtn] });
+}
+
+async function imgUpdateBulkPull() {
+  if (_imgUpdateSelected.size === 0) return;
+
+  const selected = Array.from(_imgUpdateSelected);
+  showToast(`Pull & Restart: ${selected.length} image${selected.length !== 1 ? 's' : ''}…`, 'info', 2000);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const image of selected) {
+    const entry = _imgUpdateResults.find(r => r.image === image);
+    const containers = entry ? (entry.containers || []) : [];
+
+    try {
+      const res = await fetch('/api/image-updates/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, restart: true, containers }),
+      });
+      const data = await res.json();
+      if (data.ok) successCount++;
+      else failCount++;
+    } catch {
+      failCount++;
+    }
+  }
+
+  if (failCount === 0) {
+    showToast(`Pull & Restart complete: ${successCount} image${successCount !== 1 ? 's' : ''}`, 'ok', 3000);
+  } else {
+    showToast(`Pull & Restart: ${successCount} succeeded, ${failCount} failed`, failCount > 0 ? 'err' : 'ok', 4000);
+  }
+
+  _imgUpdateSelected.clear();
+  await openImageUpdatesModal();
 }

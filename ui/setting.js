@@ -2,6 +2,9 @@
 // setting.js — Settings form logic for NAS Monitor
 // ═══════════════════════════════════════════════════════════════════════════
 
+let _settingsConfigFolders = [];
+let _settingsDataFolders = [];
+
 function getElement(id) {
   return document.getElementById(id);
 }
@@ -32,6 +35,35 @@ function setSettingsInputValue(id, value) {
   input.value = value == null ? '' : String(value);
 }
 
+// ─── Folder List Rendering ────────────────────────────────────────────────────
+function renderSettingsFolderList(listId, folders, updateCallback) {
+  const container = getElement(listId);
+  if (!container) return;
+  if (!folders.length) {
+    container.innerHTML = `<div style="color:var(--text3);font-size:12px;font-family:var(--mono);font-style:italic;">No folders configured.</div>`;
+    return;
+  }
+  container.innerHTML = folders.map((folder, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--card-bg);border:1px solid var(--border);border-radius:6px;">
+      <i data-lucide="folder" style="width:14px;height:14px;color:var(--accent);flex-shrink:0;"></i>
+      <input class="filter-input" type="text" value="${esc(folder)}" style="flex:1;font-size:12px;" onchange="${updateCallback}(${i}, this.value)"/>
+    </div>
+  `).join('');
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons({ nodes: [container] });
+  }
+}
+
+function updateSettingsConfigFolder(idx, value) {
+  _settingsConfigFolders[idx] = value;
+}
+window.updateSettingsConfigFolder = updateSettingsConfigFolder;
+
+function updateSettingsDataFolder(idx, value) {
+  _settingsDataFolders[idx] = value;
+}
+window.updateSettingsDataFolder = updateSettingsDataFolder;
+
 async function loadSettingsForm() {
   hideSettingsMessage();
   try {
@@ -51,9 +83,16 @@ async function loadSettingsForm() {
     setSettingsInputValue('settings-imageUpdateAutoApply', String(Boolean(settings.imageUpdateAutoApply)));
     setSettingsInputValue('settings-imageUpdateAutoRestart', String(Boolean(settings.imageUpdateAutoRestart)));
     setSettingsInputValue('settings-composeInactivityTimeoutSeconds', settings.composeInactivityTimeoutSeconds ?? 120);
-    setSettingsInputValue('settings-dockerConfigFolder', settings.dockerConfigFolder || '');
-    setSettingsInputValue('settings-dockerDataFolder', settings.dockerDataFolder || '');
     setSettingsInputValue('settings-refreshIntervalSeconds', settings.refreshIntervalSeconds ?? 3);
+
+    // Load folder arrays (with backward compatibility for old single-folder settings)
+    _settingsConfigFolders = Array.isArray(settings.configFolders) ? [...settings.configFolders] :
+      (settings.dockerConfigFolder ? [settings.dockerConfigFolder] : []);
+    _settingsDataFolders = Array.isArray(settings.dataFolders) ? [...settings.dataFolders] :
+      (settings.dockerDataFolder ? [settings.dockerDataFolder] : []);
+
+    renderSettingsFolderList('settings-configFolders-list', _settingsConfigFolders, 'updateSettingsConfigFolder');
+    renderSettingsFolderList('settings-dataFolders-list', _settingsDataFolders, 'updateSettingsDataFolder');
   } catch (error) {
     showSettingsMessage(error.message || 'Failed to load settings.', true);
   }
@@ -68,6 +107,11 @@ function parseNumberField(id, defaultValue) {
 
 async function submitSettingsForm() {
   hideSettingsMessage();
+
+  // Filter out empty folders
+  const configFolders = _settingsConfigFolders.filter(f => f.trim());
+  const dataFolders = _settingsDataFolders.filter(f => f.trim());
+
   const payload = {
     logLevel: getElement('settings-logLevel')?.value || 'INFO',
     authenticationType: getElement('settings-authenticationType')?.value === 'true',
@@ -78,8 +122,8 @@ async function submitSettingsForm() {
     imageUpdateAutoApply:   getElement('settings-imageUpdateAutoApply')?.value   === 'true',
     imageUpdateAutoRestart: getElement('settings-imageUpdateAutoRestart')?.value === 'true',
     composeInactivityTimeoutSeconds: parseNumberField('settings-composeInactivityTimeoutSeconds', 120),
-    dockerConfigFolder: getElement('settings-dockerConfigFolder')?.value || '',
-    dockerDataFolder: getElement('settings-dockerDataFolder')?.value || '',
+    configFolders: configFolders,
+    dataFolders: dataFolders,
     refreshIntervalSeconds: parseNumberField('settings-refreshIntervalSeconds', 3),
   };
 
@@ -105,9 +149,13 @@ async function submitSettingsForm() {
       setSettingsInputValue('settings-imageUpdateAutoApply', String(Boolean(data.settings.imageUpdateAutoApply)));
       setSettingsInputValue('settings-imageUpdateAutoRestart', String(Boolean(data.settings.imageUpdateAutoRestart)));
       setSettingsInputValue('settings-composeInactivityTimeoutSeconds', data.settings.composeInactivityTimeoutSeconds ?? 120);
-      setSettingsInputValue('settings-dockerConfigFolder', data.settings.dockerConfigFolder || '');
-      setSettingsInputValue('settings-dockerDataFolder', data.settings.dockerDataFolder || '');
       setSettingsInputValue('settings-refreshIntervalSeconds', data.settings.refreshIntervalSeconds ?? 3);
+
+      // Update folder lists
+      _settingsConfigFolders = Array.isArray(data.settings.configFolders) ? [...data.settings.configFolders] : [];
+      _settingsDataFolders = Array.isArray(data.settings.dataFolders) ? [...data.settings.dataFolders] : [];
+      renderSettingsFolderList('settings-configFolders-list', _settingsConfigFolders, 'updateSettingsConfigFolder');
+      renderSettingsFolderList('settings-dataFolders-list', _settingsDataFolders, 'updateSettingsDataFolder');
     }
   } catch (error) {
     showSettingsMessage(error.message || 'Failed to save settings.', true);

@@ -31,7 +31,7 @@
 <div class="modal-backdrop" id="modal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-title">Process Details</div>
+      <div class="modal-title" id="modal-title"><i data-lucide="cpu" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--accent);"></i><span style="color:var(--white);">Process Details</span></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -46,7 +46,7 @@
     <div class="log-modal-header">
       <div class="log-modal-title">
         <i data-lucide="scroll-text" style="width:16px;height:16px;color:var(--accent);"></i>
-        <span id="log-modal-title">Container Logs</span>
+        <span id="log-modal-title" style="color:var(--white);">Container Logs</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="list-btn autoscroll on" id="log-autoscroll-btn" onclick="toggleLogAutoscroll()"><i data-lucide="arrow-down-to-line" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Auto-Scroll</button>
@@ -69,19 +69,19 @@
   <div class="log-modal" style="width:720px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <i data-lucide="trash-2" style="width:16px;height:16px;color:var(--red);"></i>
-        <span id="prune-modal-title">Docker Cleanup — Unused Resources</span>
+        <i data-lucide="archive-x" style="width:16px;height:16px;color:var(--red);"></i>
+        <span id="prune-modal-title" style="color:var(--white);">Docker Cleanup — Unused Resources</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="list-btn blue" id="prune-log-btn" onclick="openPruneLogModal()"><i data-lucide="scroll-text" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>View Prune Log</button>
+        <button class="folder-nav-btn" id="prune-log-btn" style="padding:5px 12px;font-size:12px;" onclick="openPruneLogModal()"><i data-lucide="scroll-text" style="width:12px;height:12px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>View Prune Log</button>
+        <button id="prune-scan-btn" class="action-modal-btn ok" style="padding:5px 12px;font-size:12px;" onclick="openPruneModal()"><i data-lucide="refresh-cw" style="width:12px;height:12px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Re-Scan</button>
         <button class="modal-close" onclick="closePruneModal()">✕</button>
       </div>
     </div>
     <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
       <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
-      <button id="prune-select-all-btn" onclick="pruneSelectAll()" class="list-btn blue"><i data-lucide="check-circle" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Select All</button>
-      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn cancel"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
+      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn ok"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
     </div>
   </div>
 </div>
@@ -91,26 +91,28 @@
   <div class="log-modal" style="width:800px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;color:var(--red);"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>Prune Log</span>
+        <i data-lucide="archive-x" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--red);"></i>
+        <span style="color:var(--white);">Prune Log</span>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
       </div>
       <button class="modal-close" onclick="closePruneLogModal()">✕</button>
     </div>
-    <div class="log-body" id="prune-log-body" style="font-family:var(--mono);font-size:12px;padding:12px 16px;"></div>
+    <pre class="log-body" id="prune-log-body" style="font-family:var(--mono);font-size:12px;padding:12px 16px;white-space:pre-wrap;word-break:break-all;"></pre>
   </div>
 </div>
 
 <!-- IMAGE UPDATES MODAL -->
 <div class="log-modal-backdrop" id="imgupdate-modal">
-  <div class="log-modal" style="width:860px;max-width:96vw;">
+  <div class="log-modal" style="width:900px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <i data-lucide="arrow-up-circle" style="width:18px;height:18px;stroke-width:2;vertical-align:middle;margin-right:6px;color:var(--lavender);"></i>
-        <span>Docker Image Updates</span>
+        <i data-lucide="arrow-up-circle" style="width:16px;height:16px;stroke-width:2;vertical-align:middle;margin-right:6px;color:var(--lavender);"></i>
+        <span style="color:var(--white);">Docker Image Updates</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button id="imgupdate-bulk-pull-restart" class="action-modal-btn lavender" style="padding:5px 12px;font-size:12px;" onclick="imgUpdateBulkPull()" disabled><i data-lucide="refresh-cw" style="width:12px;height:12px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Pull &amp; Restart</button>
         <button class="cdetail-action-btn logs" onclick="openImageUpdateLogModal()"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>View Log</span></button>
-        <button id="imgupdate-scan-btn" class="folder-nav-btn" style="padding:5px 12px;font-size:12px;" onclick="openImageUpdatesModal()"><i data-lucide="refresh-cw" style="width:13px;height:13px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Re-Scan</button>
+        <button id="imgupdate-scan-btn" class="action-modal-btn ok" style="padding:5px 12px;font-size:12px;" onclick="openImageUpdatesModal()"><i data-lucide="refresh-cw" style="width:12px;height:12px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Re-Scan</button>
         <button class="modal-close" onclick="closeImageUpdatesModal()">✕</button>
       </div>
     </div>
@@ -126,7 +128,8 @@
   <div class="log-modal" style="width:820px;max-width:96vw;">
     <div class="log-modal-header">
       <div class="log-modal-title">
-        <span>📋 Image Update Log</span>
+        <i data-lucide="scroll-text" style="width:16px;height:16px;stroke-width:2;vertical-align:middle;margin-right:6px;color:var(--cyan);"></i>
+        <span style="color:var(--white);">Image Update Log</span>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
       </div>
       <button class="modal-close" onclick="closeImageUpdateLogModal()">✕</button>
@@ -140,9 +143,9 @@
   <div class="action-modal">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span id="action-modal-icon" style="font-size:20px;">▶</span>
+        <span id="action-modal-icon" style="display:flex;align-items:center;"><i data-lucide="play" style="width:16px;height:16px;color:var(--green);"></i></span>
         <div>
-          <div style="font-size:14px;font-weight:600;" id="action-modal-title">–</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);" id="action-modal-title">–</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="action-modal-container">–</div>
         </div>
       </div>
@@ -153,11 +156,11 @@
       <div class="action-progress" id="action-progress"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="action-modal-confirm" class="action-modal-btn confirm" onclick="executeAction()">
-        Confirm
-      </button>
       <button id="action-modal-cancel" class="action-modal-btn cancel" onclick="closeActionModal()">
-        Cancel
+        <i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel
+      </button>
+      <button id="action-modal-confirm" class="action-modal-btn ok" onclick="executeAction()">
+        <i data-lucide="play" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Confirm
       </button>
     </div>
   </div>
@@ -168,9 +171,9 @@
   <div class="action-modal">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🗄</span>
+        <i data-lucide="archive" style="width:16px;height:16px;color:var(--orange);flex-shrink:0;"></i>
         <div>
-          <div style="font-size:14px;font-weight:600;" id="restore-confirm-title">Restore Archive</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);" id="restore-confirm-title">Restore Archive</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="restore-confirm-project">–</div>
         </div>
       </div>
@@ -180,8 +183,8 @@
       <div id="restore-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="restore-confirm-btn" class="action-modal-btn ok" onclick="confirmRestoreProject()">Restore</button>
-      <button class="action-modal-btn cancel" onclick="closeRestoreConfirmModal()">Cancel</button>
+      <button class="action-modal-btn cancel" onclick="closeRestoreConfirmModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+      <button id="restore-confirm-btn" class="action-modal-btn ok" onclick="confirmRestoreProject()"><i data-lucide="archive-restore" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Restore</button>
     </div>
   </div>
 </div>
@@ -191,9 +194,9 @@
   <div class="action-modal">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🗑</span>
+        <i data-lucide="archive" style="width:16px;height:16px;color:var(--orange);flex-shrink:0;"></i>
         <div>
-          <div style="font-size:14px;font-weight:600;color:var(--red);">Delete Archive</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">Delete Archive</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="archive-delete-confirm-project">–</div>
         </div>
       </div>
@@ -203,11 +206,10 @@
       <div id="archive-delete-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="archive-delete-confirm-btn" onclick="confirmArchiveDelete()"
-        style="padding:8px 22px;border:1px solid var(--red);border-radius:var(--radius);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;background:rgba(239,68,68,.15);color:var(--red);">
-        Delete permanently
+      <button class="action-modal-btn cancel" onclick="closeArchiveDeleteModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+      <button id="archive-delete-confirm-btn" class="action-modal-btn cancel" onclick="confirmArchiveDelete()">
+        <i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Delete Permanently
       </button>
-      <button class="action-modal-btn cancel" onclick="closeArchiveDeleteModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -217,9 +219,9 @@
   <div class="action-modal" onclick="event.stopPropagation()">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--yellow);flex-shrink:0;"></i>
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--yellow);flex-shrink:0;"></i>
         <div>
-          <div style="font-size:14px;font-weight:600;">Dismiss Compose Changes</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">Dismiss Compose Changes</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">Unsaved compose file edits</div>
         </div>
       </div>
@@ -232,8 +234,8 @@
       </div>
     </div>
     <div class="action-modal-footer">
-      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(false)"><i data-lucide="x" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
-      <button class="action-modal-btn confirm" data-action="delete" onclick="resolveComposeDismiss(true)"><i data-lucide="x-circle" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Dismiss Changes</button>
+      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(false)"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+      <button class="action-modal-btn cancel" onclick="resolveComposeDismiss(true)"><i data-lucide="x-circle" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Dismiss Changes</button>
     </div>
   </div>
 </div>
@@ -283,7 +285,7 @@
 <div class="newcompose-backdrop" id="newcompose-modal">
   <div class="newcompose-modal">
     <div class="newcompose-header">
-      <span class="newcompose-header-title"><i data-lucide="file-plus" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--green)"></i>New compose.yaml</span>
+      <span class="newcompose-header-title"><i data-lucide="file-plus" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--green)"></i><span style="color:var(--white);">New compose.yaml</span></span>
       <button class="modal-close" onclick="closeNewComposeModal()">✕</button>
     </div>
     <div class="newcompose-body">
@@ -314,14 +316,14 @@
     </div>
     <div class="newcompose-footer">
       <div class="newcompose-footer-left">
-        <button id="newcompose-compose-apply-btn" class="newcompose-btn template" onclick="applyComposeImportToTemplate()"><i data-lucide="file-input" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Apply Compose</button>
-        <button id="newcompose-run-apply-btn" class="newcompose-btn template" onclick="applyDockerRunToTemplate()"><i data-lucide="terminal" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Apply Docker Run</button>
-        <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()"><i data-lucide="bookmark" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Save Template</button>
+        <button id="newcompose-compose-apply-btn" class="newcompose-btn template" onclick="applyComposeImportToTemplate()"><i data-lucide="file-input" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px"></i>Apply Compose</button>
+        <button id="newcompose-run-apply-btn" class="newcompose-btn template" onclick="applyDockerRunToTemplate()"><i data-lucide="terminal" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px"></i>Apply Docker Run</button>
+        <button id="newcompose-template-btn" class="newcompose-btn template" onclick="saveNewComposeTemplate()"><i data-lucide="bookmark" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px"></i>Save Template</button>
         <span id="newcompose-status" class="newcompose-status"></span>
       </div>
       <div class="newcompose-footer-right">
-        <button class="newcompose-btn cancel" onclick="closeNewComposeModal()"><i data-lucide="x" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Cancel</button>
-        <button id="newcompose-save-btn" class="action-modal-btn ok" onclick="saveNewCompose()"><i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Save</button>
+        <button class="newcompose-btn cancel" onclick="closeNewComposeModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px"></i>Cancel</button>
+        <button id="newcompose-save-btn" class="action-modal-btn ok" onclick="saveNewCompose()"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px"></i>Save</button>
       </div>
     </div>
   </div>
@@ -333,7 +335,7 @@
     <div class="cdetail-header">
       <span id="cdetail-status-dot" class="status-dot" style="width:10px;height:10px;flex-shrink:0;"></span>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:16px;font-weight:700;" id="cdetail-name">–</div>
+        <div style="font-size:16px;font-weight:700;color:var(--white);" id="cdetail-name">–</div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="cdetail-id">–</div>
       </div>
       <div id="cdetail-actions" style="display:flex;gap:6px;align-items:center;margin-right:12px;"></div>
@@ -443,7 +445,7 @@
             <span class="subitem-text">Image Updates</span>
           </button>
           <button class="sidebar-subitem" style="--item-color:#ef4444" onclick="openPruneModal()">
-            <span class="subitem-icon"><i data-lucide="trash-2"></i></span>
+            <span class="subitem-icon"><i data-lucide="archive-x"></i></span>
             <span class="subitem-text">Prune</span>
           </button>
         </div>
@@ -711,7 +713,7 @@
 <div class="change-auth" id="creds-backdrop">
   <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:420px;">
     <div class="settings-header">
-      <div class="settings-title"><i data-lucide="key-round" style="width:22px;height:22px;vertical-align:middle;"></i> Change Credentials</div>
+      <div class="settings-title"><i data-lucide="key-round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;color:var(--accent);"></i><span style="color:var(--white);">Change Credentials</span></div>
       <button class="modal-close" onclick="closeCredentialsModal()">✕</button>
     </div>
     <div class="settings-body" style="padding:20px 24px;gap:14px;">
@@ -749,8 +751,8 @@
       <div id="creds-success" style="display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--green);">✓ Credentials updated successfully.</div>
     </div>
     <div class="settings-footer" style="justify-content:flex-end;">
-      <button class="action-modal-btn cancel" onclick="closeCredentialsModal()">Cancel</button>
-      <button id="creds-save-btn" class="action-modal-btn ok" onclick="submitCredentials()">Save Credentials</button>
+      <button class="action-modal-btn cancel" onclick="closeCredentialsModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
+      <button id="creds-save-btn" class="action-modal-btn ok" onclick="submitCredentials()"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Save Credentials</button>
     </div>
   </div>
 </div>
@@ -759,7 +761,7 @@
 <div class="settings-backdrop" id="settings-backdrop">
   <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:460px;">
     <div class="settings-header">
-      <div class="settings-title"><i data-lucide="settings" style="width:22px;height:22px;vertical-align:middle;margin-right:6px;"></i>Settings</div>
+      <div class="settings-title"><i data-lucide="settings" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;color:var(--accent);"></i><span style="color:var(--white);">Settings</span></div>
       <button class="modal-close" onclick="closeSettingsModal()">✕</button>
     </div>
     <div class="settings-body" style="padding:20px 24px;gap:14px;" id="settings-body">
@@ -819,20 +821,24 @@
         <div class="settings-label">Compose Inactivity (seconds)</div>
         <input class="filter-input" type="number" id="settings-composeInactivityTimeoutSeconds" min="10" max="3600" step="1" value="120" style="width:100px;"/>
       </div>
-      <div style="height:1px;background:var(--border);margin:2px 0;"></div>
-      <div class="catedit-row">
-        <div class="settings-label">Docker Config Folder</div>
-        <input class="filter-input" type="text" id="settings-dockerConfigFolder" style="flex:1;" placeholder="/volume1/docker/_config"/>
+      <div style="height:1px;background:var(--border);margin:10px 0 6px;"></div>
+      <!-- Configuration Folders -->
+      <div>
+        <div class="settings-label" style="margin-bottom:8px;">Configuration Folders</div>
+        <div style="color:var(--text3);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing docker-compose.yml and .env files</div>
+        <div id="settings-configFolders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
-      <div class="catedit-row">
-        <div class="settings-label">Docker Data Folder</div>
-        <input class="filter-input" type="text" id="settings-dockerDataFolder" style="flex:1;" placeholder="/volume1/docker/_data"/>
+      <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+      <!-- Data Folders -->
+      <div>
+        <div class="settings-label" style="margin-bottom:8px;">Data Folders</div>
+        <div style="color:var(--text3);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing container data and persistent storage</div>
+        <div id="settings-dataFolders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div id="settings-message" style="display:none;border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;"></div>
     </div>
     <div class="settings-footer" style="justify-content:flex-end;">
-      <button class="action-modal-btn cancel" onclick="closeSettingsModal()">Cancel</button>
-      <button class="action-modal-btn ok" onclick="submitSettingsForm()">Save Settings</button>
+      <button class="action-modal-btn ok" onclick="submitSettingsForm()"><i data-lucide="save" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Save Settings</button>
     </div>
   </div>
 </div>
@@ -841,7 +847,7 @@
 <div class="catmgr-backdrop" id="catmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--coral)"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg> Manage Categories</div>
+      <div class="catmgr-title"><i data-lucide="folder-open" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--coral);"></i><span style="color:var(--white);">Manage Categories</span></div>
       <button class="modal-close" onclick="closeCatMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="catmgr-body"></div>
@@ -855,8 +861,13 @@
 <div class="catmgr-backdrop" id="volmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()" style="width:900px;max-width:98vw;">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--yellow)"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg> Volumes</div>
-      <button class="modal-close" onclick="closeDockerVolumesModal()">✕</button>
+      <div class="catmgr-title"><i data-lucide="hard-drive" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--yellow);"></i><span style="color:var(--white);">Volumes</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="vol-back-btn" class="folder-nav-btn" style="padding:5px 12px;font-size:12px;display:none;" onclick="renderDockerVolumesList()"><i data-lucide="arrow-left" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Back</button>
+        <button id="vol-bulk-delete" class="action-modal-btn cancel" style="padding:5px 12px;font-size:12px;" onclick="volBulkDelete()" disabled><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i><span>Delete</span></button>
+        <button id="vol-refresh-btn" class="action-modal-btn ok" style="padding:5px 12px;font-size:12px;" onclick="openDockerVolumesModal()"><i data-lucide="refresh-cw" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Refresh</button>
+        <button class="modal-close" onclick="closeDockerVolumesModal()">✕</button>
+      </div>
     </div>
     <div class="catmgr-body" id="volmgr-body"></div>
     <div class="catmgr-footer">
@@ -869,12 +880,12 @@
 <div class="catmgr-backdrop" id="netmgr-backdrop">
   <div class="catmgr-modal" onclick="event.stopPropagation()">
     <div class="catmgr-header">
-      <div class="catmgr-title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:-2px;margin-right:6px;color:var(--coral)"><path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1h4v1a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1h-4v-1a2 2 0 0 0-2-2z"/><path d="M6 5v4"/><path d="M18 5v4"/><path d="M6 15v4"/><path d="M18 15v4"/></svg> Manage Docker Networks</div>
+      <div class="catmgr-title"><i data-lucide="cable" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--coral);"></i><span style="color:var(--white);">Manage Docker Networks</span></div>
       <button class="modal-close" onclick="closeNetworkMgr()">✕</button>
     </div>
     <div class="catmgr-body" id="netmgr-body"></div>
     <div class="catmgr-footer">
-      <button class="catmgr-add-btn" onclick="openNetworkEditForm(null)">＋ Create Network</button>
+      <button class="catmgr-add-btn" onclick="openNetworkEditForm(null)"><i data-lucide="plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Create Network</button>
     </div>
   </div>
 </div>
@@ -884,9 +895,9 @@
   <div class="action-modal" onclick="event.stopPropagation()">
     <div class="action-modal-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🗑</span>
+        <i data-lucide="cable" style="width:16px;height:16px;color:var(--coral);flex-shrink:0;"></i>
         <div>
-          <div style="font-size:14px;font-weight:600;">Delete Docker Network</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">Delete Docker Network</div>
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="net-delete-network">–</div>
         </div>
       </div>
@@ -897,8 +908,8 @@
       <div class="action-progress" id="net-delete-progress"></div>
     </div>
     <div class="action-modal-footer">
-      <button id="net-delete-confirm" class="action-modal-btn confirm" data-action="delete" onclick="confirmDeleteNetwork()">
-        Delete Network
+      <button id="net-delete-confirm" class="action-modal-btn cancel" onclick="confirmDeleteNetwork()">
+        <i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Delete Permanently
       </button>
     </div>
   </div>

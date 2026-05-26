@@ -62,7 +62,16 @@ function findDocker() {
 }
 
 function getComposeConfigRoot() {
-  return process.env.COMPOSE_CONFIG_ROOT || appSettings.dockerConfigFolder || '/volume1/docker/_config';
+  // Support env var override, then first config folder from settings
+  if (process.env.COMPOSE_CONFIG_ROOT) return process.env.COMPOSE_CONFIG_ROOT;
+  const folders = appSettings.configFolders || [];
+  return folders.length > 0 ? folders[0] : '/volume1/docker/_config';
+}
+
+function getConfigFolders() {
+  if (process.env.COMPOSE_CONFIG_ROOT) return [process.env.COMPOSE_CONFIG_ROOT];
+  const folders = appSettings.configFolders || [];
+  return folders.length > 0 ? folders : [];
 }
 
 function getComposeRelativePath(projectDir = '') {
@@ -344,7 +353,16 @@ function parseComposeSyntheticId(id) {
 }
 
 function getContainerDataRoot() {
-  return process.env.CONTAINER_DATA_ROOT || appSettings.dockerDataFolder || '/volume1/docker/_data';
+  // Support env var override, then first data folder from settings
+  if (process.env.CONTAINER_DATA_ROOT) return process.env.CONTAINER_DATA_ROOT;
+  const folders = appSettings.dataFolders || [];
+  return folders.length > 0 ? folders[0] : '/volume1/docker/_data';
+}
+
+function getDataFolders() {
+  if (process.env.CONTAINER_DATA_ROOT) return [process.env.CONTAINER_DATA_ROOT];
+  const folders = appSettings.dataFolders || [];
+  return folders.length > 0 ? folders : [];
 }
 
 function isValidContainerFolderName(name) {
@@ -365,6 +383,18 @@ function resolveContainerDataPath(containerName, subPath = '') {
   const dataRoot = getContainerDataRoot();
   const basePath = path.join(dataRoot, containerName);
   if (!isPathInsideRoot(basePath, dataRoot)) return null;
+  const normalizedSubPath = normalizeContainerSubPath(subPath);
+  if (normalizedSubPath === null) return null;
+  const targetPath = normalizedSubPath ? path.join(basePath, normalizedSubPath) : basePath;
+  if (!isPathInsideRoot(targetPath, basePath)) return null;
+  return { basePath, targetPath, subPath: normalizedSubPath || '' };
+}
+
+function resolveContainerConfigPath(containerName, subPath = '') {
+  if (!isValidContainerFolderName(containerName)) return null;
+  const configRoot = getComposeConfigRoot();
+  const basePath = path.join(configRoot, containerName);
+  if (!isPathInsideRoot(basePath, configRoot)) return null;
   const normalizedSubPath = normalizeContainerSubPath(subPath);
   if (normalizedSubPath === null) return null;
   const targetPath = normalizedSubPath ? path.join(basePath, normalizedSubPath) : basePath;
@@ -1346,6 +1376,65 @@ async function handleContainerFolders(req, res, url) {
   return false;
 }
 
+async function handleContainerConfigFolders(req, res, url) {
+  if (url.pathname !== '/api/container/config-folders') return false;
+  if (req.method === 'GET') {
+    const name = getHelperUrlValue(url, 'name');
+    const subpath = getHelperUrlValue(url, 'subpath');
+    const resolved = resolveContainerConfigPath(name, subpath);
+    if (!resolved) {
+      writeJson(res, { ok: false, error: 'Invalid container name or path' }, 400);
+      return true;
+    }
+    const exists = fs.existsSync(resolved.basePath);
+    let entries = [];
+    const currentExists = fs.existsSync(resolved.targetPath);
+    if (exists && currentExists) {
+      try {
+        entries = fs.readdirSync(resolved.targetPath, { withFileTypes: true })
+          .map(e => {
+            const fullPath = path.join(resolved.targetPath, e.name);
+            let sizeBytes = 0;
+            let modifiedAt = '';
+            try {
+              const st = fs.statSync(fullPath);
+              sizeBytes = st.size || 0;
+              modifiedAt = st.mtime ? st.mtime.toISOString() : '';
+            } catch {}
+            return {
+              name: e.name,
+              type: e.isDirectory() ? 'dir' : 'file',
+              sizeBytes,
+              modifiedAt,
+            };
+          })
+          .sort((a, b) => {
+            if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+      } catch (e) {
+        logError('Failed to browse container config folder', {
+          name,
+          subpath: resolved.subPath,
+          path: resolved.targetPath,
+          error: e.message,
+        });
+      }
+    }
+    writeJson(res, {
+      ok: true,
+      path: resolved.targetPath,
+      basePath: resolved.basePath,
+      subpath: resolved.subPath,
+      exists,
+      currentExists,
+      entries,
+    });
+    return true;
+  }
+  return false;
+}
+
 async function handleContainerFoldersDownload(req, res, url) {
   if (url.pathname !== '/api/container/folders/download' || req.method !== 'GET') return false;
   const name = getHelperUrlValue(url, 'name');
@@ -2063,6 +2152,7 @@ async function handleApi(req, res, url, reqUser) {
   if (await handleContainerDetail(req, res, url)) return true;
   if (await handleContainerRestartPolicy(req, res, url)) return true;
   if (await handleContainerFolders(req, res, url)) return true;
+  if (await handleContainerConfigFolders(req, res, url)) return true;
   if (await handleContainerFoldersDownload(req, res, url)) return true;
   if (await handleContainerFoldersRename(req, res, url)) return true;
   if (await handleContainerFoldersDelete(req, res, url)) return true;
@@ -2092,6 +2182,8 @@ module.exports = {
   getComposeSyntheticDetail,
   runDocker,
   handleApi,
+  getConfigFolders,
+  getDataFolders,
   _test: {
     normalizeContainerSubPath,
     parseComposeServices,

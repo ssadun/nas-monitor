@@ -507,8 +507,8 @@ server.listen(PORT, '0.0.0.0', () => {
     warnThresholdSeconds: appSettings.warnThresholdSeconds,
     pruneIntervalHours: appSettings.pruneIntervalHours,
     composeInactivityTimeoutSeconds: appSettings.composeInactivityTimeoutSeconds,
-    dockerConfigFolder: appSettings.dockerConfigFolder,
-    dockerDataFolder: appSettings.dockerDataFolder,
+    configFolders: appSettings.configFolders,
+    dataFolders: appSettings.dataFolders,
   });
 });
 

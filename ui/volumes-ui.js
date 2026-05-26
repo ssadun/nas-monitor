@@ -1,8 +1,11 @@
 // ─── Docker Volumes Manager ──────────────────────────────────────────────────
 let allDockerVolumes = [];
+let _volSelected = new Set();
 
 async function openDockerVolumesModal() {
   document.getElementById('volmgr-backdrop').classList.add('open');
+  _volSelected.clear();
+  updateVolBulkButtons();
   await refreshDockerVolumesList();
 }
 
@@ -29,48 +32,59 @@ async function refreshDockerVolumesList() {
 }
 
 function renderDockerVolumesList() {
+  // Show list buttons, hide back button
+  document.getElementById('vol-bulk-delete').style.display = '';
+  document.getElementById('vol-refresh-btn').style.display = '';
+  document.getElementById('vol-back-btn').style.display = 'none';
+
   const body = document.getElementById('volmgr-body');
   if (!allDockerVolumes.length) {
     body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No docker volumes found. Create one below.</div>`;
+    updateVolBulkButtons();
     return;
   }
+
+  const allNames = allDockerVolumes.map(v => v.name);
+  const allChecked = allNames.length > 0 && allNames.every(n => _volSelected.has(n));
 
   const rows = allDockerVolumes.map((v, i) => {
     const containerCount = Array.isArray(v.runningOn) ? v.runningOn.length : 0;
     const containerCountText = containerCount > 0 ? String(containerCount) : '–';
+    const checkboxHtml = `<input type="checkbox" data-volume="${esc(v.name)}" onchange="volToggleSelect('${esc(v.name)}', this.checked)" ${_volSelected.has(v.name) ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);">`;
+    const mountLink = v.mountpoint
+      ? `<a href="#" onclick="openDockerVolumeDetail(${i});return false;" style="color:var(--accent);text-decoration:none;font-family:var(--mono);font-size:12px;" title="View details">${esc(v.mountpoint)}</a>`
+      : `<span style="font-family:var(--mono);font-size:12px;color:var(--text3);">-</span>`;
     return `<tr>
+      <td style="text-align:center;">${checkboxHtml}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.stack || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.driver || '-')}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.mountpoint || '-')}</td>
+      <td>${mountLink}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.ownership || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.createdDate || '-')}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(containerCountText)}</td>
-      <td style="white-space:nowrap;"><div style="display:flex;gap:6px;justify-content:flex-end;">
-        <button class="list-btn blue" onclick="openDockerVolumeDetail(${i})"><i data-lucide="eye" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>View</button>
-        <button class="list-btn red" onclick="deleteDockerVolume(${i})"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Delete</button>
-      </div></td>
     </tr>`;
   }).join('');
 
   body.innerHTML = `
     <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;">${allDockerVolumes.length} volume(s)</div>
     <div style="overflow:auto;border:1px solid var(--border);border-radius:10px;">
-      <table class="cdetail-table" style="min-width:980px;">
+      <table class="cdetail-table" style="min-width:900px;">
         <thead>
           <tr>
+            <th style="width:28px;text-align:center;"><input type="checkbox" id="vol-select-all" onchange="volSelectAll(this.checked)" ${allChecked && allNames.length > 0 ? 'checked' : ''} ${allNames.length === 0 ? 'disabled' : ''} title="Select All" style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);"></th>
             <th>Stack</th>
             <th>Driver</th>
             <th>Mount Point</th>
             <th>Ownership</th>
             <th>Created Date</th>
             <th>Container Count</th>
-            <th style="width:130px;">Actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
   lucide.createIcons({ nodes: [body] });
+  updateVolBulkButtons();
 }
 
 function openDockerVolumeCreateForm() {
@@ -131,6 +145,11 @@ async function openDockerVolumeDetail(idx) {
   if (!v) return;
   const body = document.getElementById('volmgr-body');
   body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">Loading volume details…</div>`;
+
+  // Hide list buttons, show back button
+  document.getElementById('vol-bulk-delete').style.display = 'none';
+  document.getElementById('vol-refresh-btn').style.display = 'none';
+  document.getElementById('vol-back-btn').style.display = '';
   try {
     const res = await fetch('/api/docker/volumes/detail?name=' + encodeURIComponent(v.name));
     const data = await res.json();
@@ -177,7 +196,6 @@ async function openDockerVolumeDetail(idx) {
           <i data-lucide="clipboard-list" style="width:16px;height:16px;color:var(--accent);"></i>
           Volume Details
         </div>
-        <button class="list-btn blue" onclick="renderDockerVolumesList()"><i data-lucide="arrow-left" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Back</button>
       </div>
 
       <div style="margin-bottom:20px;">
@@ -235,15 +253,7 @@ async function openDockerVolumeDetail(idx) {
   }
 }
 
-async function deleteDockerVolume(idx) {
-  const v = allDockerVolumes[idx];
-  if (!v) return;
-  if (!confirm(`Delete volume "${v.name}"? This cannot be undone.`)) return;
-  await deleteDockerVolumeByName(v.name);
-}
-
 async function deleteDockerVolumeByName(volumeName) {
-  if (!confirm(`Delete volume "${volumeName}"? This cannot be undone.`)) return;
   try {
     const res = await fetch('/api/docker/volumes/delete', {
       method: 'POST',
@@ -253,11 +263,78 @@ async function deleteDockerVolumeByName(volumeName) {
     const data = await res.json();
     if (!res.ok || !data.ok) {
       alert('Error: ' + (data.error || 'Failed to delete volume'));
-      return;
+      return false;
     }
-    await refreshDockerVolumesList();
+    return true;
   } catch (e) {
     alert('Error deleting volume: ' + e.message);
+    return false;
   }
+}
+
+// ─── Bulk selection helpers ──────────────────────────────────────────────────
+
+function volToggleSelect(name, checked) {
+  if (checked) _volSelected.add(name);
+  else _volSelected.delete(name);
+  updateVolBulkButtons();
+  updateVolSelectAllCheckbox();
+}
+
+function volSelectAll(checked) {
+  if (checked) {
+    allDockerVolumes.forEach(v => _volSelected.add(v.name));
+  } else {
+    _volSelected.clear();
+  }
+  document.querySelectorAll('#volmgr-body input[type="checkbox"][data-volume]').forEach(cb => {
+    cb.checked = checked;
+  });
+  updateVolBulkButtons();
+}
+
+function updateVolSelectAllCheckbox() {
+  const selectAllCb = document.getElementById('vol-select-all');
+  if (!selectAllCb) return;
+  if (allDockerVolumes.length === 0) {
+    selectAllCb.checked = false;
+    selectAllCb.disabled = true;
+  } else {
+    selectAllCb.disabled = false;
+    selectAllCb.checked = allDockerVolumes.every(v => _volSelected.has(v.name));
+  }
+}
+
+function updateVolBulkButtons() {
+  const deleteBtn = document.getElementById('vol-bulk-delete');
+  if (!deleteBtn) return;
+  const count = _volSelected.size;
+  deleteBtn.disabled = count === 0;
+  deleteBtn.innerHTML = `<i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px;"></i><span>Delete${count > 0 ? ` (${count})` : ''}</span>`;
+  lucide.createIcons({ nodes: [deleteBtn] });
+}
+
+async function volBulkDelete() {
+  if (_volSelected.size === 0) return;
+  const selected = Array.from(_volSelected);
+  if (!confirm(`Delete ${selected.length} volume(s)? This cannot be undone.`)) return;
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const name of selected) {
+    const ok = await deleteDockerVolumeByName(name);
+    if (ok) successCount++;
+    else failCount++;
+  }
+
+  if (failCount === 0) {
+    showToast(`Deleted ${successCount} volume(s)`, 'ok', 3000);
+  } else {
+    showToast(`Deleted ${successCount}, failed ${failCount}`, failCount > 0 ? 'err' : 'ok', 4000);
+  }
+
+  _volSelected.clear();
+  await refreshDockerVolumesList();
 }
 
