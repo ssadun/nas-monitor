@@ -169,7 +169,7 @@ function renderConfigFolderTab(containerName, containerId, data) {
       ? `<button class="list-btn green" onclick="downloadConfigFile('${encodedName}','${encodeURIComponent(targetPath)}')"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Download</button>`
       : '';
     return `<tr>
-      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
@@ -311,7 +311,7 @@ function renderFoldersTab(containerName, containerId, data) {
       ? `<button class="list-btn green" onclick="downloadContainerFile('${encodedName}','${encodeURIComponent(targetPath)}')"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Download</button>`
       : '';
     return `<tr>
-      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>

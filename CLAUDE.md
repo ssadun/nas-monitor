@@ -8,43 +8,74 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run the server
 node server.js
 
-# Run tests (Node.js built-in test runner)
+# Run all tests (Node.js built-in test runner)
 npm test
 # or: node --test
+
+# Run a single test file
+node --test test/docker.test.js
+
+# Run tests matching a name pattern
+node --test --test-name-pattern="path safety"
 ```
 
-No build step required. No linter configured. The app currently has no runtime npm dependencies.
+No build step required. No linter configured. The app has no runtime npm dependencies.
 
 ## Architecture
 
-This is a single-file Node.js HTTP server that monitors a NAS/Docker host via `/proc` and the Docker CLI, serving a vanilla JS SPA with real-time updates.
+A Node.js HTTP server that monitors a NAS/Docker host via `/proc` and the Docker CLI, serving a vanilla JS SPA with real-time updates.
 
-**server.js** is the entry point and handles all HTTP routing, SSE streaming, and a 3-second data refresh loop. It reads system metrics directly from `/proc` (CPU, memory, processes, disk I/O, network I/O) rather than relying on external tools.
+### Server-side modules (`modules/`)
 
-**modules/docker.js** wraps Docker CLI commands (`execFile`) for all container/volume/network operations and Docker Compose project management. It includes path safety validation to prevent traversal attacks, YAML parsing for compose files, and synthetic ID generation for compose services.
+**server.js** is the entry point: sets up the HTTP server, the 3-second (configurable) cache refresh loop, WebSocket console, and routes requests to the appropriate handler. It is thin — most logic lives in modules.
 
-**modules/auth.js** handles PBKDF2-SHA512 password hashing (100K iterations), session creation/validation/expiry (4-hour TTL), cookie management, and periodic session cleanup. Sessions are persisted to `data/sessions.json` so they survive restarts.
+**modules/config.js** centralizes all configuration: `PORT`, file paths, `LOG_LEVELS`, settings schema/defaults (`logLevel`, `refreshIntervalSeconds`, `warnThresholdSeconds`), and `loadSettings()`/`saveSettingsFile()`. All other modules import from here.
 
-**index.html** is the entire frontend — a ~8,000-line single file containing all HTML, CSS, and JavaScript. Vanilla JS only; no framework. It connects to `/api/stream` (SSE) for live metric updates every 3 seconds and `/ws/console/:id` (WebSocket + xterm.js) for interactive container terminals. It is read from disk on every request (no restart needed for frontend changes — just refresh the browser).
+**modules/api.js** handles the REST API via `handleApi()`. Routes: `/api/data`, `/api/data/refresh`, `/api/stream` (SSE), `/api/disk*`, `/api/logs/*`, `/api/prune/*`, `/api/image-updates/*`, `/api/settings`, `/api/change-credentials`, `/api/network/*`, `/api/health`.
 
-**modules/menu.js** and **modules/setting.js** are small frontend JS modules served at `/modules/*.js`.
+**modules/docker.js** wraps Docker CLI (`execFile`) and handles container/compose routes via `handleApi()`. Routes: `/api/container/log/*`, `/api/container/detail/*`, `/api/container/restart-policy/*`, `/api/container/folders*`, `/api/container/config-folders*`, container action endpoints, `/api/docker/volumes/*`, `/api/compose/*`. Includes path safety validation, YAML parsing, and synthetic compose ID generation.
 
-**modules/header.js** contains HTTP response helpers for the server.
+**modules/categories.js** handles category CRUD via `registerRoutes()`. Routes: `/api/category-defs`, `/api/categories`.
+
+**modules/auth.js** handles PBKDF2-SHA512 password hashing (100K iterations), session creation/validation/expiry (4-hour TTL), and periodic cleanup. Sessions persist to `data/sessions.json`.
+
+**modules/monitor.js** collects process list from `/proc`. **modules/process.js** collects system summary (CPU, memory, uptime). **modules/disk.js** handles disk scan and 20-snapshot ring-buffer history. **modules/network.js** handles network interface stats. **modules/prune.js** runs Docker prune with `scheduleAutoPrune()`. **modules/image-updates.js** checks/pulls image updates with `scheduleImageUpdateCheck()`.
+
+**modules/logger.js** provides structured logging (`logDebug/Info/Warn/Error`, `auditLog`). Log level is runtime-configurable via settings. Audit log writes to `logs/audit.log`.
+
+**modules/header.js** contains HTTP response helpers.
+
+### Dependency injection pattern
+
+All modules receive their dependencies via `setDependencies(deps)` rather than direct imports — this avoids circular dependencies between modules that need each other (e.g., `api.js` needs `disk`, `prune`, `auth`; `server.js` wires them all together).
+
+### Frontend (`ui/`, `index.html`, `styles.css`)
+
+**index.html** is the HTML shell (~934 lines). It loads CDN dependencies (xterm.js, Prism, lucide), then loads all `/ui/*.js` modules, then `/styles.css`. It is read from disk on every request — no restart needed for frontend changes, just refresh.
+
+**styles.css** contains all CSS (~2400 lines). Edit this for styling.
+
+**ui/*.js** contains all frontend JavaScript, split by concern:
+- `utils.js` — shared utilities (loaded first, no imports)
+- `state.js` — global client state
+- `render.js` — data rendering / SSE update handler
+- `*-ui.js` — per-feature UI: `processes-ui`, `disk-ui`, `network-ui`, `docker-ui`, `compose-ui`, `console-ui`, `credentials-ui`, `volumes-ui`, `networks-ui`, `image-updates-ui`, `prune-ui`
+- `menu.js`, `menu-ui.js` — sidebar navigation
+- `setting.js` — settings panel
+- `syntax-highlight.js` — YAML/JSON highlighting
 
 ### Data flow
 
-1. `setInterval(refreshCache, 3000)` runs every 3s in server.js, collecting process/container/system data in parallel
-2. Data is held in an in-memory cache object `{ processes, containers, summary, lastUpdate }`
-3. SSE clients connected to `/api/stream` receive the cache as a streamed JSON event
-4. Write operations (container actions, settings, categories) go through individual REST endpoints, many of which trigger an immediate cache refresh
+1. `setInterval(refreshCache, N * 1000)` runs every N seconds (default 3, configurable in settings), collecting data from `monitor`, `docker`, and `process` modules in parallel.
+2. Cache is held in-memory as `{ processes, containers, summary, lastUpdate }`.
+3. SSE clients at `/api/stream` receive the cache as a streamed JSON event.
+4. Write operations go through REST endpoints; most trigger an immediate `refreshCache()`.
 
 ### Persistence
 
-All state lives in `data/` as JSON files: `credentials.json`, `sessions.json`, `settings.json`, `category-defs.json`, `category-assignments.json`, `disk-history.json` (20-snapshot ring buffer). These are excluded from git.
+All state in `data/` as JSON (excluded from git): `credentials.json`, `sessions.json`, `settings.json`, `category-defs.json`, `category-assignments.json`, `disk-history.json`.
 
-### Docker path detection
-
-The server searches 7 known paths to find the Docker binary, supporting both standard Linux and Synology DSM installs.
+Logs in `logs/` (excluded from git): `nas-monitor.log`, `audit.log`, `image-updates.log`, `prune.log`.
 
 ## Key environment variables
 
@@ -57,7 +88,9 @@ The server searches 7 known paths to find the Docker binary, supporting both sta
 
 ## Testing
 
-`test/docker.test.js` uses `node:test` (built-in) and covers docker module helpers: path safety validation, YAML parsing, and synthetic ID generation. Tests are isolated unit tests with no Docker daemon required.
+`test/docker.test.js` covers docker module helpers: path safety validation, YAML parsing, synthetic ID generation.  
+`test/categories.test.js` covers category CRUD logic including file I/O, dependency injection, and route handlers.  
+Both use `node:test` (built-in). No Docker daemon or running server required.
 
 ## UI Design
 
@@ -114,7 +147,6 @@ Pending items to be aware of when working on related areas:
 - **Historical metrics**: time-series snapshots in `metrics-history.json` (not yet implemented)
 - **Alerting**: configurable high-CPU / low-memory / disk-full alerts at `/api/alerts` (not yet implemented)
 - **Graceful shutdown**: `SIGTERM`/`SIGINT` handling not yet wired up
-- **Config extraction**: configuration is inline in `server.js`, not in a separate `config.js`
 
 ## Credential setup (first run)
 
@@ -137,7 +169,7 @@ fs.writeFileSync('data/credentials.json', JSON.stringify({ username: 'admin', pa
 In DSM → Control Panel → Task Scheduler, create a triggered task (Boot-up), run as root:
 
 ```bash
-nohup node /volume1/system/nas-monitor/server.js > /volume1/system/nas-monitor/nas-monitor.log 2>&1 &
+nohup node /volume1/system/nas-monitor/server.js > /volume1/system/nas-monitor/logs/nas-monitor.log 2>&1 &
 ```
 
 ## Troubleshooting
