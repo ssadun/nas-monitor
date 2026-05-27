@@ -9,8 +9,8 @@ const { _test } = dockerModule;
 
 const DEFAULT_DEPS = {
   appSettings: {
-    dockerConfigFolder: '',
-    dockerDataFolder: '/tmp/docker-data',
+    configFolders: [],
+    dataFolders: ['/tmp/docker-data'],
   },
   logError: () => {},
   logInfo: () => {},
@@ -80,7 +80,7 @@ describe('modules/docker helper tests', () => {
 
     dockerModule.setDependencies({
       ...DEFAULT_DEPS,
-      appSettings: { dockerConfigFolder: tempRoot },
+      appSettings: { configFolders: [tempRoot], dataFolders: [] },
     });
 
     const safePath = _test.getSafeComposeFilePath('default', composeFilePath);
@@ -96,7 +96,7 @@ describe('modules/docker helper tests', () => {
 
     dockerModule.setDependencies({
       ...DEFAULT_DEPS,
-      appSettings: { dockerConfigFolder: tempRoot },
+      appSettings: { configFolders: [tempRoot], dataFolders: [] },
     });
 
     assert.strictEqual(_test.getSafeComposeFilePath('default', outsideFile), '');

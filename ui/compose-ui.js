@@ -56,26 +56,153 @@ async function loadConfigFolderTab(containerName, containerId) {
   try {
     const res = await fetch('/api/container/config-folders?' + new URLSearchParams({ name: containerName }).toString());
     const data = await res.json();
-    renderConfigFolderTab(containerId, data);
+    renderConfigFolderTab(containerName, containerId, data);
   } catch (e) {
     content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(e.message)}</div>`;
   }
 }
 
-function renderConfigFolderTab(containerId, data) {
+async function loadConfigFolderPath(containerName, containerId, subpath = '') {
+  const content = document.getElementById(`configfolder-content-${containerId}`);
+  if (!content) return;
+  content.innerHTML = `<span style="font-family:var(--mono);font-size:13px;">⟳ Loading…</span>`;
+  try {
+    const params = new URLSearchParams({ name: containerName });
+    if (subpath) params.set('subpath', subpath);
+    const res = await fetch('/api/container/config-folders?' + params.toString());
+    const data = await res.json();
+    renderConfigFolderTab(containerName, containerId, data);
+  } catch (e) {
+    content.innerHTML = `<div style="color:var(--red);font-family:var(--mono);font-size:13px;">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+function renderConfigFolderTab(containerName, containerId, data) {
   const content = document.getElementById(`configfolder-content-${containerId}`);
   if (!content) return;
   if (!data || !data.ok) {
     content.innerHTML = `<div style="color:var(--text3);font-family:var(--mono);font-size:13px;">No configuration folder configured for this container.</div>`;
     return;
   }
-  content.innerHTML = `
-    <div class="cdetail-key" style="margin-bottom:8px;">CONFIGURATION FOLDER</div>
-    <code style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(data.path)}</code>
-    <span class="status-dot ${data.exists ? 'running' : 'exited'}"
-      style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
-    <span style="font-family:var(--mono);font-size:12px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
-  `;
+  const currentPath = String(data.subpath || '');
+  const encodedName = encodeURIComponent(containerName);
+
+  const parts = currentPath ? currentPath.split('/').filter(Boolean) : [];
+  let breadcrumbBuild = '';
+  const breadcrumbItems = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    breadcrumbBuild = breadcrumbBuild ? `${breadcrumbBuild}/${part}` : part;
+    if (i > 0) breadcrumbItems.push(`<span style="color:var(--text3);">/</span>`);
+    breadcrumbItems.push(`<a href="#" class="folder-breadcrumb-link" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(breadcrumbBuild)}');return false;">${esc(part)}</a>`);
+  }
+
+  const pathRow = `
+    <div style="margin-bottom:12px;">
+      <div class="cdetail-key" style="margin-bottom:4px;">CONFIGURATION FOLDER BROWSER</div>
+      <code style="font-family:var(--mono);font-size:11px;color:#505775;">${esc(data.path)}</code>
+      <span class="status-dot ${data.exists ? 'running' : 'exited'}"
+        style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
+      <span style="font-family:var(--mono);font-size:11px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text2);">
+        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--text3);">/</span>'}
+      </div>
+    </div>`;
+
+  if (!data.exists) {
+    content.innerHTML = pathRow + `
+      <div style="text-align:center;padding:16px 0;">
+        <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
+          No configuration folder found. Create it to store compose and container configuration files.
+        </div>
+        <button class="list-btn blue"
+          onclick="createConfigFolderAt('${encodedName}','${containerId}','',[])"><i data-lucide="folder-plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Create Configuration Folder</button>
+        <div id="configfolder-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>
+      </div>`;
+    lucide.createIcons({ nodes: [content] });
+    return;
+  }
+
+  if (!data.currentExists) {
+    const parentPath = getFolderParentPath(currentPath);
+    content.innerHTML = pathRow + `
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+        Current folder does not exist anymore.
+        <div style="margin-top:8px;">
+          <button class="list-btn blue" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
+        </div>
+      </div>
+      <div id="configfolder-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
+    lucide.createIcons({ nodes: [content] });
+    return;
+  }
+
+  const parentPath = getFolderParentPath(currentPath);
+  const controls = `
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 12px;">
+      <button class="list-btn blue" ${currentPath ? '' : 'disabled'} onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
+      <button class="list-btn blue" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}')"><i data-lucide="refresh-cw" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Refresh</button>
+      <input id="new-config-subfolder-${containerId}" class="filter-input" type="text" placeholder="new folder name"
+        style="flex:1;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;
+               padding:6px 10px;font-family:var(--mono);font-size:12px;outline:none;"
+        onkeydown="if(event.key==='Enter')createConfigFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[this.value])"/>
+      <button class="list-btn blue"
+        onclick="createConfigFolderAt('${encodedName}','${containerId}','${encodeURIComponent(currentPath)}',[document.getElementById('new-config-subfolder-${containerId}').value])"><i data-lucide="folder-plus" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Add Folder</button>
+    </div>`;
+
+  const rows = (data.entries || []).map(entry => {
+    const isDir = entry.type === 'dir';
+    const targetPath = joinFolderPath(currentPath, entry.name);
+    const nameCellHtml = isDir
+      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
+      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
+    const openBtn = isDir
+      ? `<button class="list-btn blue" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="external-link" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Open</button>`
+      : '';
+    const renameBtn = isDir
+      ? `<button class="list-btn blue" onclick="renameConfigFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Rename</button>`
+      : '';
+    const deleteBtn = isDir
+      ? `<button class="list-btn red" onclick="deleteConfigFolder('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Delete</button>`
+      : '';
+    const downloadBtn = !isDir
+      ? `<button class="list-btn green" onclick="downloadConfigFile('${encodedName}','${encodeURIComponent(targetPath)}')"><i data-lucide="download" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Download</button>`
+      : '';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:12px;color:${isDir ? 'var(--text)' : 'var(--text2)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
+      <td style="white-space:nowrap;vertical-align:middle;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
+    </tr>`;
+  }).join('');
+
+  const tableHtml = data.entries && data.entries.length
+    ? `<table class="cdetail-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Modified</th><th style="text-align:right;">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
+
+  content.innerHTML = pathRow
+    + `<div style="color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Configuration folder browser. Create/Rename/Delete operations apply to folders only.</div>`
+    + controls
+    + tableHtml
+    + `<div id="configfolder-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
+  lucide.createIcons({ nodes: [content] });
+}
+
+function openConfigFolderPath(encodedName, containerId, encodedSubpath) {
+  loadConfigFolderPath(decodeFolderArg(encodedName), containerId, decodeFolderArg(encodedSubpath));
+}
+
+function downloadConfigFile(encodedName, encodedFilePath) {
+  const containerName = decodeFolderArg(encodedName);
+  const filePath = decodeFolderArg(encodedFilePath);
+  const params = new URLSearchParams({ name: containerName, filePath });
+  const a = document.createElement('a');
+  a.href = '/api/container/config-folders/download?' + params.toString();
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
 function openFolderPath(encodedName, containerId, encodedSubpath) {
@@ -276,6 +403,88 @@ async function deleteDataFolder(encodedName, containerId, encodedFolderPath) {
     if (data.ok) {
       await loadFoldersTab(containerName, containerId, getFolderParentPath(folderPath));
       const fresh = document.getElementById(`folders-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = '✓ Folder deleted'; }
+    } else if (statusEl) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '✗ ' + (data.error || 'Delete failed');
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
+  }
+}
+
+async function createConfigFolderAt(encodedName, containerId, encodedParentPath, subfolders) {
+  const containerName = decodeFolderArg(encodedName);
+  const parentPath = decodeFolderArg(encodedParentPath);
+  const subNames = (subfolders || []).map(s => String(s || '').trim()).filter(Boolean);
+  const statusEl = document.getElementById(`configfolder-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Creating…'; }
+  try {
+    const res = await fetch('/api/container/config-folders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, parentPath, subfolders: subNames }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const msg = data.created.length > 0 ? `✓ Created: ${data.created.join(', ')}` : '✓ Already exists';
+      await loadConfigFolderPath(containerName, containerId, parentPath);
+      const fresh = document.getElementById(`configfolder-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = msg; }
+    } else {
+      if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + (data.error || 'Failed'); }
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
+  }
+}
+
+async function renameConfigFolder(encodedName, containerId, encodedFolderPath) {
+  const containerName = decodeFolderArg(encodedName);
+  const folderPath = decodeFolderArg(encodedFolderPath);
+  const currentName = folderPath.split('/').filter(Boolean).pop() || '';
+  const nextName = prompt('Rename folder to:', currentName);
+  if (!nextName || String(nextName).trim() === currentName) return;
+  const statusEl = document.getElementById(`configfolder-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Renaming…'; }
+  try {
+    const res = await fetch('/api/container/config-folders/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, folderPath, newName: String(nextName).trim() }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const refreshPath = getFolderParentPath(folderPath);
+      await loadConfigFolderPath(containerName, containerId, refreshPath);
+      const fresh = document.getElementById(`configfolder-status-${containerId}`);
+      if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = '✓ Folder renamed'; }
+    } else if (statusEl) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '✗ ' + (data.error || 'Rename failed');
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = 'var(--red)'; statusEl.textContent = '✗ ' + e.message; }
+  }
+}
+
+async function deleteConfigFolder(encodedName, containerId, encodedFolderPath) {
+  const containerName = decodeFolderArg(encodedName);
+  const folderPath = decodeFolderArg(encodedFolderPath);
+  const folderName = folderPath.split('/').filter(Boolean).pop() || folderPath;
+  if (!confirm(`Delete folder "${folderName}" and all nested content?`)) return;
+  const statusEl = document.getElementById(`configfolder-status-${containerId}`);
+  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Deleting…'; }
+  try {
+    const res = await fetch('/api/container/config-folders/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, folderPath }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      await loadConfigFolderPath(containerName, containerId, getFolderParentPath(folderPath));
+      const fresh = document.getElementById(`configfolder-status-${containerId}`);
       if (fresh) { fresh.style.color = 'var(--green)'; fresh.textContent = '✓ Folder deleted'; }
     } else if (statusEl) {
       statusEl.style.color = 'var(--red)';

@@ -210,10 +210,10 @@ async function openCDetailModal(id, name, stateClass) {
       : statusSection + detailSection + volumesSection + networksSection;
 
     const tabBar = `<div class="cdetail-tabs">
-      <button class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Container Status</button>
-      ${composeBacked ? `<button class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')"><i data-lucide="file-code" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Compose File</button>` : ''}
-      <button class="cdetail-tab" data-tab="folders" onclick="switchCDetailTab('folders')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Data Folders</button>
-      <button class="cdetail-tab" data-tab="configfolder" onclick="switchCDetailTab('configfolder')"><i data-lucide="settings" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Configuration Folder</button>
+      <button id="cdetail-tab-status" class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Container Status</button>
+      ${composeBacked ? `<button id="cdetail-tab-compose" class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')"><i data-lucide="file-code" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Compose File</button>` : ''}
+      <button id="cdetail-tab-datafolders" class="cdetail-tab" data-tab="datafolder" onclick="switchCDetailTab('datafolder')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Data Folders</button>
+      <button id="cdetail-tab-configfolder" class="cdetail-tab" data-tab="configfolder" onclick="switchCDetailTab('configfolder')"><i data-lucide="settings" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Configuration Folder</button>
     </div>`;
 
     el('cdetail-body').innerHTML = tabBar
@@ -226,7 +226,7 @@ async function openCDetailModal(id, name, stateClass) {
             + `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">⟳ Loading compose file…</div>`
             + `</div></div>`
           : '')
-      + `<div class="cdetail-tab-panel" id="cdetail-panel-folders" style="display:none">`
+      + `<div class="cdetail-tab-panel" id="cdetail-panel-datafolder" style="display:none">`
       + `<div id="folders-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`
       + `<div class="cdetail-tab-panel" id="cdetail-panel-configfolder" style="display:none">`
@@ -297,4 +297,3 @@ async function openCDetailModal(id, name, stateClass) {
     el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(e.message)}</div>`;
   }
 }
-

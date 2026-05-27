@@ -1432,6 +1432,53 @@ async function handleContainerConfigFolders(req, res, url) {
     });
     return true;
   }
+
+  if (req.method === 'POST') {
+    const body = await getRequestBody(req);
+    try {
+      const { name, subfolders, parentPath } = JSON.parse(body || '{}');
+      const resolvedBase = resolveContainerConfigPath(name, '');
+      const resolvedParent = resolveContainerConfigPath(name, parentPath || '');
+      if (!resolvedBase || !resolvedParent) {
+        writeJson(res, { ok: false, error: 'Invalid container name or parent path' });
+        return true;
+      }
+      const basePath = resolvedBase.basePath;
+      const parentDir = resolvedParent.targetPath;
+      const created = [];
+      if (!fs.existsSync(basePath)) {
+        fs.mkdirSync(basePath, { recursive: true });
+        created.push(name);
+      }
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+      }
+      if (Array.isArray(subfolders)) {
+        for (const sub of subfolders) {
+          const subName = String(sub || '').trim();
+          if (!subName || path.isAbsolute(subName)) continue;
+          if (subName.split('/').some(seg => seg === '..' || seg === '.')) continue;
+          if (!/^[a-zA-Z0-9_.\-][a-zA-Z0-9_.\-\/]*$/.test(subName)) continue;
+          const subPath = path.join(parentDir, subName);
+          if (!isPathInsideRoot(subPath, basePath)) continue;
+          if (!fs.existsSync(subPath)) {
+            fs.mkdirSync(subPath, { recursive: true });
+            created.push(subName);
+          }
+        }
+      }
+      logError('Container config folder ensured', {
+        container: name,
+        createdCount: created.length,
+        created,
+      });
+      writeJson(res, { ok: true, path: basePath, created });
+    } catch (e) {
+      logError('Failed to create container config folder', { error: e.message });
+      writeJson(res, { ok: false, error: e.message });
+    }
+    return true;
+  }
   return false;
 }
 
@@ -1553,6 +1600,129 @@ async function handleContainerFoldersDelete(req, res, url) {
     writeJson(res, { ok: true });
   } catch (e) {
     logError('Failed to delete container folder', { error: e.message });
+    writeJson(res, { ok: false, error: e.message });
+  }
+  return true;
+}
+
+async function handleContainerConfigFoldersDownload(req, res, url) {
+  if (url.pathname !== '/api/container/config-folders/download' || req.method !== 'GET') return false;
+  const name = getHelperUrlValue(url, 'name');
+  const filePath = getHelperUrlValue(url, 'filePath');
+  const resolved = resolveContainerConfigPath(name, filePath);
+  if (!resolved) {
+    writeJson(res, { ok: false, error: 'Invalid container name or file path' }, 400);
+    return true;
+  }
+
+  let st = null;
+  try { st = fs.statSync(resolved.targetPath); } catch {}
+  if (!st) {
+    writeJson(res, { ok: false, error: 'File not found' }, 404);
+    return true;
+  }
+  if (!st.isFile()) {
+    writeJson(res, { ok: false, error: 'Only files can be downloaded' }, 400);
+    return true;
+  }
+
+  const filename = path.basename(resolved.targetPath);
+  const encodedFilename = encodeURIComponent(filename);
+  res.writeHead(200, {
+    'Content-Type': 'application/octet-stream',
+    'Content-Length': st.size,
+    'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '')}"; filename*=UTF-8''${encodedFilename}`,
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+  });
+
+  const stream = fs.createReadStream(resolved.targetPath);
+  stream.on('error', e => {
+    logError('Container config file download stream failed', {
+      container: name,
+      filePath: resolved.subPath,
+      error: e.message,
+    });
+    if (!res.writableEnded) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ ok: false, error: 'Failed to read file' }));
+    }
+  });
+  stream.pipe(res);
+  return true;
+}
+
+async function handleContainerConfigFoldersRename(req, res, url) {
+  if (url.pathname !== '/api/container/config-folders/rename' || req.method !== 'POST') return false;
+  const body = await getRequestBody(req);
+  try {
+    const { name, folderPath, newName } = JSON.parse(body || '{}');
+    const resolved = resolveContainerConfigPath(name, folderPath || '');
+    if (!resolved) {
+      writeJson(res, { ok: false, error: 'Invalid container name or folder path' });
+      return true;
+    }
+    const cleanNewName = String(newName || '').trim();
+    if (!/^[a-zA-Z0-9_.\-]+$/.test(cleanNewName)) {
+      writeJson(res, { ok: false, error: 'Invalid folder name' });
+      return true;
+    }
+    const fromPath = resolved.targetPath;
+    if (fromPath === resolved.basePath) {
+      writeJson(res, { ok: false, error: 'Root folder cannot be renamed' });
+      return true;
+    }
+    let fromStat = null;
+    try { fromStat = fs.statSync(fromPath); } catch {}
+    if (!fromStat || !fromStat.isDirectory()) {
+      writeJson(res, { ok: false, error: 'Only folders can be renamed' });
+      return true;
+    }
+    const toPath = path.join(path.dirname(fromPath), cleanNewName);
+    if (!isPathInsideRoot(toPath, resolved.basePath)) {
+      writeJson(res, { ok: false, error: 'Invalid target folder path' });
+      return true;
+    }
+    if (fs.existsSync(toPath)) {
+      writeJson(res, { ok: false, error: 'A file or folder with the target name already exists' });
+      return true;
+    }
+    fs.renameSync(fromPath, toPath);
+    logError('Container config folder renamed', { container: name, from: resolved.subPath, to: cleanNewName });
+    writeJson(res, { ok: true });
+  } catch (e) {
+    logError('Failed to rename container config folder', { error: e.message });
+    writeJson(res, { ok: false, error: e.message });
+  }
+  return true;
+}
+
+async function handleContainerConfigFoldersDelete(req, res, url) {
+  if (url.pathname !== '/api/container/config-folders/delete' || req.method !== 'POST') return false;
+  const body = await getRequestBody(req);
+  try {
+    const { name, folderPath } = JSON.parse(body || '{}');
+    const resolved = resolveContainerConfigPath(name, folderPath || '');
+    if (!resolved) {
+      writeJson(res, { ok: false, error: 'Invalid container name or folder path' });
+      return true;
+    }
+    const targetPath = resolved.targetPath;
+    if (targetPath === resolved.basePath) {
+      writeJson(res, { ok: false, error: 'Root folder cannot be deleted' });
+      return true;
+    }
+    let st = null;
+    try { st = fs.statSync(targetPath); } catch {}
+    if (!st || !st.isDirectory()) {
+      writeJson(res, { ok: false, error: 'Only folders can be deleted' });
+      return true;
+    }
+    fs.rmSync(targetPath, { recursive: true, force: false });
+    logError('Container config folder deleted', { container: name, folderPath: resolved.subPath });
+    writeJson(res, { ok: true });
+  } catch (e) {
+    logError('Failed to delete container config folder', { error: e.message });
     writeJson(res, { ok: false, error: e.message });
   }
   return true;
@@ -2156,6 +2326,9 @@ async function handleApi(req, res, url, reqUser) {
   if (await handleContainerFoldersDownload(req, res, url)) return true;
   if (await handleContainerFoldersRename(req, res, url)) return true;
   if (await handleContainerFoldersDelete(req, res, url)) return true;
+  if (await handleContainerConfigFoldersDownload(req, res, url)) return true;
+  if (await handleContainerConfigFoldersRename(req, res, url)) return true;
+  if (await handleContainerConfigFoldersDelete(req, res, url)) return true;
   if (await handleContainerAction(req, res, url)) return true;
   if (await handleDockerVolumesList(req, res, url)) return true;
   if (await handleDockerVolumesDetail(req, res, url)) return true;
