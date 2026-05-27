@@ -246,6 +246,10 @@ function openComposeUpAction(project, service, name) {
   openActionModal('composeUp', `${project}/${service}`, name, { project, service });
 }
 
+function renderActionIcon(icon) {
+  return `<i data-lucide="${icon}" style="width:14px;height:14px;stroke-width:2;"></i>`;
+}
+
 // ─── depends_on grouping ──────────────────────────────────────────────────────
 // Within each compose project, show the depended-upon container (the "main"
 // one, e.g. gluetun) at depth 0, then indent containers that depend on it
@@ -392,16 +396,16 @@ function renderContainers() {
         <div class="container-actions" style="display:flex;gap:4px;">
           <button class="action-btn start" title="${startTitle}"
             ${stateClass === 'running' || c.dependsOnDepth ? 'disabled' : ''}
-            onclick="${startAction}">▶</button>
+            onclick="${startAction}">${renderActionIcon(isComposeParent ? 'upload' : 'play')}</button>
           <button class="action-btn restart" title="Restart"
             ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
-            onclick="openActionModal('restart','${c.id}','${esc(c.name)}')">↻</button>
+            onclick="openActionModal('restart','${c.id}','${esc(c.name)}')">${renderActionIcon('rotate-cw')}</button>
           <button class="action-btn stop" title="Stop"
             ${stateClass !== 'running' || isComposeOnly(c) ? 'disabled' : ''}
-            onclick="openActionModal('stop','${c.id}','${esc(c.name)}')">⏹</button>
+            onclick="openActionModal('stop','${c.id}','${esc(c.name)}')">${renderActionIcon('square')}</button>
           <button class="action-btn logs" title="Logs"
             ${stateClass !== 'running' ? 'disabled' : ''}
-            onclick="openLogs('${c.id}','${esc(c.name)}')">📋</button>
+            onclick="openLogs('${c.id}','${esc(c.name)}')">${renderActionIcon('scroll-text')}</button>
         </div>
       </td>
       <td class="col-process" onclick="event.stopPropagation()">
@@ -1319,4 +1323,3 @@ function render() {
   else if (currentTab === 'categories') renderCategories();
   else renderProcesses();
 }
-

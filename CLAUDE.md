@@ -13,7 +13,7 @@ npm test
 # or: node --test
 ```
 
-No build step required. No linter configured. The only npm dependency is `node-pty`.
+No build step required. No linter configured. The app currently has no runtime npm dependencies.
 
 ## Architecture
 

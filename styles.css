@@ -872,6 +872,7 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .action-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .action-btn svg { pointer-events: none; }
   .action-btn.start  { color: var(--green); }
   .action-btn.start:hover:not(:disabled)  { background: rgba(34,197,94,.12);  border-color: var(--green); }
   .action-btn.stop   { color: var(--red); }

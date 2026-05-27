@@ -1,9 +1,7 @@
 FROM node:20-alpine
 
-# Install build tools for node-pty (native addon) + Docker CLI
+# Install Docker CLI for container monitoring and management
 RUN apk add --no-cache \
-    alpine-sdk \
-    python3 \
     docker-cli
 
 WORKDIR /app
