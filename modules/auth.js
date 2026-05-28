@@ -217,6 +217,7 @@ function sendLoginPage(res, message = '') {
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <link rel="icon" href="/favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -331,9 +332,11 @@ function sendLoginPage(res, message = '') {
   .input-wrap { position: relative; }
   .input-icon {
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-    color: var(--text3); font-size: 14px; pointer-events: none;
+    color: var(--text3); pointer-events: none;
+    width: 15px; height: 15px; display: block;
     transition: color .2s;
   }
+  .input-icon svg { width: 15px; height: 15px; stroke: currentColor; }
   .field:focus-within .input-icon { color: var(--blue); }
   input[type=text], input[type=password] {
     width: 100%; padding: 11px 12px 11px 38px;
@@ -398,7 +401,15 @@ function sendLoginPage(res, message = '') {
   <div class="page">
     <div class="card">
       <div class="logo-area">
-        <div class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48"><path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></div>
+        <div class="logo-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="#e8edf4" stroke="#4f8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" version="1.1" id="svg5" sodipodi:docname="nas-monitor.svg" inkscape:version="1.4.3 (0d15f75, 2025-12-25)" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <defs id="defs5"></defs>
+  <sodipodi:namedview id="namedview5" pagecolor="#ffffff" bordercolor="#000000" borderopacity="0.25" inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="#d1d1d1" inkscape:zoom="1.6621094" inkscape:cx="225.01528" inkscape:cy="258.40658" inkscape:window-width="1920" inkscape:window-height="1111" inkscape:window-x="-9" inkscape:window-y="-9" inkscape:window-maximized="1" inkscape:current-layer="svg5"></sodipodi:namedview>
+  <rect style="display:inline;fill:#e8edf4;fill-opacity:1;stroke-width:0;stroke-dasharray:none" id="rect1" width="15.963737" height="8.2350178" x="4.0329027" y="12.747356"></rect>
+  <path d="M 12,2 V 5" id="path2" style="display:inline"></path>
+  <path d="M 19,13 V 7 A 2,2 0 0 0 17,5 H 7 A 2,2 0 0 0 5,7 v 6" id="path3" style="display:inline"></path>
+  <path d="M 19.38,20 A 11.6,11.6 0 0 0 21,14 l -8.188,-3.639 a 2,2 0 0 0 -1.624,0 L 3,14 a 11.6,11.6 0 0 0 2.81,7.76" fill="#e8edf4" id="path4" style="display:inline;fill:#e8edf4;fill-opacity:0"></path>
+  <path d="m 2,21 c 0.6,0.5 1.2,1 2.5,1 2.5,0 2.5,-2 5,-2 1.3,0 1.9,0.5 2.5,1 0.6,0.5 1.2,1 2.5,1 2.5,0 2.5,-2 5,-2 1.3,0 1.9,0.5 2.5,1" fill="none" id="path5" style="display:inline"></path>
+</svg></div>
         <div class="logo-name">NAS <span>Monitor</span></div>
         <div class="logo-sub">Real-time system monitor</div>
         <div class="live-pill"><div class="live-dot"></div> System Online</div>
@@ -408,14 +419,14 @@ function sendLoginPage(res, message = '') {
         <div class="field">
           <label>Username</label>
           <div class="input-wrap">
-            <span class="input-icon">👤</span>
+            <i data-lucide="user" class="input-icon"></i>
             <input type="text" name="user" placeholder="Enter username" autocomplete="username" required autofocus/>
           </div>
         </div>
         <div class="field">
           <label>Password</label>
           <div class="input-wrap">
-            <span class="input-icon">🔑</span>
+            <i data-lucide="lock" class="input-icon"></i>
             <input type="password" name="pass" placeholder="Enter password" autocomplete="current-password" required/>
           </div>
         </div>
@@ -425,6 +436,7 @@ function sendLoginPage(res, message = '') {
       <div class="card-footer">Secure access · Session protected</div>
     </div>
   </div>
+<script>lucide.createIcons();</script>
 </body>
 </html>`;
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });

@@ -50,6 +50,8 @@ const MANIFEST_FILE = path.join(PWA_DIR, 'manifest.webmanifest');
 const SERVICE_WORKER_FILE = path.join(PWA_DIR, 'sw.js');
 const PWA_ICON_FILE = path.join(PWA_DIR, 'pwa-icon.svg');
 const PWA_ICON_WHALE_FILE = path.join(PWA_DIR, 'pwa-icon-whale.svg');
+const PWA_ICON_192_FILE = path.join(PWA_DIR, 'pwa-icon-192.png');
+const PWA_ICON_512_FILE = path.join(PWA_DIR, 'pwa-icon-512.png');
 const STYLES_FILE = path.join(__dirname, 'styles.css');
 const PREVIEW_DIR = path.join(__dirname, 'preview');
 
@@ -289,6 +291,18 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/pwa/pwa-icon-whale.svg') {
     if (header.sendFile(res, PWA_ICON_WHALE_FILE, 'image/svg+xml; charset=utf-8')) return;
+    header.sendNotFound(res, 'icon not found');
+    return;
+  }
+
+  if (url.pathname === '/pwa/pwa-icon-192.png') {
+    if (header.sendFile(res, PWA_ICON_192_FILE, 'image/png', null)) return;
+    header.sendNotFound(res, 'icon not found');
+    return;
+  }
+
+  if (url.pathname === '/pwa/pwa-icon-512.png') {
+    if (header.sendFile(res, PWA_ICON_512_FILE, 'image/png', null)) return;
     header.sendNotFound(res, 'icon not found');
     return;
   }

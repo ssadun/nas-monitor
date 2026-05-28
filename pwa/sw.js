@@ -1,7 +1,8 @@
-const CACHE_NAME = 'nas-monitor-pwa-v3';
+const CACHE_NAME = 'nas-monitor-pwa-v5';
 const STATIC_PATHS = [
-  '/pwa/manifest.webmanifest?v=2',
-  '/pwa/pwa-icon-whale.svg',
+  '/pwa/manifest.webmanifest?v=3',
+  '/pwa/pwa-icon-192.png',
+  '/pwa/pwa-icon-512.png',
   '/favicon.ico',
 ];
 
