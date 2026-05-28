@@ -307,6 +307,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/homepage/calendar.ics') {
+    const apiKey = process.env.HOMEPAGE_API_KEY;
+    if (apiKey) {
+      const authHeader = req.headers['authorization'] || '';
+      if (authHeader !== `Bearer ${apiKey}`) {
+        res.writeHead(401, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ error: 'Unauthorized' }));
+        return;
+      }
+    }
+    await api.handleHomepageCalendar(req, res, url);
+    return;
+  }
+
   if (url.pathname === '/api/homepage/widget') {
     const apiKey = process.env.HOMEPAGE_API_KEY;
     if (apiKey) {
