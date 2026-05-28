@@ -541,6 +541,51 @@ async function handleHealth(req, res, CREDENTIALS_FILE) {
   }
 }
 
+// ─── /api/homepage/widget ────────────────────────────────────────────────────
+
+function parseFormattedBytes(str) {
+	if (!str) return 0;
+	const match = String(str).match(/^([\d.]+)\s*(B|Ki?B|Mi?B|Gi?B|Ti?B)$/i);
+	if (!match) return 0;
+	const val = parseFloat(match[1]);
+	const unit = match[2].toUpperCase().replace('IB', 'B');
+	const mult = { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 };
+	return val * (mult[unit] || 1);
+}
+
+async function handleHomepageWidget(req, res) {
+	const { containers } = _getCache();
+	const running = containers.filter(c => c.state === 'running');
+
+	const cpuPercent = running.reduce((sum, c) => sum + (parseFloat(c.cpu) || 0), 0);
+	const memBytes = running.reduce((sum, c) => sum + parseFormattedBytes(c.memUsage), 0);
+
+	const seenImages = new Set();
+	let imageSizeBytes = 0;
+	for (const c of containers) {
+		const key = c.image || c.id;
+		if (!seenImages.has(key) && c.imageSize) {
+			seenImages.add(key);
+			imageSizeBytes += parseFormattedBytes(c.imageSize);
+		}
+	}
+
+	const netRxKBs = running.reduce((sum, c) => sum + (c.vethRxKBs || 0), 0);
+	const netTxKBs = running.reduce((sum, c) => sum + (c.vethTxKBs || 0), 0);
+
+	jsonOk(res, {
+		containers: {
+			running: running.length,
+			total: containers.length,
+			cpu_percent: parseFloat(cpuPercent.toFixed(1)),
+			memory_gb: parseFloat((memBytes / 1024 ** 3).toFixed(2)),
+			image_size_gb: parseFloat((imageSizeBytes / 1024 ** 3).toFixed(2)),
+			net_rx_kbs: parseFloat(netRxKBs.toFixed(2)),
+			net_tx_kbs: parseFloat(netTxKBs.toFixed(2)),
+		},
+	});
+}
+
 // ─── Main router ──────────────────────────────────────────────────────────────
 
 async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CREDENTIALS_FILE }) {
@@ -579,4 +624,4 @@ async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CRED
   return false;
 }
 
-module.exports = { setDependencies, handleApi };
+module.exports = { setDependencies, handleApi, handleHomepageWidget };
