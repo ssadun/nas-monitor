@@ -573,6 +573,12 @@ async function handleHomepageWidget(req, res) {
 	const netRxKBs = running.reduce((sum, c) => sum + (c.vethRxKBs || 0), 0);
 	const netTxKBs = running.reduce((sum, c) => sum + (c.vethTxKBs || 0), 0);
 
+	const { processes = [] } = _getCache();
+	const containerPids = new Set(running.flatMap(c => c.pids || []));
+	const containerProcs = processes.filter(p => containerPids.has(p.pid));
+	const diskReadKBs  = containerProcs.reduce((sum, p) => sum + (p.diskReadKBs  || 0), 0);
+	const diskWriteKBs = containerProcs.reduce((sum, p) => sum + (p.diskWriteKBs || 0), 0);
+
 	jsonOk(res, {
 		containers: {
 			running: running.length,
@@ -582,71 +588,36 @@ async function handleHomepageWidget(req, res) {
 			image_size_gb: parseFloat((imageSizeBytes / 1024 ** 3).toFixed(2)),
 			net_rx_kbs: parseFloat(netRxKBs.toFixed(2)),
 			net_tx_kbs: parseFloat(netTxKBs.toFixed(2)),
+			net_total_kbs: parseFloat((netRxKBs + netTxKBs).toFixed(2)),
+			disk_read_kbs: parseFloat(diskReadKBs.toFixed(2)),
+			disk_write_kbs: parseFloat(diskWriteKBs.toFixed(2)),
+			disk_io_kbs: parseFloat((diskReadKBs + diskWriteKBs).toFixed(2)),
 		},
 	});
 }
 
-// ─── /api/homepage/calendar.ics ──────────────────────────────────────────────
+// ─── /api/homepage/containers ────────────────────────────────────────────────
 
-function icalEscape(str) {
-	return String(str || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-}
-
-function icalDate(d) {
-	return d.toISOString().slice(0, 10).replace(/-/g, '');
-}
-
-async function handleHomepageCalendar(req, res, url) {
-	const params = url ? url.searchParams : new URLSearchParams();
-	const limit = Math.min(parseInt(params.get('limit') || '5', 10), 20);
-	const sortBy = params.get('sort') === 'mem' ? 'mem' : 'cpu';
-
-	const { containers } = _getCache();
+async function handleHomepageContainers(req, res) {
+	const { containers, processes = [] } = _getCache();
 	const running = containers.filter(c => c.state === 'running');
+	const sorted = [...running].sort((a, b) => (parseFloat(b.cpu) || 0) - (parseFloat(a.cpu) || 0));
+	const top = sorted.slice(0, 10);
 
-	const sorted = [...running].sort((a, b) => {
-		if (sortBy === 'mem') return parseFormattedBytes(b.memUsage) - parseFormattedBytes(a.memUsage);
-		return (parseFloat(b.cpu) || 0) - (parseFloat(a.cpu) || 0);
+	const pidDiskMap = new Map(processes.map(p => [p.pid, (p.diskReadKBs || 0) + (p.diskWriteKBs || 0)]));
+
+	const rows = top.map(c => {
+		const nwKBs   = (c.vethRxKBs || 0) + (c.vethTxKBs || 0);
+		const diskKBs = (c.pids || []).reduce((sum, pid) => sum + (pidDiskMap.get(pid) || 0), 0);
+		return {
+			name: c.name,
+			usage: `${(parseFloat(c.cpu) || 0).toFixed(1)}% · ${(parseFormattedBytes(c.memUsage) / 1024 ** 3).toFixed(1)} GB · ${nwKBs.toFixed(1)} KB/s · ${diskKBs.toFixed(1)} KB/s`,
+		};
 	});
 
-	const top = sorted.slice(0, limit);
-	const today = new Date();
-	const todayStr = icalDate(today);
-	const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-	const tomorrowStr = icalDate(tomorrow);
-
-	const events = top.map(c => {
-		const cpu = parseFloat(c.cpu) || 0;
-		const memGb = (parseFormattedBytes(c.memUsage) / 1024 ** 3).toFixed(2);
-		const summary = icalEscape(`${c.name} - ${cpu.toFixed(1)}% CPU / ${memGb} GB RAM`);
-		const desc = icalEscape(`CPU: ${c.cpu}  RAM: ${c.memUsage}  Image: ${c.image}  Status: ${c.status}`);
-		return [
-			'BEGIN:VEVENT',
-			`UID:nas-monitor-${c.id}-${todayStr}@nas`,
-			`DTSTART;VALUE=DATE:${todayStr}`,
-			`DTEND;VALUE=DATE:${tomorrowStr}`,
-			`SUMMARY:${summary}`,
-			`DESCRIPTION:${desc}`,
-			'END:VEVENT',
-		].join('\r\n');
+	jsonOk(res, {
+		containers: [{ name: 'Container', usage: 'CPU · RAM · Network · Disk' }, ...rows],
 	});
-
-	const cal = [
-		'BEGIN:VCALENDAR',
-		'VERSION:2.0',
-		'PRODID:-//NAS Monitor//Container Stats//EN',
-		'CALSCALE:GREGORIAN',
-		'X-WR-CALNAME:Top Containers',
-		...events,
-		'END:VCALENDAR',
-	].join('\r\n');
-
-	res.writeHead(200, {
-		'Content-Type': 'text/calendar; charset=utf-8',
-		'Cache-Control': 'no-cache',
-		'Access-Control-Allow-Origin': '*',
-	});
-	res.end(cal);
 }
 
 // ─── Main router ──────────────────────────────────────────────────────────────
@@ -687,4 +658,4 @@ async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CRED
   return false;
 }
 
-module.exports = { setDependencies, handleApi, handleHomepageWidget, handleHomepageCalendar };
+module.exports = { setDependencies, handleApi, handleHomepageWidget, handleHomepageContainers };
