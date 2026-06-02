@@ -335,6 +335,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+
   if (!auth.isAuthenticated(req)) {
     logInfo('Authentication required for request', {
       method,
