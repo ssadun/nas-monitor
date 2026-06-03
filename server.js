@@ -470,6 +470,80 @@ server.on('upgrade', (req, socket, head) => {
   }
 
   const url = new URL(req.url, `http://localhost`);
+
+  // ─── Pull progress terminal ───────────────────────────────────────────────
+  if (url.pathname === '/ws/pull-progress') {
+    wsHandshake(req, socket);
+    const { spawn } = require('child_process');
+    const send = (text) => { try { wsSend(socket, text); } catch {} };
+    let currentProc = null;
+    let pullBuf = Buffer.alloc(0);
+
+    const runPulls = async ({ images, containersMap, restart }) => {
+      const total = (images || []).length;
+      for (let i = 0; i < total; i++) {
+        const image = images[i];
+        send(`\r\n\x1b[1;36m┌─── [${i + 1}/${total}] Pulling: ${image}\x1b[0m\r\n\r\n`);
+
+        const ok = await new Promise((resolve) => {
+          currentProc = spawn(DOCKER, ['pull', image], { stdio: ['ignore', 'pipe', 'pipe'] });
+          currentProc.stdout.on('data', d => send(d.toString()));
+          currentProc.stderr.on('data', d => send(d.toString()));
+          currentProc.on('close', code => {
+            currentProc = null;
+            if (code === 0) {
+              send(`\r\n\x1b[32m✓ ${image} pulled successfully\x1b[0m\r\n`);
+            } else {
+              send(`\r\n\x1b[31m✗ Pull failed for ${image} (exit code ${code})\x1b[0m\r\n`);
+            }
+            resolve(code === 0);
+          });
+          currentProc.on('error', e => {
+            currentProc = null;
+            send(`\r\n\x1b[31m✗ Error: ${e.message}\x1b[0m\r\n`);
+            resolve(false);
+          });
+        });
+
+        if (ok && restart && containersMap && Array.isArray(containersMap[image])) {
+          for (const ctr of containersMap[image].filter(Boolean)) {
+            send(`\r\n\x1b[34m  ↻ Restarting container: ${ctr}…\x1b[0m\r\n`);
+            try {
+              await docker.runDocker(`restart ${ctr}`);
+              send(`\x1b[32m  ✓ ${ctr} restarted\x1b[0m\r\n`);
+              imageUpdates.appendLog([`RESTART OK  container=${ctr}`]);
+            } catch (e) {
+              send(`\x1b[31m  ✗ Failed to restart ${ctr}: ${e.message}\x1b[0m\r\n`);
+              imageUpdates.appendLog([`RESTART FAIL  container=${ctr} error=${e.message}`]);
+            }
+          }
+        }
+        imageUpdates.appendLog([ok ? `PULL OK  ${image}` : `PULL FAIL ${image}`]);
+      }
+      send(`\r\n\x1b[1;32m══════════════════════════════════════════\r\n  All operations complete.\r\n══════════════════════════════════════════\x1b[0m\r\n`);
+      try { socket.end(); } catch {}
+    };
+
+    socket.on('data', chunk => {
+      pullBuf = Buffer.concat([pullBuf, chunk]);
+      while (pullBuf.length > 0) {
+        const frame = wsRead(pullBuf);
+        if (!frame) break;
+        pullBuf = pullBuf.slice(frame.total);
+        if (frame.opcode === 8) { try { if (currentProc) currentProc.kill(); socket.end(); } catch {} break; }
+        if (frame.opcode === 1 || frame.opcode === 2) {
+          try {
+            const msg = JSON.parse(frame.data.toString());
+            if (msg.type === 'start') runPulls(msg).catch(e => send(`\r\n\x1b[31m✗ Fatal: ${e.message}\x1b[0m\r\n`));
+          } catch {}
+        }
+      }
+    });
+    socket.on('error', () => { try { if (currentProc) currentProc.kill(); } catch {} });
+    socket.on('close', () => { try { if (currentProc) currentProc.kill(); } catch {} });
+    return;
+  }
+
   if (!url.pathname.startsWith('/ws/console/')) {
     socket.destroy(); return;
   }

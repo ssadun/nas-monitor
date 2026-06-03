@@ -792,18 +792,29 @@ function openActionModal(action, id, name, extra = {}) {
 }
 
 function addProgressStep(text, state = 'active') {
-  const icons = { active: '<span class="spin">⟳</span>', done: '✓', error: '✕', pending: '○' };
+  const icons = {
+    active:  '<span class="spin"><i data-lucide="loader-2" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i></span>',
+    done:    '<i data-lucide="check-circle" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i>',
+    error:   '<i data-lucide="x-circle" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i>',
+    pending: '<i data-lucide="circle" style="width:14px;height:14px;stroke-width:1.5;vertical-align:-3px;opacity:.4;"></i>',
+  };
   const div = document.createElement('div');
   div.className = `action-progress-step ${state}`;
   div.innerHTML = `<span class="step-icon">${icons[state]}</span><span>${esc(text)}</span>`;
   el('action-progress').appendChild(div);
+  lucide.createIcons({ nodes: [div] });
   return div;
 }
 
 function updateStep(stepEl, state, text) {
-  const icons = { active: '<span class="spin">⟳</span>', done: '✓', error: '✕' };
+  const icons = {
+    active:  '<span class="spin"><i data-lucide="loader-2" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i></span>',
+    done:    '<i data-lucide="check-circle" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i>',
+    error:   '<i data-lucide="x-circle" style="width:14px;height:14px;stroke-width:2;vertical-align:-3px;"></i>',
+  };
   stepEl.className = `action-progress-step ${state}`;
   stepEl.innerHTML = `<span class="step-icon">${icons[state]}</span><span>${esc(text)}</span>`;
+  lucide.createIcons({ nodes: [stepEl] });
 }
 
 async function executeAction() {

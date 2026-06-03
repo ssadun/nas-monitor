@@ -1,6 +1,9 @@
 // ─── Image Updates ────────────────────────────────────────────────────────────
-let _imgUpdateResults = [];
+let _imgUpdateResults  = [];
 let _imgUpdateSelected = new Set();
+let _pullTerm          = null;
+let _pullFit           = null;
+let _pullWs            = null;
 
 async function openImageUpdatesModal() {
   el('imgupdate-modal').classList.add('open');
@@ -166,39 +169,95 @@ function updateImgUpdateBulkButtons() {
   lucide.createIcons({ nodes: [pullRestartBtn] });
 }
 
-async function imgUpdateBulkPull() {
+function imgUpdateBulkPull() {
   if (_imgUpdateSelected.size === 0) return;
 
   const selected = Array.from(_imgUpdateSelected);
-  showToast(`Pull & Restart: ${selected.length} image${selected.length !== 1 ? 's' : ''}…`, 'info', 2000);
-
-  let successCount = 0;
-  let failCount = 0;
-
+  const containersMap = {};
   for (const image of selected) {
     const entry = _imgUpdateResults.find(r => r.image === image);
-    const containers = entry ? (entry.containers || []) : [];
-
-    try {
-      const res = await fetch('/api/image-updates/pull', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image, restart: true, containers }),
-      });
-      const data = await res.json();
-      if (data.ok) successCount++;
-      else failCount++;
-    } catch {
-      failCount++;
-    }
-  }
-
-  if (failCount === 0) {
-    showToast(`Pull & Restart complete: ${successCount} image${successCount !== 1 ? 's' : ''}`, 'ok', 3000);
-  } else {
-    showToast(`Pull & Restart: ${successCount} succeeded, ${failCount} failed`, failCount > 0 ? 'err' : 'ok', 4000);
+    containersMap[image] = entry ? (entry.containers || []) : [];
   }
 
   _imgUpdateSelected.clear();
-  await openImageUpdatesModal();
+  openPullTerminalModal(selected, containersMap, true);
 }
+
+function openPullTerminalModal(images, containersMap, restart) {
+  el('pull-progress-modal').classList.add('open');
+  el('pull-progress-title').textContent = `Pulling ${images.length} image${images.length !== 1 ? 's' : ''}…`;
+  const closeBtn = el('pull-progress-close-btn');
+  closeBtn.disabled = true;
+
+  if (_pullWs)   { try { _pullWs.close(); } catch {} _pullWs = null; }
+  if (_pullTerm) { _pullTerm.dispose(); _pullTerm = null; }
+
+  const termDiv = el('pull-progress-terminal');
+  termDiv.innerHTML = '';
+
+  _pullTerm = new Terminal({
+    theme: {
+      background: '#0d1117', foreground: '#e2e8ff', cursor: '#4f8ef7',
+      black: '#0d1117', brightBlack: '#545b7a',
+      blue: '#4f8ef7',  brightBlue: '#8b5cf6',
+      cyan: '#06b6d4',  green: '#22c55e',
+      red:  '#ef4444',  yellow: '#eab308',
+      white: '#e2e8ff', magenta: '#ec4899',
+    },
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13, lineHeight: 1.4,
+    cursorBlink: false, scrollback: 5000,
+    disableStdin: true,
+  });
+  _pullTerm.open(termDiv);
+
+  if (window.FitAddon) {
+    _pullFit = new FitAddon.FitAddon();
+    _pullTerm.loadAddon(_pullFit);
+    setTimeout(() => { try { _pullFit.fit(); } catch {} }, 50);
+  }
+
+  _pullTerm.write(`\x1b[1;35mImage Pull — ${images.length} image${images.length !== 1 ? 's' : ''} selected\x1b[0m\r\n`);
+
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  _pullWs = new WebSocket(`${proto}//${location.host}/ws/pull-progress`);
+  _pullWs.binaryType = 'arraybuffer';
+
+  _pullWs.onopen = () => {
+    _pullWs.send(JSON.stringify({ type: 'start', images, containersMap, restart }));
+  };
+
+  _pullWs.onmessage = e => {
+    const data = e.data instanceof ArrayBuffer ? new TextDecoder().decode(e.data) : e.data;
+    if (_pullTerm) _pullTerm.write(data);
+  };
+
+  _pullWs.onerror = () => {
+    if (_pullTerm) _pullTerm.write('\r\n\x1b[31m[WebSocket error]\x1b[0m\r\n');
+  };
+
+  _pullWs.onclose = () => {
+    _pullWs = null;
+    if (_pullTerm) _pullTerm.write('\r\n\x1b[33m[Session ended]\x1b[0m\r\n');
+    el('pull-progress-title').textContent = 'Pull Complete';
+    closeBtn.disabled = false;
+    lucide.createIcons({ nodes: [closeBtn] });
+  };
+}
+
+function closePullTerminalModal(refresh) {
+  el('pull-progress-modal').classList.remove('open');
+  if (_pullWs)   { try { _pullWs.close(); } catch {} _pullWs = null; }
+  if (_pullTerm) { _pullTerm.dispose(); _pullTerm = null; }
+  if (refresh) openImageUpdatesModal();
+}
+
+window.addEventListener('resize', () => {
+  if (_pullFit && el('pull-progress-modal').classList.contains('open')) {
+    try { _pullFit.fit(); } catch {}
+  }
+});
+
+el('pull-progress-modal').addEventListener('click', e => {
+  if (e.target === el('pull-progress-modal')) closePullTerminalModal(false);
+});

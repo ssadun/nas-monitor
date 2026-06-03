@@ -86,7 +86,7 @@ if ('serviceWorker' in navigator) {
     <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
       <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
-      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn ok"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
+      <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn ok"><i data-lucide="archive-x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
     </div>
   </div>
 </div>
@@ -261,6 +261,20 @@ if ('serviceWorker' in navigator) {
       <button class="modal-close" onclick="closeConsoleModal()" style="margin-left:8px;">✕</button>
     </div>
     <div id="console-terminal"></div>
+  </div>
+</div>
+
+<!-- PULL PROGRESS TERMINAL -->
+<div class="console-backdrop" id="pull-progress-modal">
+  <div class="console-modal">
+    <div class="console-header">
+      <i data-lucide="download" style="width:16px;height:16px;color:var(--lavender);flex-shrink:0;stroke-width:2;"></i>
+      <span id="pull-progress-title" style="font-family:var(--mono);font-size:13px;font-weight:600;flex:1;color:var(--white);margin-left:8px;">Pulling Images…</span>
+      <button id="pull-progress-close-btn" class="action-modal-btn cancel" style="padding:4px 12px;font-size:12px;" onclick="closePullTerminalModal(true)" disabled>
+        <i data-lucide="x" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;stroke-width:2.5;"></i>Close &amp; Refresh
+      </button>
+    </div>
+    <div id="pull-progress-terminal"></div>
   </div>
 </div>
 

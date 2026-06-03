@@ -5,7 +5,6 @@ Thumbs.db
 *.disabled
 nas-monitor.pid
 logs/*.log
-pwa/pwa-icon-whale.svg
 data/category-assignments.json
 data/credentials.json
 data/sessions.json
