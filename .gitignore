@@ -1,6 +1,7 @@
 @eaDir
 .DS_Store
 Thumbs.db
+node_modules/
 *.bak
 *.disabled
 nas-monitor.pid
