@@ -62,7 +62,10 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
     if (parent) parent.querySelector('.sidebar-item')?.classList.add('active');
   }
 
-  const sidebarExpanded = sessionStorage.getItem('sidebar-expanded') === 'true';
+  // On mobile the sidebar is an off-canvas drawer — always start closed,
+  // ignoring any persisted desktop "expanded" rail state.
+  const isMobileView = window.matchMedia('(max-width: 660px)').matches;
+  const sidebarExpanded = !isMobileView && sessionStorage.getItem('sidebar-expanded') === 'true';
   if (sidebarExpanded) {
     document.body.classList.add('sidebar-expanded');
     const sidebar = document.getElementById('sidebar');

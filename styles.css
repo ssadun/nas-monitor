@@ -2576,4 +2576,36 @@
     .mobile-bottom-nav-btn svg { width: 20px; height: 20px; }
     .mobile-bottom-nav-btn:hover { color: var(--slate); }
     .mobile-bottom-nav-btn.active { color: var(--accent); }
+
+    /* Processes table → stacked cards (one card per process row) */
+    #proc-table thead { display: none; }
+    #proc-table, #proc-table tbody, #proc-table tr { display: block; width: auto; }
+    #proc-table tr {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); margin: 0 8px 8px; padding: 8px 12px;
+    }
+    #proc-table td {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      width: auto !important; max-width: none !important;
+      padding: 3px 0; border: none; text-align: right;
+      white-space: normal; overflow: visible; text-overflow: clip;
+    }
+    #proc-table td::before {
+      content: attr(data-label);
+      flex-shrink: 0; text-align: left;
+      color: var(--muted); font-size: 11px; font-weight: 600;
+      letter-spacing: .5px; text-transform: uppercase;
+    }
+    /* Cells without a label (the status dot) are redundant with the Status row */
+    #proc-table td:not([data-label]) { display: none; }
+    /* Name becomes the card header — full width, no label */
+    #proc-table td.name-col {
+      display: block; text-align: left;
+      margin: -2px -4px 4px; padding: 0 0 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    #proc-table td.name-col::before { display: none; }
+    #proc-table td.name-col .proc-name { padding-left: 0 !important; font-size: 14px; font-weight: 600; }
+    /* Keep the CPU/Mem bars readable on the right side of the row */
+    #proc-table td.cpu-col .cpu-bar, #proc-table td.mem-col .mem-bar { flex: 1; max-width: 60%; }
   }
