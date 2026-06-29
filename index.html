@@ -370,9 +370,6 @@ if ('serviceWorker' in navigator) {
 
 <!-- HEADER -->
 <header>
-  <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleSidebar()" title="Menu" aria-label="Toggle navigation">
-    <i data-lucide="menu"></i>
-  </button>
   <div class="metrics-strip">
     <div class="metric-card containers" style="flex:13 1 100px;" onclick="switchTab('containers')">
       <div class="metric-label"><i data-lucide="activity" style="color:var(--accent)"></i>Containers</div>
@@ -511,6 +508,25 @@ if ('serviceWorker' in navigator) {
 
 <!-- Mobile drawer backdrop (only visible when sidebar is open at mobile widths) -->
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+<!-- Mobile bottom tab bar (only visible at mobile widths): 4 primary tabs + Menu -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Primary navigation">
+  <button class="mobile-bottom-nav-btn" id="mobnav-containers" data-tab="containers" onclick="switchTab('containers')">
+    <i data-lucide="box"></i><span>Docker</span>
+  </button>
+  <button class="mobile-bottom-nav-btn" id="mobnav-processes" data-tab="processes" onclick="switchTab('processes')">
+    <i data-lucide="cpu"></i><span>Processes</span>
+  </button>
+  <button class="mobile-bottom-nav-btn" id="mobnav-disk" data-tab="disk" onclick="switchTab('disk')">
+    <i data-lucide="hard-drive"></i><span>Disk</span>
+  </button>
+  <button class="mobile-bottom-nav-btn" id="mobnav-network" data-tab="network" onclick="switchTab('network')">
+    <i data-lucide="network"></i><span>Network</span>
+  </button>
+  <button class="mobile-bottom-nav-btn" id="mobnav-menu" onclick="toggleSidebar()">
+    <i data-lucide="menu"></i><span>Menu</span>
+  </button>
+</nav>
 
 <main>
   <!--  CONTAINERS TAB  -->

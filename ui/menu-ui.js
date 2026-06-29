@@ -24,6 +24,13 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + currentTab);
   });
+  // Sync mobile bottom-nav active state on load
+  const initBottomTabs = ['containers', 'processes', 'disk', 'network'];
+  document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === currentTab);
+  });
+  const initMenuBtn = document.getElementById('mobnav-menu');
+  if (initMenuBtn) initMenuBtn.classList.toggle('active', !initBottomTabs.includes(currentTab));
 
   // Restore containers sub-menu open state (default: open)
   const submenuOpen = sessionStorage.getItem('containers-submenu-open') !== 'false';
@@ -63,7 +70,11 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
   }
 
   updateSidebarToggleLabel();
-  if (window.lucide) lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+  if (window.lucide) {
+    lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+    const bottomNav = document.getElementById('mobile-bottom-nav');
+    if (bottomNav) lucide.createIcons({ nodes: [bottomNav] });
+  }
 })();
 
 function toggleContainersMenu() {
@@ -114,6 +125,13 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + name);
   });
+  // Sync the mobile bottom nav: highlight the matching tab, else fall back to Menu
+  const bottomTabs = ['containers', 'processes', 'disk', 'network'];
+  document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === name);
+  });
+  const menuBtn = document.getElementById('mobnav-menu');
+  if (menuBtn) menuBtn.classList.toggle('active', !bottomTabs.includes(name));
   // Keep containers parent button highlighted when any sub-item tab is active
   const containersBtn = document.querySelector('#containers-parent > .sidebar-item');
   const subTabs = ['containers', 'categories'];

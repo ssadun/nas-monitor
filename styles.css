@@ -2494,22 +2494,13 @@
      additive and scoped inside @media so desktop layout (>660px) is unchanged.
      Mobile-only controls below default to hidden at every width.
      ═══════════════════════════════════════════════════════════════════════ */
-  .mobile-nav-toggle {
-    display: none;
-    align-items: center; justify-content: center;
-    width: 38px; height: 38px; flex-shrink: 0;
-    background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: var(--radius); color: var(--text);
-    cursor: pointer; transition: var(--transition);
-  }
-  .mobile-nav-toggle:hover { background: var(--bg4); border-color: var(--accent); }
-  .mobile-nav-toggle svg { width: 20px; height: 20px; }
   .sidebar-backdrop {
     display: none;
     position: fixed; inset: 0;
     background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
     z-index: 100;
   }
+  .mobile-bottom-nav { display: none; }
 
   /* ─── Phase 1 — make every view usable at 360px ─────────────────────────── */
   @media (max-width: 660px) {
@@ -2517,11 +2508,10 @@
     html, body { height: auto; overflow-x: hidden; overflow-y: auto; }
     main, body.sidebar-expanded main, body:not(.sidebar-expanded) main,
     header, body.sidebar-expanded header { margin-left: 0; }
-    main { flex: 1 0 auto; }
+    main { flex: 1 0 auto; padding-bottom: 60px; }
 
-    /* Header: show hamburger, tighten spacing */
+    /* Header: tighten spacing (hamburger replaced by the bottom-nav Menu button) */
     header { gap: 10px; padding: 6px 10px; }
-    .mobile-nav-toggle { display: inline-flex; }
 
     /* Navigation: off-canvas drawer driven by the existing sidebar-expanded class */
     .sidebar {
@@ -2560,4 +2550,30 @@
     }
     .cdetail-grid, .cdetail-grid-3, .detail-grid { grid-template-columns: 1fr; }
     .catedit-icon-grid { grid-template-columns: repeat(6, 1fr); }
+  }
+
+  /* ─── Phase 2 — Home-Ledger-style polish ────────────────────────────────── */
+  @media (max-width: 660px) {
+    /* Fixed bottom tab bar: 4 primary tabs + Menu (opens the off-canvas drawer) */
+    .mobile-bottom-nav {
+      display: flex;
+      position: fixed; left: 0; right: 0; bottom: 0;
+      z-index: 90;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 4px 2px;
+      padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+    }
+    .mobile-bottom-nav-btn {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 6px 2px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-family: var(--mono);
+      font-size: 10px; font-weight: 600;
+      transition: var(--transition);
+    }
+    .mobile-bottom-nav-btn svg { width: 20px; height: 20px; }
+    .mobile-bottom-nav-btn:hover { color: var(--slate); }
+    .mobile-bottom-nav-btn.active { color: var(--accent); }
   }
