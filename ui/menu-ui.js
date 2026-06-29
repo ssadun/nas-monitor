@@ -143,6 +143,8 @@ function switchTab(name) {
   const filterInput = document.getElementById('filter-input');
   if (filterInput) filterInput.value = '';
   filterText = '';
+  // On mobile, the sidebar is an off-canvas drawer — auto-close after navigating
+  if (window.matchMedia('(max-width: 660px)').matches) closeSidebar();
   render();
 }
 

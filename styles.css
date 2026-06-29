@@ -2487,3 +2487,77 @@
   .app-toast.err {
     border-color: rgba(239,68,68,.55);
   }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     RESPONSIVE / MOBILE
+     House breakpoints: ≤660px (mobile), ≤410px (tighten). All rules are
+     additive and scoped inside @media so desktop layout (>660px) is unchanged.
+     Mobile-only controls below default to hidden at every width.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .mobile-nav-toggle {
+    display: none;
+    align-items: center; justify-content: center;
+    width: 38px; height: 38px; flex-shrink: 0;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius); color: var(--text);
+    cursor: pointer; transition: var(--transition);
+  }
+  .mobile-nav-toggle:hover { background: var(--bg4); border-color: var(--accent); }
+  .mobile-nav-toggle svg { width: 20px; height: 20px; }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+    z-index: 100;
+  }
+
+  /* ─── Phase 1 — make every view usable at 360px ─────────────────────────── */
+  @media (max-width: 660px) {
+    /* App shell: let the document scroll vertically; drop sidebar margin offsets */
+    html, body { height: auto; overflow-x: hidden; overflow-y: auto; }
+    main, body.sidebar-expanded main, body:not(.sidebar-expanded) main,
+    header, body.sidebar-expanded header { margin-left: 0; }
+    main { flex: 1 0 auto; }
+
+    /* Header: show hamburger, tighten spacing */
+    header { gap: 10px; padding: 6px 10px; }
+    .mobile-nav-toggle { display: inline-flex; }
+
+    /* Navigation: off-canvas drawer driven by the existing sidebar-expanded class */
+    .sidebar {
+      transform: translateX(-100%);
+      transition: transform .25s ease, width .25s ease;
+    }
+    .sidebar.expanded { box-shadow: var(--shadow-modal-lg); }
+    body.sidebar-expanded .sidebar, .sidebar.expanded { transform: translateX(0); }
+    body.sidebar-expanded .sidebar-backdrop { display: block; }
+
+    /* Header metrics: 2-column grid, shorter cards */
+    .metrics-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; }
+    .metric-card { height: auto; min-height: 56px; padding: 6px 10px; }
+    .metric-value { font-size: 15px; }
+
+    /* Toolbars / filters: wrap instead of overflowing */
+    .toolbar, .container-toolbar { flex-wrap: wrap; row-gap: 8px; }
+    .toolbar-right { flex-wrap: wrap; row-gap: 8px; }
+    .filter-box { flex: 1 1 140px; }
+    .filter-input { width: 100%; }
+
+    /* Tables: keep structure, scroll sideways with momentum */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Disk tab: stack the master/detail split into a single column */
+    #disk-split { flex-direction: column; overflow: visible; }
+    #disk-split > div {
+      width: 100% !important; flex: 1 1 auto !important;
+      border-right: none !important; border-bottom: 1px solid var(--border);
+    }
+    #disk-history-list { max-height: 200px; }
+
+    /* Modals: fit the viewport; collapse 2-col form/detail grids to one column */
+    .modal, .action-modal, .log-modal, .console-modal, .cdetail-modal {
+      max-width: 96vw; max-height: 92vh;
+    }
+    .cdetail-grid, .cdetail-grid-3, .detail-grid { grid-template-columns: 1fr; }
+    .catedit-icon-grid { grid-template-columns: repeat(6, 1fr); }
+  }

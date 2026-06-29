@@ -370,6 +370,9 @@ if ('serviceWorker' in navigator) {
 
 <!-- HEADER -->
 <header>
+  <button class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleSidebar()" title="Menu" aria-label="Toggle navigation">
+    <i data-lucide="menu"></i>
+  </button>
   <div class="metrics-strip">
     <div class="metric-card containers" style="flex:13 1 100px;" onclick="switchTab('containers')">
       <div class="metric-label"><i data-lucide="activity" style="color:var(--accent)"></i>Containers</div>
@@ -506,6 +509,9 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- Mobile drawer backdrop (only visible when sidebar is open at mobile widths) -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 <main>
   <!--  CONTAINERS TAB  -->
   <div class="tab-panel active" id="tab-containers">
@@ -633,7 +639,7 @@ if ('serviceWorker' in navigator) {
         <div class="live-badge" onclick="startStream()" style="cursor:pointer;" title="Click to refresh"><div class="live-dot"></div> LIVE · 3s</div>
       </div>
     </div>
-    <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+    <div id="disk-split" style="display:flex;flex:1;min-height:0;overflow:hidden;">
 
       <!-- History sidebar -->
       <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg2);">
