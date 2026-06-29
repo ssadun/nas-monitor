@@ -3,6 +3,8 @@ services:
     container_name: my-service
     hostname: my-service
     environment:
+      PUID: 1027
+      PGID: 100
       TZ: Europe/Istanbul
     volumes:
       - ../../_data:/data

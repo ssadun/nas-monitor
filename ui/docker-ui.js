@@ -59,7 +59,7 @@ async function openCDetailModal(id, name, stateClass) {
           onclick="openActionModal('stop','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span>Stop</span></button>
         <button class="cdetail-action-btn logs" title="Logs"
           onclick="openLogs('${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M15 12h-5"/><path d="M15 8H9"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg><span>Logs</span></button>
-        <button class="cdetail-action-btn delete" title="Delete" ${isRunning ? 'disabled' : ''}
+        <button class="cdetail-action-btn delete" title="Delete"
           onclick="openActionModal('delete','${cid}','${cname}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg><span>Delete</span></button>`;
     }
 
@@ -212,6 +212,7 @@ async function openCDetailModal(id, name, stateClass) {
     const tabBar = `<div class="cdetail-tabs">
       <button id="cdetail-tab-status" class="cdetail-tab${defaultTab === 'status' ? ' active' : ''}" data-tab="status" onclick="switchCDetailTab('status')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Container Status</button>
       ${composeBacked ? `<button id="cdetail-tab-compose" class="cdetail-tab${defaultTab === 'compose' ? ' active' : ''}" data-tab="compose" onclick="switchCDetailTab('compose')"><i data-lucide="file-code" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Compose File</button>` : ''}
+      <button id="cdetail-tab-dockerfile" class="cdetail-tab" data-tab="dockerfile" style="display:none" onclick="switchCDetailTab('dockerfile')"><i data-lucide="file-terminal" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Dockerfile</button>
       <button id="cdetail-tab-datafolders" class="cdetail-tab" data-tab="datafolder" onclick="switchCDetailTab('datafolder')"><i data-lucide="folder" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Data Folders</button>
       <button id="cdetail-tab-configfolder" class="cdetail-tab" data-tab="configfolder" onclick="switchCDetailTab('configfolder')"><i data-lucide="settings" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"></i>Configuration Folder</button>
     </div>`;
@@ -231,6 +232,9 @@ async function openCDetailModal(id, name, stateClass) {
       + `</div>`
       + `<div class="cdetail-tab-panel" id="cdetail-panel-configfolder" style="display:none">`
       + `<div id="configfolder-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `</div>`
+      + `<div class="cdetail-tab-panel" id="cdetail-panel-dockerfile" style="display:none">`
+      + `<div id="dockerfile-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`;
 
     lucide.createIcons({ nodes: [el('cdetail-body')] });
@@ -238,6 +242,12 @@ async function openCDetailModal(id, name, stateClass) {
     // ── Folders tabs ──
     loadFoldersTab(d.name, cid);
     loadConfigFolderTab(d.name, cid);
+    loadDockerfileTab(d.name, cid);
+
+    // ── Image update check (real containers only) ──
+    if (!isComposeConfigured && !d.composeOnly && d.image) {
+      loadContainerImageUpdate(d.image, d.name || name, cid, name, stateClass);
+    }
 
     // ── compose.yaml editor (compose-managed containers only) ──
     if (composeBacked) {
@@ -295,5 +305,58 @@ async function openCDetailModal(id, name, stateClass) {
 
   } catch (e) {
     el('cdetail-body').innerHTML = `<div style="padding:30px;color:var(--red);font-family:var(--mono);">⚠ ${esc(e.message)}</div>`;
+  }
+}
+
+// Queries the registry for a newer image and, if found, injects an "Update"
+// button into the detail modal's action bar. Runs async so the modal stays
+// responsive while the (potentially slow) registry lookup completes.
+async function loadContainerImageUpdate(image, containerName, cid, name, stateClass) {
+  const actions = el('cdetail-actions');
+  if (!actions) return;
+  try {
+    const res  = await fetch(`/api/image-updates/check?image=${encodeURIComponent(image)}`);
+    const data = await res.json();
+    if (!data.ok || !data.result || !data.result.updateAvailable) return;
+
+    // The user may have switched to a different container while we waited.
+    const openId = String(el('cdetail-id')?.textContent || '').split('  · ')[0].trim();
+    if (openId !== cid || el('cdetail-update-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'cdetail-update-btn';
+    btn.className = 'cdetail-action-btn update';
+    btn.title = 'A newer image is available — pull & recreate the container';
+    btn.innerHTML = `<i data-lucide="arrow-up-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i><span>Update</span>`;
+    btn.onclick = () => triggerContainerImageUpdate(image, containerName, cid, name, stateClass);
+    actions.insertBefore(btn, actions.firstChild);
+    lucide.createIcons({ nodes: [btn] });
+  } catch {
+    // Network/registry errors are non-fatal — simply don't show the button.
+  }
+}
+
+async function triggerContainerImageUpdate(image, containerName, cid, name, stateClass) {
+  const btn = el('cdetail-update-btn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i><span>Updating…</span>`;
+  lucide.createIcons({ nodes: [btn] });
+
+  try {
+    const res = await fetch('/api/image-updates/pull', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, restart: true, containers: [containerName].filter(Boolean) }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Pull failed');
+    showToast(`Updated ${image} — container recreated`, 'ok', 3500);
+    openCDetailModal(cid, name, stateClass); // reload to clear the Update button
+  } catch (e) {
+    showToast(`Update failed: ${e.message}`, 'err', 4500);
+    btn.disabled = false;
+    btn.innerHTML = `<i data-lucide="arrow-up-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i><span>Update</span>`;
+    lucide.createIcons({ nodes: [btn] });
   }
 }

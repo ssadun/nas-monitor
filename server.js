@@ -255,6 +255,22 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Locally-vendored third-party assets (xterm, etc.) so the UI works offline
+  // and is immune to CDN path changes.
+  const VENDOR_FILES = {
+    'xterm.min.js':      'application/javascript; charset=utf-8',
+    'xterm.min.css':     'text/css; charset=utf-8',
+    'addon-fit.min.js':  'application/javascript; charset=utf-8',
+  };
+  if (url.pathname.startsWith('/vendor/')) {
+    const file = url.pathname.slice(8); // strip leading '/vendor/'
+    if (Object.prototype.hasOwnProperty.call(VENDOR_FILES, file)) {
+      if (header.sendFile(res, path.join(__dirname, 'vendor', file), VENDOR_FILES[file])) return;
+    }
+    header.sendNotFound(res, 'vendor asset not found');
+    return;
+  }
+
   if (url.pathname === '/styles.css') {
     if (header.sendFile(res, STYLES_FILE, 'text/css; charset=utf-8')) return;
     header.sendNotFound(res, 'styles not found');
@@ -475,7 +491,11 @@ server.on('upgrade', (req, socket, head) => {
   if (url.pathname === '/ws/pull-progress') {
     wsHandshake(req, socket);
     const { spawn } = require('child_process');
-    const send = (text) => { try { wsSend(socket, text); } catch {} };
+    // xterm needs CRLF; docker pull / compose emit bare LF which would
+    // stagger each line. Normalize to CRLF without doubling existing CRLFs.
+    const send = (text) => {
+      try { wsSend(socket, String(text).replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')); } catch {}
+    };
     let currentProc = null;
     let pullBuf = Buffer.alloc(0);
 
@@ -507,14 +527,17 @@ server.on('upgrade', (req, socket, head) => {
 
         if (ok && restart && containersMap && Array.isArray(containersMap[image])) {
           for (const ctr of containersMap[image].filter(Boolean)) {
-            send(`\r\n\x1b[34m  ↻ Restarting container: ${ctr}…\x1b[0m\r\n`);
-            try {
-              await docker.runDocker(`restart ${ctr}`);
-              send(`\x1b[32m  ✓ ${ctr} restarted\x1b[0m\r\n`);
-              imageUpdates.appendLog([`RESTART OK  container=${ctr}`]);
-            } catch (e) {
-              send(`\x1b[31m  ✗ Failed to restart ${ctr}: ${e.message}\x1b[0m\r\n`);
-              imageUpdates.appendLog([`RESTART FAIL  container=${ctr} error=${e.message}`]);
+            send(`\r\n\x1b[34m  ↻ Recreating container: ${ctr}…\x1b[0m\r\n`);
+            const result = await docker.applyImageUpdate(ctr, (type, text) => send(text));
+            if (result.ok) {
+              send(`\r\n\x1b[32m  ✓ ${ctr} recreated with new image\x1b[0m\r\n`);
+              imageUpdates.appendLog([`RECREATE OK  container=${ctr}`]);
+            } else if (result.standalone) {
+              send(`\r\n\x1b[33m  ⚠ ${ctr}: ${result.error}\x1b[0m\r\n`);
+              imageUpdates.appendLog([`RECREATE SKIP  container=${ctr} (standalone)`]);
+            } else {
+              send(`\r\n\x1b[31m  ✗ Failed to recreate ${ctr}: ${result.error}\x1b[0m\r\n`);
+              imageUpdates.appendLog([`RECREATE FAIL  container=${ctr} error=${result.error}`]);
             }
           }
         }

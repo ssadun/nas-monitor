@@ -176,16 +176,53 @@ async function getRegistryDigest(parsed) {
     return res.headers['docker-content-digest'] || null;
   }
 
-  // Generic registry
+  // Generic registry — try the manifest directly, then follow a Bearer token
+  // challenge if the registry demands one (e.g. lscr.io, ghcr-backed registries).
   const creds = _registryCredentials[registry] || null;
+  const basicAuth = creds
+    ? 'Basic ' + Buffer.from(`${creds.username}:${creds.password}`).toString('base64')
+    : null;
   const url = `https://${registry}/v2/${repository}/manifests/${tag}`;
   const headers = { 'Accept': ACCEPT };
-  if (creds) {
-    headers['Authorization'] = 'Basic ' + Buffer.from(`${creds.username}:${creds.password}`).toString('base64');
+  if (basicAuth) headers['Authorization'] = basicAuth;
+
+  let res = await httpsGet(url, headers);
+  if (res.status === 401) {
+    const token = await getBearerToken(res.headers['www-authenticate'], repository, basicAuth);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      res = await httpsGet(url, headers);
+    }
   }
-  const res = await httpsGet(url, headers);
   if (res.status !== 200) throw new Error(`Registry ${registry} manifest fetch failed: ${res.status}`);
   return res.headers['docker-content-digest'] || null;
+}
+
+// Parse a `WWW-Authenticate: Bearer realm=...,service=...,scope=...` challenge
+// and exchange it for a token via the advertised realm.
+async function getBearerToken(wwwAuthenticate, repository, basicAuth) {
+  if (!wwwAuthenticate || !/^bearer/i.test(wwwAuthenticate.trim())) return null;
+  const params = {};
+  for (const part of wwwAuthenticate.replace(/^[Bb]earer\s+/, '').split(',')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    params[part.slice(0, eq).trim()] = part.slice(eq + 1).trim().replace(/^"|"$/g, '');
+  }
+  if (!params.realm) return null;
+
+  const query = [];
+  if (params.service) query.push('service=' + encodeURIComponent(params.service));
+  query.push('scope=' + encodeURIComponent(params.scope || `repository:${repository}:pull`));
+  const tokenUrl = params.realm + (params.realm.includes('?') ? '&' : '?') + query.join('&');
+
+  const authHeaders = {};
+  if (basicAuth) authHeaders['Authorization'] = basicAuth;
+  const res = await httpsGet(tokenUrl, authHeaders);
+  if (res.status !== 200) return null;
+  try {
+    const body = JSON.parse(res.body);
+    return body.token || body.access_token || null;
+  } catch { return null; }
 }
 
 // ─── Local image digest ───────────────────────────────────────────────────────
@@ -227,36 +264,42 @@ async function scanUpdates() {
   }
 
   for (const { image, containers: ctrs } of imageRefs) {
-    const entry = {
-      image,
-      containers: ctrs.flat ? ctrs.flat() : ctrs,
-      localDigest: null,
-      remoteDigest: null,
-      updateAvailable: false,
-      error: null,
-      registry: null,
-      tag: null,
-    };
-    try {
-      const parsed = parseImageRef(image);
-      entry.registry = parsed.registry;
-      entry.tag      = parsed.tag;
-      entry.localDigest  = await getLocalDigest(image);
-      entry.remoteDigest = await getRegistryDigest(parsed);
-      if (entry.localDigest && entry.remoteDigest) {
-        entry.updateAvailable = entry.localDigest !== entry.remoteDigest;
-      } else if (!entry.localDigest && entry.remoteDigest) {
-        // No local digest means image was pulled without content hash (build or load)
-        entry.updateAvailable = false;
-        entry.error = 'no local digest — cannot compare';
-      }
-    } catch (e) {
-      entry.error = e.message;
-    }
+    const entry = await checkImageUpdate(image);
+    entry.containers = ctrs.flat ? ctrs.flat() : ctrs;
     results.push(entry);
   }
 
   return results;
+}
+
+// ─── Check a single image for an update ──────────────────────────────────────
+
+async function checkImageUpdate(imageRef) {
+  const entry = {
+    image: imageRef,
+    localDigest: null,
+    remoteDigest: null,
+    updateAvailable: false,
+    error: null,
+    registry: null,
+    tag: null,
+  };
+  if (!imageRef) { entry.error = 'image required'; return entry; }
+  try {
+    const parsed = parseImageRef(imageRef);
+    entry.registry = parsed.registry;
+    entry.tag      = parsed.tag;
+    entry.localDigest  = await getLocalDigest(imageRef);
+    entry.remoteDigest = await getRegistryDigest(parsed);
+    if (entry.localDigest && entry.remoteDigest) {
+      entry.updateAvailable = entry.localDigest !== entry.remoteDigest;
+    } else if (!entry.localDigest && entry.remoteDigest) {
+      entry.error = 'no local digest — cannot compare';
+    }
+  } catch (e) {
+    entry.error = e.message;
+  }
+  return entry;
 }
 
 // ─── Pull an image ────────────────────────────────────────────────────────────
@@ -343,6 +386,7 @@ module.exports = {
   setDependencies,
   setRegistryCredentials,
   scanUpdates,
+  checkImageUpdate,
   pullImage,
   scheduleImageUpdateCheck,
   parseImageRef,

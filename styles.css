@@ -910,6 +910,7 @@
     background: #161b22; flex-shrink: 0;
   }
   #console-terminal { flex: 1; padding: 4px; overflow: hidden; }
+  #pull-progress-terminal { flex: 1; min-height: 0; padding: 10px 14px; overflow: hidden; }
 
   /* ─── Container Action Modal ─────────────────────────────── */
   .action-modal-backdrop {
@@ -1227,6 +1228,8 @@
   .cdetail-action-btn.logs:hover:not(:disabled)    { background: rgba(71,126,217,.12);  border-color: #477ed9; }
   .cdetail-action-btn.archive { color: var(--orange); }
   .cdetail-action-btn.archive:hover:not(:disabled) { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .cdetail-action-btn.update  { color: var(--lavender); border-color: rgba(139,92,246,.45); }
+  .cdetail-action-btn.update:hover:not(:disabled)  { background: rgba(139,92,246,.12); border-color: var(--lavender); }
   .compose-editor-head {
     display: flex;
     align-items: center;
@@ -1843,6 +1846,52 @@
   .syntax-highlight-pre .token.number,
   .syntax-highlight-pre .token.boolean { color: #f97316; }
   .syntax-highlight-pre .token.null { color: #ef4444; }
+  /* Read-only Dockerfile viewer (container detail modal) */
+  .dockerfile-view,
+  pre[class*="language-"].dockerfile-view {
+    margin: 0 !important;
+    padding: 16px 18px !important;
+    background: var(--bg3) !important;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    overflow: auto;
+    box-sizing: border-box;
+    text-shadow: none !important;
+  }
+  .dockerfile-view code,
+  .dockerfile-view code[class*="language-"] {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text);
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-shadow: none !important;
+  }
+  /* Prism wraps each whole instruction line in `.token.instruction`; keep that
+     wrapper neutral so only the nested tokens carry color, mirroring how the
+     compose YAML viewer colors keys/strings rather than entire lines. */
+  .dockerfile-view .token.instruction { color: var(--text); font-weight: 400; }
+  .dockerfile-view .token.comment { color: #545b7a; font-style: italic; }
+  .dockerfile-view .token.keyword { color: #4f8ef7; font-weight: 600; }
+  .dockerfile-view .token.string { color: #22c55e; }
+  .dockerfile-view .token.property { color: #8b5cf6; }
+  .dockerfile-view .token.function { color: #4f8ef7; }
+  .dockerfile-view .token.number,
+  .dockerfile-view .token.boolean { color: #f97316; }
+  .dockerfile-view .token.operator,
+  .dockerfile-view .token.punctuation { color: #8891b8; }
+  .dockerfile-view .token.variable { color: #eab308; }
+  /* Editable Dockerfile viewer: highlighted <pre> overlays the textarea and
+     swaps with it on edit/blur, mirroring the compose editor. */
+  .dockerfile-edit-container { position: relative; width: 100%; }
+  .dockerfile-edit-container .dockerfile-view { display: none; cursor: text; }
+  .dockerfile-edit-container .dockerfile-view.visible { display: block; }
+  .dockerfile-edit-container .compose-editor-textarea.hidden { display: none; }
   @keyframes modalIn { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;

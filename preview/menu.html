@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sidebar Menu Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg:        #0d0f14;
+    --bg2:       #141720;
+    --bg3:       #1c2030;
+    --bg4:       #242840;
+    --border:    #2a2f4a;
+    --border2:   #353b5e;
+    --text:      #e2e8ff;
+    --text2:     #8891b8;
+    --text3:     #545b7a;
+    --accent:    #4f8ef7;
+    --lavender:  #8b5cf6;
+    --white:     #f2ffff;
+    --green:     #22c55e;
+    --yellow:    #eab308;
+    --red:       #ef4444;
+    --orange:    #f97316;
+    --coral:     #fb7185;
+    --pink:      #ec4899;
+    --mono:      'Inter', system-ui, sans-serif;
+    --sans:      'Inter', system-ui, sans-serif;
+    --radius:    8px;
+    --radius2:   12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    overflow: hidden;
+  }
+
+  /* ─── Page layout ─── */
+  .page {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ─── Info panel on the right ─── */
+  .info-panel {
+    flex: 1;
+    padding: 32px 36px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .info-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .info-sub {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: monospace;
+    margin-bottom: 8px;
+  }
+
+  .section-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: monospace;
+    margin-bottom: 4px;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .item-row:last-child { border-bottom: none; }
+
+  .item-icon-preview {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+  }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .item-desc {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: monospace;
+    line-height: 1.5;
+  }
+
+  .color-chip {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 5px;
+    flex-shrink: 0;
+  }
+
+  .state-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: monospace;
+    font-weight: 600;
+  }
+  .state-badge.collapsed {
+    background: rgba(84,91,122,.15);
+    border: 1px solid var(--border);
+    color: var(--text3);
+  }
+  .state-badge.expanded {
+    background: rgba(79,142,247,.12);
+    border: 1px solid rgba(79,142,247,.35);
+    color: var(--accent);
+  }
+
+  .tip {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: monospace;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.6;
+    padding: 8px 12px;
+    background: rgba(79,142,247,.06);
+    border: 1px solid rgba(79,142,247,.15);
+    border-radius: 8px;
+  }
+
+  /* ─── Scrollbar ─────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ══════════════════════════════════════════════════════════════
+     SIDEBAR STYLES (exact copy from styles.css)
+  ══════════════════════════════════════════════════════════════ */
+
+  .sidebar {
+    position: relative;
+    width: 69px;
+    height: 100vh;
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    z-index: 101;
+    transition: width 0.3s ease;
+    overflow: visible;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+  }
+  .sidebar.expanded {
+    width: 201px;
+  }
+
+  .sidebar-toggle {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 64px;
+    background: rgba(79,142,247,.10);
+    cursor: pointer;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0 14px;
+    line-height: 1;
+    z-index: 102;
+    text-align: left;
+  }
+  .sidebar-toggle-icon {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    opacity: 0.4;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .sidebar-toggle-icon svg { width: 76px; height: 76px; }
+  .sidebar-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    padding-left: 60px;
+  }
+  .sidebar-toggle-name {
+    font-size: 17px;
+    font-weight: 700;
+    font-family: var(--sans);
+    color: var(--text);
+    opacity: 0.9;
+  }
+  .sidebar-toggle-motto {
+    font-size: 11px;
+    font-family: var(--sans);
+    color: var(--accent);
+    opacity: 0.5;
+  }
+  .sidebar-toggle-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    flex-shrink: 0;
+    letter-spacing: 1px;
+  }
+
+  /* Collapsed state overrides — scoped to preview wrapper */
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-toggle-text { display: none; }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-toggle-label { display: none; }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-toggle {
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+  }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-toggle-icon {
+    position: absolute;
+    top: -6px; left: -6px;
+    width: 76px; height: 76px;
+    opacity: 0.4;
+    overflow: hidden;
+  }
+
+  .sidebar-float-btn {
+    position: absolute;
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 11px; font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+    z-index: 103;
+    transition: border-color .15s;
+    user-select: none;
+    pointer-events: none;
+  }
+  .sidebar-toggle:hover .sidebar-float-btn { border-color: var(--border2); }
+  .sidebar-toggle:hover {
+    background: rgba(79,142,247,.18);
+    color: var(--accent);
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    padding-top: 8px;
+    padding-bottom: 1px;
+  }
+  .sidebar-section {
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-section.bottom {
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-section.bottom .sidebar-item {
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    margin: 6px 6px;
+    border-radius: 8px;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    overflow: hidden;
+    width: calc(100% - 12px);
+    box-sizing: border-box;
+  }
+  .sidebar-item:hover {
+    background: var(--sidebar-active-bg);
+    color: var(--text);
+  }
+  .sidebar-item.active {
+    background: var(--sidebar-active-bg);
+    color: var(--text);
+  }
+  .sidebar-item-icon {
+    flex-shrink: 0;
+    width: 24px; height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--sidebar-idle-color, #6b7fa3);
+    line-height: 1;
+  }
+  .sidebar-item.active .sidebar-item-icon,
+  .sidebar-item:hover .sidebar-item-icon {
+    color: var(--sidebar-active-color);
+  }
+  .sidebar-item-icon svg { width: 20px; height: 20px; color: inherit; display: block; }
+
+  .sidebar-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  /* Collapsed: text hidden, icon centered */
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-item-text { display: none; }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-item {
+    justify-content: center;
+    width: 52px;
+    margin: 6px 8px;
+    padding: 10px;
+    gap: 0;
+  }
+
+  /* ─── Chevron ─── */
+  .sidebar-item-chevron {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px;
+    color: var(--text3);
+    transition: transform .25s ease, color .15s;
+    margin-left: auto;
+  }
+  .sidebar-item-chevron svg { width: 14px; height: 14px; display: block; }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-item-chevron { display: none; }
+  .sidebar-parent.open .sidebar-item-chevron { transform: rotate(180deg); color: var(--accent); }
+  .sidebar-parent.open > .sidebar-item { color: var(--text); }
+  .sidebar-parent.open > .sidebar-item .sidebar-item-icon { color: var(--sidebar-active-color); }
+
+  /* ─── Sub-menu ─── */
+  .sidebar-submenu {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height .3s ease, opacity .25s ease;
+    opacity: 1;
+  }
+  .sidebar-submenu.closed {
+    max-height: 0;
+    opacity: 0;
+  }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-submenu.closed {
+    max-height: 0 !important;
+    pointer-events: none;
+  }
+
+  .sidebar-subitem {
+    position: relative;
+    display: flex; align-items: center; justify-content: flex-start; gap: 9px;
+    padding: 6px 8px 6px 30px;
+    margin: 2px 6px;
+    border-radius: 6px;
+    background: none; border: none;
+    color: var(--text3);
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    line-height: 1; cursor: pointer; text-align: left;
+    transition: background .15s, color .15s;
+    white-space: nowrap; overflow: hidden;
+    width: calc(100% - 12px);
+    box-sizing: border-box;
+  }
+  .sidebar-subitem::before {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 60%;
+    min-height: 12px;
+    border-radius: 2px;
+    background: var(--item-color, var(--accent));
+    opacity: 0.5;
+    transition: opacity .15s, height .15s;
+  }
+  .sidebar-subitem:hover::before { opacity: 1; height: 75%; }
+  .sidebar-subitem:hover {
+    background: color-mix(in srgb, var(--item-color, var(--accent)) 12%, transparent);
+    color: var(--text);
+  }
+  .sidebar-subitem:hover .subitem-icon { color: var(--item-color, var(--accent)); opacity: 1; }
+
+  .subitem-icon {
+    flex-shrink: 0; width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--item-color, var(--accent)); opacity: .65;
+    transition: opacity .15s;
+  }
+  .subitem-icon svg { width: 15px; height: 15px; display: block; color: inherit; }
+  .subitem-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+  /* Collapsed: icon + line centered */
+  .sidebar-wrap:not(.sidebar-expanded-state) .subitem-text { display: none; }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-subitem {
+    justify-content: center;
+    width: 52px; margin: 3px 8px; padding: 8px 0; gap: 5px;
+  }
+  .sidebar-wrap:not(.sidebar-expanded-state) .sidebar-subitem::before {
+    position: relative;
+    left: auto; top: auto; transform: none;
+    width: 2px; height: 14px; min-height: unset;
+    border-radius: 2px;
+    align-self: center; flex-shrink: 0;
+    opacity: 0.75;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══ LIVE SIDEBAR ═══ -->
+  <div class="sidebar-wrap" id="sidebar-wrap">
+    <div class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <span class="sidebar-toggle-icon"><i data-lucide="ship"></i></span>
+        <span class="sidebar-toggle-text">
+          <span class="sidebar-toggle-name">NAS <span style="color:var(--accent)">Monitor</span></span>
+          <span class="sidebar-toggle-motto">System Diagnostics</span>
+        </span>
+        <div class="sidebar-float-btn" id="sidebar-float-label">>></div>
+      </button>
+
+      <div class="sidebar-nav">
+        <div class="sidebar-section">
+
+          <!-- Docker Management (expandable) -->
+          <div class="sidebar-parent" id="containers-parent">
+            <button id="containers-btn" class="sidebar-item active"
+              data-icon="box" data-idle-color="#6b7fa3" data-active-color="#4f8ef7"
+              onclick="toggleContainersMenu()">
+              <span class="sidebar-item-text">Docker Management</span>
+              <span class="sidebar-item-chevron"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="sidebar-submenu" id="containers-submenu">
+              <button class="sidebar-subitem" style="--item-color:#22c55e">
+                <span class="subitem-icon"><i data-lucide="file-plus"></i></span>
+                <span class="subitem-text">New Compose</span>
+              </button>
+              <button class="sidebar-subitem" style="--item-color:#f97316">
+                <span class="subitem-icon"><i data-lucide="archive"></i></span>
+                <span class="subitem-text">Archive</span>
+              </button>
+              <button class="sidebar-subitem" style="--item-color:var(--coral)">
+                <span class="subitem-icon"><i data-lucide="folder-open"></i></span>
+                <span class="subitem-text">Categories</span>
+              </button>
+              <button class="sidebar-subitem" style="--item-color:#eab308">
+                <span class="subitem-icon"><i data-lucide="hard-drive"></i></span>
+                <span class="subitem-text">Volumes</span>
+              </button>
+              <button class="sidebar-subitem" style="--item-color:#8b5cf6">
+                <span class="subitem-icon"><i data-lucide="arrow-up-circle"></i></span>
+                <span class="subitem-text">Image Updates</span>
+              </button>
+              <button class="sidebar-subitem" style="--item-color:#ef4444">
+                <span class="subitem-icon"><i data-lucide="archive-x"></i></span>
+                <span class="subitem-text">Prune</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="sidebar-item"
+            data-icon="cpu" data-idle-color="#6b7fa3" data-active-color="#22c55e">
+            <span class="sidebar-item-text">System Processes</span>
+          </button>
+
+          <button class="sidebar-item"
+            data-icon="server" data-idle-color="#6b7fa3" data-active-color="#eab308">
+            <span class="sidebar-item-text">Disk Usage</span>
+          </button>
+
+          <!-- Network (expandable) -->
+          <div class="sidebar-parent" id="network-parent">
+            <button id="network-btn" class="sidebar-item"
+              data-icon="network" data-idle-color="#6b7fa3" data-active-color="#8b5cf6"
+              onclick="toggleNetworkMenu()">
+              <span class="sidebar-item-text">Network Utilization</span>
+              <span class="sidebar-item-chevron"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="sidebar-submenu closed" id="network-submenu">
+              <button class="sidebar-subitem" style="--item-color:var(--coral)">
+                <span class="subitem-icon"><i data-lucide="cable"></i></span>
+                <span class="subitem-text">Manage Networks</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="sidebar-section bottom">
+          <button class="sidebar-item"
+            data-icon="settings" data-idle-color="#6b7fa3" data-active-color="#f2ffff">
+            <span class="sidebar-item-text">Settings</span>
+          </button>
+          <button class="sidebar-item"
+            data-icon="key-round" data-idle-color="#6b7fa3" data-active-color="#f2ffff">
+            <span class="sidebar-item-text">Credentials</span>
+          </button>
+          <button class="sidebar-item"
+            data-icon="log-out" data-idle-color="#ef4444" data-active-color="#ef4444">
+            <span class="sidebar-item-text">Logout</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ INFO PANEL ═══ -->
+  <div class="info-panel">
+    <div>
+      <div class="info-title">Sidebar Menu Reference</div>
+      <div class="info-sub">preview/menu.html — click the sidebar to interact</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+        <span id="state-badge" class="state-badge collapsed">Collapsed · 69px</span>
+        <span style="font-size:11px;color:var(--text3);font-family:monospace;">Click the top logo area to toggle width</span>
+      </div>
+    </div>
+
+    <!-- Nav items -->
+    <div class="section-card">
+      <div class="section-label">Navigation Items</div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="box" style="width:16px;height:16px;color:#4f8ef7;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Docker Management</div>
+          <div class="item-desc">Expandable parent · active color <code style="color:var(--accent)">#4f8ef7</code> · tab: <code>containers</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="cpu" style="width:16px;height:16px;color:#22c55e;"></i></div>
+        <div class="item-info">
+          <div class="item-name">System Processes</div>
+          <div class="item-desc">Active color <code style="color:var(--green)">#22c55e</code> · tab: <code>processes</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="server" style="width:16px;height:16px;color:#eab308;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Disk Usage</div>
+          <div class="item-desc">Active color <code style="color:var(--yellow)">#eab308</code> · tab: <code>disk</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="network" style="width:16px;height:16px;color:#8b5cf6;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Network Utilization</div>
+          <div class="item-desc">Expandable parent · active color <code style="color:var(--lavender)">#8b5cf6</code> · tab: <code>network</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="settings" style="width:16px;height:16px;color:#f2ffff;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Settings</div>
+          <div class="item-desc">Opens settings modal · active color <code style="color:var(--white)">#f2ffff</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="key-round" style="width:16px;height:16px;color:#f2ffff;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Credentials</div>
+          <div class="item-desc">Opens credentials modal · active color <code style="color:var(--white)">#f2ffff</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="log-out" style="width:16px;height:16px;color:#ef4444;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Logout</div>
+          <div class="item-desc">Idle + active color <code style="color:var(--red)">#ef4444</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-items -->
+    <div class="section-card">
+      <div class="section-label">Docker Management Sub-items</div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="file-plus" style="width:15px;height:15px;color:#22c55e;"></i></div>
+        <div class="item-info">
+          <div class="item-name">New Compose</div>
+          <div class="item-desc"><span class="color-chip" style="background:#22c55e;"></span><code>#22c55e</code> · opens New Compose modal</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="archive" style="width:15px;height:15px;color:#f97316;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Archive</div>
+          <div class="item-desc"><span class="color-chip" style="background:#f97316;"></span><code>#f97316</code> · opens Archive Browser modal</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="folder-open" style="width:15px;height:15px;color:#fb7185;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Categories</div>
+          <div class="item-desc"><span class="color-chip" style="background:#fb7185;"></span><code>var(--coral) #fb7185</code> · tab: <code>categories</code></div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="hard-drive" style="width:15px;height:15px;color:#eab308;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Volumes</div>
+          <div class="item-desc"><span class="color-chip" style="background:#eab308;"></span><code>#eab308</code> · opens Volumes modal</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="arrow-up-circle" style="width:15px;height:15px;color:#8b5cf6;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Image Updates</div>
+          <div class="item-desc"><span class="color-chip" style="background:#8b5cf6;"></span><code>#8b5cf6</code> · opens Image Updates modal</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="archive-x" style="width:15px;height:15px;color:#ef4444;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Prune</div>
+          <div class="item-desc"><span class="color-chip" style="background:#ef4444;"></span><code>#ef4444</code> · opens Prune modal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network sub-items -->
+    <div class="section-card">
+      <div class="section-label">Network Utilization Sub-items</div>
+      <div class="item-row">
+        <div class="item-icon-preview"><i data-lucide="cable" style="width:15px;height:15px;color:#fb7185;"></i></div>
+        <div class="item-info">
+          <div class="item-name">Manage Networks</div>
+          <div class="item-desc"><span class="color-chip" style="background:#fb7185;"></span><code>var(--coral) #fb7185</code> · opens Network Manager modal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimensions -->
+    <div class="section-card">
+      <div class="section-label">Dimensions &amp; Behavior</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;font-family:monospace;color:var(--text2);">
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Collapsed width</span> <code>69px</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Expanded width</span> <code>201px</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Toggle header height</span> <code>64px</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Nav item height</span> <code>~40px (10px padding)</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Sub-item height</span> <code>~28px (6px padding)</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Width transition</span> <code>0.3s ease</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Idle icon color</span> <code>#6b7fa3</code></div>
+        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">State persistence</span> <code>sessionStorage</code></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <i data-lucide="info" style="width:14px;height:14px;color:var(--accent);flex-shrink:0;margin-top:1px;"></i>
+      <span>Icons are injected by <code>menu-ui.js</code> at init time via <code>data-icon</code>, <code>data-active-color</code>, and <code>data-idle-color</code> attributes. Sub-menus default open (Docker) or closed (Network) and restore state from <code>sessionStorage</code>.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+(function init() {
+  // Inject icons + CSS vars for each sidebar item
+  document.querySelectorAll('.sidebar-item').forEach(b => {
+    if (!b.dataset.icon) return;
+    const span = document.createElement('span');
+    span.className = 'sidebar-item-icon';
+    const i = document.createElement('i');
+    i.setAttribute('data-lucide', b.dataset.icon);
+    span.appendChild(i);
+    b.prepend(span);
+    b.style.setProperty('--sidebar-active-color', b.dataset.activeColor);
+    b.style.setProperty('--sidebar-idle-color', b.dataset.idleColor);
+    b.style.setProperty('--sidebar-active-bg', hexToRgba(b.dataset.activeColor, 0.12));
+  });
+
+  // Docker submenu open by default
+  const cp = document.getElementById('containers-parent');
+  if (cp) cp.classList.add('open');
+
+  if (window.lucide) lucide.createIcons();
+  updateStateBadge();
+})();
+
+function toggleSidebar() {
+  const wrap = document.getElementById('sidebar-wrap');
+  const sidebar = document.getElementById('sidebar');
+  const isExpanded = wrap.classList.toggle('sidebar-expanded-state');
+  sidebar.classList.toggle('expanded', isExpanded);
+  updateFloatLabel(isExpanded);
+  updateStateBadge();
+}
+
+function updateFloatLabel(expanded) {
+  const lbl = document.getElementById('sidebar-float-label');
+  if (lbl) lbl.textContent = expanded ? '<<' : '>>';
+}
+
+function updateStateBadge() {
+  const badge = document.getElementById('state-badge');
+  const expanded = document.getElementById('sidebar-wrap').classList.contains('sidebar-expanded-state');
+  badge.className = 'state-badge ' + (expanded ? 'expanded' : 'collapsed');
+  badge.textContent = expanded ? 'Expanded · 201px' : 'Collapsed · 69px';
+}
+
+function toggleContainersMenu() {
+  const parent = document.getElementById('containers-parent');
+  const submenu = document.getElementById('containers-submenu');
+  const isOpen = parent.classList.contains('open');
+  parent.classList.toggle('open', !isOpen);
+  submenu.classList.toggle('closed', isOpen);
+  if (!isOpen) {
+    const np = document.getElementById('network-parent');
+    const ns = document.getElementById('network-submenu');
+    if (np && ns) { np.classList.remove('open'); ns.classList.add('closed'); }
+  }
+}
+
+function toggleNetworkMenu() {
+  const parent = document.getElementById('network-parent');
+  const submenu = document.getElementById('network-submenu');
+  const isOpen = parent.classList.contains('open');
+  parent.classList.toggle('open', !isOpen);
+  submenu.classList.toggle('closed', isOpen);
+  if (!isOpen) {
+    const cp = document.getElementById('containers-parent');
+    const cs = document.getElementById('containers-submenu');
+    if (cp && cs) { cp.classList.remove('open'); cs.classList.add('closed'); }
+  }
+}
+</script>
+</body>
+</html>

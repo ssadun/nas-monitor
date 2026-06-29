@@ -237,6 +237,17 @@ async function handleImageUpdateScan(req, res, reqUser) {
   }
 }
 
+async function handleImageUpdateCheck(req, res, url) {
+  const image = url.searchParams.get('image');
+  if (!image) { jsonOk(res, { ok: false, error: 'image required' }); return; }
+  try {
+    const result = await _imageUpdates.checkImageUpdate(image);
+    jsonOk(res, { ok: true, result });
+  } catch (e) {
+    jsonOk(res, { ok: false, error: e.message });
+  }
+}
+
 async function handleImageUpdatePull(req, res, reqUser) {
   const body = await readBody(req);
   try {
@@ -246,22 +257,23 @@ async function handleImageUpdatePull(req, res, reqUser) {
     _imageUpdates.appendLog([`USER ${action}  user=${reqUser || 'unknown'} image=${image}`]);
     const result = await _imageUpdates.pullImage(image);
     if (result.ok && restart && Array.isArray(containers)) {
-      const restartResults = [];
+      // `docker restart` keeps the old image — recreate to apply the new one.
+      const docker = require('./docker.js');
+      const recreateResults = [];
       for (const ctr of containers) {
         if (!ctr) continue;
-        try {
-          const out = await new Promise((resolve) => {
-            const docker = require('./docker.js');
-            resolve(docker.runDocker ? docker.runDocker(`restart ${ctr}`) : '');
-          });
-          restartResults.push({ container: ctr, ok: true });
-          _imageUpdates.appendLog([`RESTART OK  container=${ctr}`]);
-        } catch (e) {
-          restartResults.push({ container: ctr, ok: false, error: e.message });
-          _imageUpdates.appendLog([`RESTART FAIL  container=${ctr} error=${e.message}`]);
-        }
+        const r = await docker.applyImageUpdate(ctr);
+        recreateResults.push({ container: ctr, ok: !!r.ok, standalone: !!r.standalone, error: r.ok ? undefined : r.error });
+        if (r.ok)              _imageUpdates.appendLog([`RECREATE OK  container=${ctr}`]);
+        else if (r.standalone) _imageUpdates.appendLog([`RECREATE SKIP  container=${ctr} (standalone)`]);
+        else                   _imageUpdates.appendLog([`RECREATE FAIL  container=${ctr} error=${r.error}`]);
       }
-      result.restartResults = restartResults;
+      result.recreateResults = recreateResults;
+      const failed = recreateResults.filter(r => !r.ok);
+      if (failed.length) {
+        result.ok = false;
+        result.error = failed.map(f => `${f.container}: ${f.error}`).join('; ');
+      }
     }
     _auditLog('image_pull', { user: reqUser, image, restart: !!restart, status: result.ok ? 'success' : 'failed' }, req);
     jsonOk(res, result);
@@ -644,6 +656,7 @@ async function handleApi(req, res, url, reqUser, { saveSettingsFile, prune, CRED
   if (pathname === '/api/prune/run' && method === 'POST')               { await handlePruneRun(req, res, reqUser); return true; }
   if (pathname === '/api/prune/log')                                    { handlePruneLog(req, res); return true; }
   if (pathname === '/api/image-updates/scan')                           { await handleImageUpdateScan(req, res, reqUser); return true; }
+  if (pathname === '/api/image-updates/check' && method === 'GET')      { await handleImageUpdateCheck(req, res, url); return true; }
   if (pathname === '/api/image-updates/pull' && method === 'POST')      { await handleImageUpdatePull(req, res, reqUser); return true; }
   if (pathname === '/api/image-updates/log')                            { handleImageUpdateLog(req, res); return true; }
   if (pathname === '/api/settings' && method === 'GET')                 { handleSettingsGet(req, res); return true; }

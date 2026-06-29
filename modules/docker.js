@@ -555,6 +555,35 @@ async function runComposeUpStream(composeFile, service, sendChunk, opts = {}) {
   });
 }
 
+// Read a container's docker-compose labels to locate its compose file/service.
+async function getContainerComposeInfo(name) {
+  try {
+    const out = await runDocker(`inspect ${name} --format "{{json .Config.Labels}}"`);
+    const labels = JSON.parse((out || '').trim() || '{}');
+    const project     = labels['com.docker.compose.project'];
+    const service     = labels['com.docker.compose.service'];
+    const configFiles = labels['com.docker.compose.project.config_files'];
+    if (project && service && configFiles) {
+      return { composeManaged: true, project, service, composeFile: configFiles.split(',')[0].trim() };
+    }
+  } catch { /* not compose-managed or inspect failed */ }
+  return { composeManaged: false };
+}
+
+// Apply a freshly-pulled image to a running container. `docker restart` keeps the
+// container pinned to its original image ID, so the container must be recreated.
+// For compose-managed containers `compose up -d <service>` recreates with the new
+// image. Standalone containers can't be safely auto-recreated here, so we report it.
+async function applyImageUpdate(name, sendChunk) {
+  const info = await getContainerComposeInfo(name);
+  if (!info.composeManaged) {
+    return { ok: false, standalone: true,
+      error: 'not compose-managed — recreate the container manually to apply the new image' };
+  }
+  const result = await runComposeUpStream(info.composeFile, info.service, sendChunk);
+  return { ...result, composeManaged: true, service: info.service };
+}
+
 async function runComposeBootLogStream(composeFile, service, sendChunk, opts = {}) {
   const logArgs = service ? ['logs', '--follow', '--timestamps', service] : ['logs', '--follow', '--timestamps'];
   const child = spawnComposeCommand(composeFile, logArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -1482,6 +1511,87 @@ async function handleContainerConfigFolders(req, res, url) {
   return false;
 }
 
+// Detect a Dockerfile in the container's configuration directory (root only).
+// Matches `Dockerfile` case-insensitively; returns its content when present.
+function findContainerDockerfile(containerName) {
+  const resolved = resolveContainerConfigPath(containerName, '');
+  if (!resolved) return null;
+  const basePath = resolved.basePath;
+  let dirents = [];
+  try {
+    dirents = fs.readdirSync(basePath, { withFileTypes: true });
+  } catch {
+    return { exists: false, path: '', name: '' };
+  }
+  const match = dirents.find(e => e.isFile() && /^dockerfile$/i.test(e.name));
+  if (!match) return { exists: false, path: '', name: '' };
+  return { exists: true, path: path.join(basePath, match.name), name: match.name };
+}
+
+async function handleContainerDockerfile(req, res, url) {
+  if (url.pathname !== '/api/container/dockerfile' || req.method !== 'GET') return false;
+  const name = getHelperUrlValue(url, 'name');
+  const found = findContainerDockerfile(name);
+  if (!found) {
+    writeJson(res, { ok: false, error: 'Invalid container name' }, 400);
+    return true;
+  }
+  if (!found.exists) {
+    writeJson(res, { ok: true, exists: false });
+    return true;
+  }
+  // Guard against huge files being streamed into the UI.
+  const MAX_DOCKERFILE_BYTES = 512 * 1024;
+  let content = '';
+  try {
+    const st = fs.statSync(found.path);
+    if (st.size > MAX_DOCKERFILE_BYTES) {
+      writeJson(res, { ok: true, exists: true, path: found.path, name: found.name, tooLarge: true });
+      return true;
+    }
+    content = fs.readFileSync(found.path, 'utf8');
+  } catch (e) {
+    writeJson(res, { ok: false, error: e.message }, 500);
+    return true;
+  }
+  writeJson(res, { ok: true, exists: true, path: found.path, name: found.name, content });
+  return true;
+}
+
+// Persist edits to a container's Dockerfile. Only writes when a Dockerfile
+// already exists in the (path-safe) config directory, mirroring the compose
+// file editor — we never create a Dockerfile where one wasn't present.
+async function handleContainerDockerfilePost(req, res, url) {
+  if (url.pathname !== '/api/container/dockerfile' || req.method !== 'POST') return false;
+  const body = await getRequestBody(req);
+  try {
+    const { name, content } = JSON.parse(body || '{}');
+    if (typeof content !== 'string') {
+      writeJson(res, { ok: false, error: 'content must be a string' });
+      return true;
+    }
+    const found = findContainerDockerfile(name);
+    if (!found) {
+      writeJson(res, { ok: false, error: 'Invalid container name' }, 400);
+      return true;
+    }
+    if (!found.exists) {
+      writeJson(res, { ok: false, error: 'No Dockerfile to edit for this container' }, 404);
+      return true;
+    }
+    const MAX_DOCKERFILE_BYTES = 512 * 1024;
+    if (Buffer.byteLength(content, 'utf8') > MAX_DOCKERFILE_BYTES) {
+      writeJson(res, { ok: false, error: 'Dockerfile is too large to save here.' }, 413);
+      return true;
+    }
+    fs.writeFileSync(found.path, content, 'utf8');
+    writeJson(res, { ok: true, path: found.path });
+  } catch (e) {
+    writeJson(res, { ok: false, error: e.message });
+  }
+  return true;
+}
+
 async function handleContainerFoldersDownload(req, res, url) {
   if (url.pathname !== '/api/container/folders/download' || req.method !== 'GET') return false;
   const name = getHelperUrlValue(url, 'name');
@@ -2323,6 +2433,8 @@ async function handleApi(req, res, url, reqUser) {
   if (await handleContainerRestartPolicy(req, res, url)) return true;
   if (await handleContainerFolders(req, res, url)) return true;
   if (await handleContainerConfigFolders(req, res, url)) return true;
+  if (await handleContainerDockerfile(req, res, url)) return true;
+  if (await handleContainerDockerfilePost(req, res, url)) return true;
   if (await handleContainerFoldersDownload(req, res, url)) return true;
   if (await handleContainerFoldersRename(req, res, url)) return true;
   if (await handleContainerFoldersDelete(req, res, url)) return true;
@@ -2354,6 +2466,8 @@ module.exports = {
   collectDockerVolumes,
   getComposeSyntheticDetail,
   runDocker,
+  applyImageUpdate,
+  getContainerComposeInfo,
   handleApi,
   getConfigFolders,
   getDataFolders,

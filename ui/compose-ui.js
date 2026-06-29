@@ -62,6 +62,116 @@ async function loadConfigFolderTab(containerName, containerId) {
   }
 }
 
+async function loadDockerfileTab(containerName, containerId) {
+  const content = document.getElementById(`dockerfile-content-${containerId}`);
+  const tabBtn = document.getElementById('cdetail-tab-dockerfile');
+  if (!content) return;
+  try {
+    const res = await fetch('/api/container/dockerfile?' + new URLSearchParams({ name: containerName }).toString());
+    const data = await res.json();
+    // Only reveal the tab when a Dockerfile actually exists in the config directory.
+    if (!data || !data.ok || !data.exists) {
+      if (tabBtn) tabBtn.style.display = 'none';
+      return;
+    }
+    if (tabBtn) tabBtn.style.display = '';
+    renderDockerfileTab(containerId, data);
+  } catch (e) {
+    if (tabBtn) tabBtn.style.display = 'none';
+  }
+}
+
+function renderDockerfileTab(containerId, data) {
+  const content = document.getElementById(`dockerfile-content-${containerId}`);
+  if (!content) return;
+
+  const header = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <div>
+        <div class="cdetail-key" style="margin-bottom:4px;">DOCKERFILE</div>
+        <code style="font-family:var(--mono);font-size:11px;color:#505775;">${esc(data.path || '')}</code>
+      </div>
+    </div>`;
+
+  if (data.tooLarge) {
+    content.innerHTML = header + `
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+        File is too large to preview here.
+      </div>`;
+    return;
+  }
+
+  const editorId = `dockerfile-editor-${containerId}`;
+  const saveId   = `dockerfile-save-${containerId}`;
+  const statusId = `dockerfile-status-${containerId}`;
+
+  content.innerHTML = header + `
+    <div class="dockerfile-edit-container" id="dockerfile-edit-${containerId}">
+      <textarea id="${editorId}"
+        class="compose-editor-textarea"
+        data-save-id="${saveId}"
+        spellcheck="false"></textarea>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <button id="${editorId}-edit" class="action-modal-btn blue"
+        onclick="enableDockerfileEdit('${editorId}')"><i data-lucide="pencil" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Edit</button>
+      <span id="${statusId}" style="font-family:var(--mono);font-size:12px;"></span>
+      <div style="flex:1;"></div>
+      <button id="${saveId}" class="action-modal-btn ok" style="display:none;"
+        onclick="saveDockerfile('${esc(containerName)}','${editorId}','${saveId}','${statusId}')"><i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Save</button>
+    </div>`;
+
+  const ta = document.getElementById(editorId);
+  if (ta) {
+    const originalValue = data.content || '';
+    ta.value = originalValue;
+    _dockerfileEditorState = { editorId, originalValue };
+    if (typeof initDockerfileHighlighting === 'function') initDockerfileHighlighting(editorId);
+  }
+  lucide.createIcons({ nodes: [content] });
+}
+
+// Persists Dockerfile edits. Writing the file does not rebuild the image —
+// the user must rebuild/recreate the container for changes to take effect.
+async function saveDockerfile(containerName, editorId, saveId, statusId) {
+  const ta      = document.getElementById(editorId);
+  const saveBtn = document.getElementById(saveId);
+  const status  = document.getElementById(statusId);
+  if (!ta || !saveBtn || !status) return;
+
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Saving…';
+  lucide.createIcons({ nodes: [saveBtn] });
+  status.style.color = 'var(--text3)';
+  status.textContent = '';
+
+  try {
+    const res  = await fetch('/api/container/dockerfile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: containerName, content: ta.value }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      _dockerfileEditorState.originalValue = ta.value;
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Saved — rebuild to apply';
+      saveBtn.style.display = 'none';
+      setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '✗ ' + (data.error || 'Failed');
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '✗ ' + e.message;
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Save';
+    lucide.createIcons({ nodes: [saveBtn] });
+  }
+}
+
 async function loadConfigFolderPath(containerName, containerId, subpath = '') {
   const content = document.getElementById(`configfolder-content-${containerId}`);
   if (!content) return;

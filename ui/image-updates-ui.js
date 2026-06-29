@@ -165,7 +165,7 @@ function updateImgUpdateBulkButtons() {
   if (!pullRestartBtn) return;
   const count = _imgUpdateSelected.size;
   pullRestartBtn.disabled = count === 0;
-  pullRestartBtn.innerHTML = `<i data-lucide="refresh-cw" style="width:13px;height:13px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Pull &amp; Restart${count > 0 ? ` (${count})` : ''}`;
+  pullRestartBtn.innerHTML = `<i data-lucide="refresh-cw" style="width:13px;height:13px;stroke-width:2;vertical-align:middle;margin-right:4px;"></i>Pull &amp; Recreate${count > 0 ? ` (${count})` : ''}`;
   lucide.createIcons({ nodes: [pullRestartBtn] });
 }
 
@@ -184,6 +184,9 @@ function imgUpdateBulkPull() {
 }
 
 function openPullTerminalModal(images, containersMap, restart) {
+  // Hide the scan modal so the terminal isn't stacked behind it; it is
+  // reopened (refreshed) by closePullTerminalModal(true) when the pull ends.
+  el('imgupdate-modal').classList.remove('open');
   el('pull-progress-modal').classList.add('open');
   el('pull-progress-title').textContent = `Pulling ${images.length} image${images.length !== 1 ? 's' : ''}…`;
   const closeBtn = el('pull-progress-close-btn');

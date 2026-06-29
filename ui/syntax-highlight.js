@@ -104,3 +104,69 @@ function checkComposeSyntax(editorId) {
     statusEl.style.color = 'var(--red)';
   }
 }
+
+// ─── Dockerfile editor (container detail modal) ───────────────────────────────
+// Mirrors the compose editor's blur-to-highlight behavior but is self-contained
+// (its own state) so it can coexist with the compose editor in the same modal.
+let _dockerfileEditorState = { editorId: '', originalValue: '' };
+
+function initDockerfileHighlighting(textareaId) {
+  const textarea = document.getElementById(textareaId);
+  if (!textarea || !window.Prism) return;
+  if (textarea.dataset.highlightInit) return;
+  textarea.dataset.highlightInit = 'true';
+
+  const container = textarea.closest('.dockerfile-edit-container');
+  if (!container) return;
+
+  const pre = document.createElement('pre');
+  pre.className = 'dockerfile-view visible';
+  const code = document.createElement('code');
+  code.className = 'language-docker';
+  pre.appendChild(code);
+  container.insertBefore(pre, textarea);
+
+  function updateHighlight() {
+    code.textContent = textarea.value;
+    Prism.highlightElement(code);
+  }
+
+  updateHighlight();
+  textarea.classList.add('hidden');
+
+  textarea.addEventListener('blur', () => {
+    updateHighlight();
+    textarea.classList.add('hidden');
+    pre.classList.add('visible');
+    const editBtn = document.getElementById(textareaId + '-edit');
+    if (editBtn) editBtn.style.display = '';
+    updateDockerfileSaveVisibility(textareaId);
+  });
+
+  textarea.addEventListener('input', () => {
+    updateDockerfileSaveVisibility(textareaId);
+  });
+}
+
+function enableDockerfileEdit(editorId) {
+  const textarea = document.getElementById(editorId);
+  if (!textarea) return;
+  const container = textarea.closest('.dockerfile-edit-container');
+  if (!container) return;
+  const pre = container.querySelector('.dockerfile-view');
+  if (pre) pre.classList.remove('visible');
+  textarea.classList.remove('hidden');
+  textarea.focus();
+  const editBtn = document.getElementById(editorId + '-edit');
+  if (editBtn) editBtn.style.display = 'none';
+}
+
+function updateDockerfileSaveVisibility(editorId) {
+  const textarea = document.getElementById(editorId);
+  if (!textarea) return;
+  const saveId = textarea.dataset.saveId;
+  const saveBtn = document.getElementById(saveId);
+  if (!saveBtn) return;
+  const original = window._dockerfileEditorState?.originalValue || '';
+  saveBtn.style.display = textarea.value !== original ? '' : 'none';
+}
