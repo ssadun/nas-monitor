@@ -66,7 +66,7 @@ if ('serviceWorker' in navigator) {
       <span class="log-live-dot" style="width:6px;height:6px"></span>
       <span class="log-count" id="log-count">0 lines</span>
       <div style="flex:1"></div>
-      <span style="color:var(--text3)" id="log-container-id"></span>
+      <span style="color:var(--muted)" id="log-container-id"></span>
     </div>
   </div>
 </div>
@@ -87,7 +87,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="log-body" id="prune-body" style="background:var(--bg);padding:0;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
-      <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
+      <span id="prune-summary" style="font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;">–</span>
       <button id="prune-confirm-btn" onclick="confirmPrune()" class="action-modal-btn ok"><i data-lucide="archive-x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>System Prune</button>
     </div>
   </div>
@@ -100,7 +100,7 @@ if ('serviceWorker' in navigator) {
       <div class="log-modal-title">
         <i data-lucide="archive-x" style="width:16px;height:16px;vertical-align:-2px;margin-right:6px;color:var(--red);"></i>
         <span style="color:var(--white);">Prune Log</span>
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:8px;">30-day retention</span>
       </div>
       <button class="modal-close" onclick="closePruneLogModal()">✕</button>
     </div>
@@ -125,7 +125,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="log-body" id="imgupdate-body" style="background:var(--bg);padding:0;min-height:120px;"></div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;">
-      <span id="imgupdate-summary" style="font-family:var(--mono);font-size:12px;color:var(--text3);flex:1;">–</span>
+      <span id="imgupdate-summary" style="font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;">–</span>
     </div>
   </div>
 </div>
@@ -137,7 +137,7 @@ if ('serviceWorker' in navigator) {
       <div class="log-modal-title">
         <i data-lucide="scroll-text" style="width:16px;height:16px;stroke-width:2;vertical-align:middle;margin-right:6px;color:var(--cyan);"></i>
         <span style="color:var(--white);">Image Update Log</span>
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:8px;">30-day retention</span>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:8px;">30-day retention</span>
       </div>
       <button class="modal-close" onclick="closeImageUpdateLogModal()">✕</button>
     </div>
@@ -153,13 +153,13 @@ if ('serviceWorker' in navigator) {
         <span id="action-modal-icon" style="display:flex;align-items:center;"><i data-lucide="play" style="width:16px;height:16px;color:var(--green);"></i></span>
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--white);" id="action-modal-title">–</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="action-modal-container">–</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="action-modal-container">–</div>
         </div>
       </div>
       <button class="modal-close" id="action-modal-close" onclick="closeActionModal()">✕</button>
     </div>
     <div class="action-modal-body">
-      <div id="action-modal-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div id="action-modal-desc" style="font-size:13px;color:var(--slate);line-height:1.6;"></div>
       <div class="action-progress" id="action-progress"></div>
     </div>
     <div class="action-modal-footer">
@@ -181,13 +181,13 @@ if ('serviceWorker' in navigator) {
         <i data-lucide="archive" style="width:16px;height:16px;color:var(--orange);flex-shrink:0;"></i>
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--white);" id="restore-confirm-title">Restore Archive</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="restore-confirm-project">–</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="restore-confirm-project">–</div>
         </div>
       </div>
       <button class="modal-close" onclick="closeRestoreConfirmModal()">✕</button>
     </div>
     <div class="action-modal-body">
-      <div id="restore-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div id="restore-confirm-desc" style="font-size:13px;color:var(--slate);line-height:1.6;"></div>
     </div>
     <div class="action-modal-footer">
       <button class="action-modal-btn cancel" onclick="closeRestoreConfirmModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
@@ -204,13 +204,13 @@ if ('serviceWorker' in navigator) {
         <i data-lucide="archive" style="width:16px;height:16px;color:var(--orange);flex-shrink:0;"></i>
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--white);">Delete Archive</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="archive-delete-confirm-project">–</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="archive-delete-confirm-project">–</div>
         </div>
       </div>
       <button class="modal-close" onclick="closeArchiveDeleteModal()">✕</button>
     </div>
     <div class="action-modal-body">
-      <div id="archive-delete-confirm-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div id="archive-delete-confirm-desc" style="font-size:13px;color:var(--slate);line-height:1.6;"></div>
     </div>
     <div class="action-modal-footer">
       <button class="action-modal-btn cancel" onclick="closeArchiveDeleteModal()"><i data-lucide="x" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Cancel</button>
@@ -229,13 +229,13 @@ if ('serviceWorker' in navigator) {
         <i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--yellow);flex-shrink:0;"></i>
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--white);">Dismiss Compose Changes</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">Unsaved compose file edits</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);">Unsaved compose file edits</div>
         </div>
       </div>
       <button class="modal-close" onclick="resolveComposeDismiss(false)">✕</button>
     </div>
     <div class="action-modal-body">
-      <div style="font-size:13px;color:var(--text2);line-height:1.6;">
+      <div style="font-size:13px;color:var(--slate);line-height:1.6;">
         You have unsaved compose file changes. Dismiss them and continue?<br>
         <span style="color:var(--red);font-size:12px;">⚠ This cannot be undone.</span>
       </div>
@@ -254,11 +254,11 @@ if ('serviceWorker' in navigator) {
       <span style="font-size:16px;">🖥</span>
       <span id="console-title" style="font-family:var(--mono);font-size:13px;font-weight:600;flex:1;">Console</span>
       <div style="display:flex;gap:6px;align-items:center;">
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">Shell:</span>
+        <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">Shell:</span>
         <button id="console-bash-btn" onclick="switchShell('bash')"
           style="padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--accent);color:white;font-family:var(--mono);font-size:11px;cursor:pointer;">bash</button>
         <button id="console-sh-btn" onclick="switchShell('sh')"
-          style="padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:none;color:var(--text3);font-family:var(--mono);font-size:11px;cursor:pointer;">sh</button>
+          style="padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:none;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;">sh</button>
       </div>
       <button class="modal-close" onclick="closeConsoleModal()" style="margin-left:8px;">✕</button>
     </div>
@@ -357,13 +357,13 @@ if ('serviceWorker' in navigator) {
       <span id="cdetail-status-dot" class="status-dot" style="width:10px;height:10px;flex-shrink:0;"></span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:16px;font-weight:700;color:var(--white);" id="cdetail-name">–</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="cdetail-id">–</div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="cdetail-id">–</div>
       </div>
       <div id="cdetail-actions" style="display:flex;gap:6px;align-items:center;margin-right:12px;"></div>
       <button class="modal-close" onclick="closeCDetailModal()">✕</button>
     </div>
     <div class="cdetail-body" id="cdetail-body">
-      <div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);">Loading…</div>
+      <div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);">Loading…</div>
     </div>
   </div>
 </div>
@@ -417,7 +417,7 @@ if ('serviceWorker' in navigator) {
         <canvas id="s-nw-canvas" style="width:100%;height:22px;display:block;margin-top:0;"></canvas>
       <div class="metric-sub" style="margin-top:2px;display:flex;gap:6px;">
         <span id="s-nw-in" style="color:var(--green);">↓ – KB/s</span>
-        <span style="color:var(--text3);">·</span>
+        <span style="color:var(--muted);">·</span>
         <span id="s-nw-out" style="color:var(--lavender);">↑ – KB/s</span>
       </div>
     </div>
@@ -515,7 +515,7 @@ if ('serviceWorker' in navigator) {
       <div class="toolbar-right">
         <span class="toolbar-label toolbar-info" id="container-count-total">–</span>
         <span class="toolbar-sep">|</span>
-        <span class="toolbar-label toolbar-info" id="container-count-compose" style="color:var(--text3);">–</span>
+        <span class="toolbar-label toolbar-info" id="container-count-compose" style="color:var(--muted);">–</span>
         <span class="toolbar-sep">|</span>
         <span class="toolbar-label last-update" id="last-update-containers">–</span>
         <div class="filter-box">
@@ -610,11 +610,11 @@ if ('serviceWorker' in navigator) {
   <!--  DISK USAGE TAB  -->
   <div class="tab-panel" id="tab-disk">
     <div class="toolbar">
-<span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Path:</span>
+<span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Path:</span>
       <input class="filter-input" type="text" id="disk-path-input" value="/volume1"
         style="width:200px" placeholder="/volume1"
         onkeydown="if(event.key==='Enter')scanDisk()"/>
-      <span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Depth:</span>
+      <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Depth:</span>
       <select id="disk-depth" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:5px 8px;font-family:var(--mono);font-size:12px;outline:none;">
         <option value="2">2</option>
         <option value="3">3</option>
@@ -637,30 +637,30 @@ if ('serviceWorker' in navigator) {
 
       <!-- History sidebar -->
       <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg2);">
-        <div style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);height:36px;box-sizing:border-box;display:flex;align-items:center;flex-shrink:0;">
+        <div style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);height:36px;box-sizing:border-box;display:flex;align-items:center;flex-shrink:0;">
           <i data-lucide="history" style="width:12px;height:12px;margin-right:5px;flex-shrink:0;"></i>Scan History
         </div>
         <div id="disk-history-list" style="flex:1;overflow-y:auto;padding:4px 0;">
-          <div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>
+          <div style="padding:20px 14px;color:var(--muted);font-size:11px;font-family:var(--mono)">No scans yet</div>
         </div>
       </div>
 
       <!-- Tree panel -->
       <div id="disk-tree-panel" style="flex:1.2;display:none;flex-direction:column;min-width:0;border-right:1px solid var(--border);">
-        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);height:36px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;gap:8px;">
+        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);height:36px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;gap:8px;">
           <i data-lucide="folder-tree" style="width:12px;height:12px;flex-shrink:0;"></i>Directory Tree
           <span id="disk-tree-root" style="color:var(--accent);font-size:11px"></span>
           <div style="flex:1;"></div>
           <button class="toolbar-btn expand sm" id="disk-expand-all-btn" onclick="toggleAllDiskNodes()" style="display:none;"><i data-lucide="arrow-up-down" style="width:12px;height:12px;stroke-width:2;"></i><span>Expand All</span></button>
         </div>
         <div style="flex:1;overflow:auto;min-height:0;" id="disk-tree-wrap">
-          <div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>
+          <div style="padding:30px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>
         </div>
       </div>
 
       <!-- Top files panel -->
       <div id="disk-files-panel" style="flex:1;display:none;flex-direction:column;min-width:0;">
-        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);height:36px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;">
+        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);height:36px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;">
           <i data-lucide="file-bar-chart" style="width:12px;height:12px;margin-right:5px;flex-shrink:0;"></i>Largest Files <span id="disk-file-count" style="color:var(--accent);margin-left:4px;"></span>
         </div>
         <div class="table-wrap" style="flex:1;min-height:0;">
@@ -695,7 +695,7 @@ if ('serviceWorker' in navigator) {
         </div>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
-          <span class="toolbar-label" id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--text3)">–</span>
+          <span class="toolbar-label" id="net-total-info" style="font-family:var(--mono);font-size:11px;color:var(--muted)">–</span>
 
           <span class="toolbar-label last-update" id="last-update-network">–</span>
           <div class="filter-box">
@@ -716,7 +716,7 @@ if ('serviceWorker' in navigator) {
         <button class="expand-all-btn" onclick="openCatMgr()" style="color:var(--accent);border-color:rgba(79,142,247,.4);">⚙ Manage Categories</button>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-right">
-          <span class="toolbar-label" id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--text3);display:none;"></span>
+          <span class="toolbar-label" id="cat-unassigned-badge" style="font-family:var(--mono);font-size:11px;color:var(--muted);display:none;"></span>
           <span class="toolbar-label last-update" id="last-update-categories">–</span>
           <div class="filter-box">
             <input class="filter-input" type="text" id="filter-input" placeholder="Filter…" oninput="applyFilter()"/>
@@ -759,7 +759,7 @@ if ('serviceWorker' in navigator) {
         <div id="creds-strength-bar" style="height:3px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden;">
           <div id="creds-strength-fill" style="height:100%;width:0;border-radius:2px;transition:width .3s,background .3s;"></div>
         </div>
-        <div id="creds-strength-label" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px;"></div>
+        <div id="creds-strength-label" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;"></div>
       </div>
       <div class="settings-row">
         <div class="settings-label">Confirm New Password</div>
@@ -846,14 +846,14 @@ if ('serviceWorker' in navigator) {
       <!-- Configuration Folders -->
       <div>
         <div class="settings-label" style="margin-bottom:8px;">Configuration Folders</div>
-        <div style="color:var(--text3);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing docker-compose.yml and .env files</div>
+        <div style="color:var(--muted);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing docker-compose.yml and .env files</div>
         <div id="settings-configFolders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div style="height:1px;background:var(--border);margin:6px 0;"></div>
       <!-- Data Folders -->
       <div>
         <div class="settings-label" style="margin-bottom:8px;">Data Folders</div>
-        <div style="color:var(--text3);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing container data and persistent storage</div>
+        <div style="color:var(--muted);font-size:11px;font-family:var(--mono);margin-bottom:8px;">Folders containing container data and persistent storage</div>
         <div id="settings-dataFolders-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
       <div id="settings-message" style="display:none;border-radius:7px;padding:8px 12px;font-family:var(--mono);font-size:12px;"></div>
@@ -919,13 +919,13 @@ if ('serviceWorker' in navigator) {
         <i data-lucide="cable" style="width:16px;height:16px;color:var(--coral);flex-shrink:0;"></i>
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--white);">Delete Docker Network</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="net-delete-network">–</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);" id="net-delete-network">–</div>
         </div>
       </div>
       <button class="modal-close" onclick="closeNetworkDeleteModal()">✕</button>
     </div>
     <div class="action-modal-body">
-      <div id="net-delete-desc" style="font-size:13px;color:var(--text2);line-height:1.6;"></div>
+      <div id="net-delete-desc" style="font-size:13px;color:var(--slate);line-height:1.6;"></div>
       <div class="action-progress" id="net-delete-progress"></div>
     </div>
     <div class="action-modal-footer">

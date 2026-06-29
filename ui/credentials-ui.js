@@ -176,7 +176,7 @@ function closeCatMgr(e) {
 function renderCatMgrList() {
   const body = document.getElementById('catmgr-body');
   if (!CATEGORIES.length) {
-    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No categories yet. Add one below.</div>`;
+    body.innerHTML = `<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px;">No categories yet. Add one below.</div>`;
     return;
   }
   body.innerHTML = CATEGORIES.map((cat, i) => `
@@ -544,7 +544,7 @@ function renderCategories() {
                 <td class="col-memused" style="color:var(--green);">${c.memUsage || '–'}</td>
                 <td class="col-netin" style="color:var(--green);">${c.vethRxKBs ? c.vethRxKBs.toFixed(2)+' KB/s' : '–'}</td>
                 <td class="col-netout" style="color:var(--accent);">${c.vethTxKBs ? c.vethTxKBs.toFixed(2)+' KB/s' : '–'}</td>
-                <td class="col-img" style="color:var(--text3);">${c.imageSize || '–'}</td>
+                <td class="col-img" style="color:var(--muted);">${c.imageSize || '–'}</td>
                 <td class="col-cat" onclick="event.stopPropagation()">${renderCategoryBadge(c.id, c.name)}</td>
               </tr>`;
             }).join('')}
@@ -560,7 +560,7 @@ function renderCategories() {
         <div class="cat-summary-card">
           <div class="cat-summary-cell cat-sc-containers">
             <div class="cat-summary-label">Containers</div>
-            <div class="cat-summary-value" style="color:${catColor};">${list.length} <span style="font-size:10px;font-weight:400;color:var(--text3);">${running} running</span></div>
+            <div class="cat-summary-value" style="color:${catColor};">${list.length} <span style="font-size:10px;font-weight:400;color:var(--muted);">${running} running</span></div>
           </div>
           <div class="cat-summary-cell cat-sc-cpu">
             <div class="cat-summary-label">CPU</div>
@@ -600,7 +600,7 @@ function renderCategories() {
   }
 
   if (unassigned.length > 0) {
-    html += buildSection('__unassigned__', '#545b7a', 'var(--text3)', '❓ Unassigned', unassigned);
+    html += buildSection('__unassigned__', '#545b7a', 'var(--muted)', '❓ Unassigned', unassigned);
   }
 
   root.innerHTML = html;

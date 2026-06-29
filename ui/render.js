@@ -455,7 +455,7 @@ function renderNetworks(networks) {
     ].filter(Boolean).join('\n');
     const color = n.driver === 'host'    ? 'var(--orange)'
                 : n.driver === 'overlay' ? 'var(--pink)'
-                : 'var(--text3)';
+                : 'var(--muted)';
     return `<span onclick="event.stopPropagation()" title="${esc(tip)}"
       style="display:inline-block;font-size:12px;font-family:var(--mono);
              padding:1px 6px;border-radius:4px;margin:1px 2px 1px 0;
@@ -495,11 +495,11 @@ function toggleAllContainers() {
 }
 
 function renderSubProcTable(pids) {
-  if (!pids || !pids.length) return '<p style="padding:12px 16px;color:var(--text3);font-size:13px">No process info available.</p>';
+  if (!pids || !pids.length) return '<p style="padding:12px 16px;color:var(--muted);font-size:13px">No process info available.</p>';
 
   // Build tree structure for these pids
   const procs = pids.map(pid => procByPid[pid]).filter(Boolean);
-  if (!procs.length) return '<p style="padding:12px 16px;color:var(--text3);font-size:13px">Process data not available (may need root access).</p>';
+  if (!procs.length) return '<p style="padding:12px 16px;color:var(--muted);font-size:13px">Process data not available (may need root access).</p>';
 
   // Group into tree
   const pidSet = new Set(pids);
@@ -523,7 +523,7 @@ function renderSubProcTable(pids) {
 
     let expandBtn = '';
     if (depth > 0) {
-      expandBtn = `<span style="color:var(--text3);font-size:13px;margin-right:6px;">⤷</span>`;
+      expandBtn = `<span style="color:var(--muted);font-size:13px;margin-right:6px;">⤷</span>`;
     }
 
     rows += `<tr>

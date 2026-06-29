@@ -114,8 +114,8 @@ function renderNetworkLeft() {
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:8px;">
         <div onclick="toggleNetContainers('${esc(n.iface)}')"
           style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;padding:2px 0 6px 0;">
-          <span style="font-size:10px;color:var(--text3);">${isExpanded ? '▼' : '▶'}</span>
-          <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:var(--mono);">
+          <span style="font-size:10px;color:var(--muted);">${isExpanded ? '▼' : '▶'}</span>
+          <span style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="vertical-align:-1px"><path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg> Containers (${attachedRows.length})
           </span>
         </div>
@@ -128,13 +128,13 @@ function renderNetworkLeft() {
             <span style="font-family:var(--mono);font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
               title="${esc(c.name)}">${esc(c.name)}</span>
             ${net && net.ip ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent);">${esc(net.ip)}</span>` : ''}
-            ${net && net.name ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:1px 5px;border:1px solid var(--border);border-radius:3px;">${esc(net.name)}</span>` : ''}
+            ${net && net.name ? `<span style="font-family:var(--mono);font-size:10px;color:var(--muted);padding:1px 5px;border:1px solid var(--border);border-radius:3px;">${esc(net.name)}</span>` : ''}
             <span class="green-text"  style="font-family:var(--mono);font-size:11px;">↓ ${esc(rxStr)}</span>
             <span class="accent-text" style="font-family:var(--mono);font-size:11px;">↑ ${esc(txStr)}</span>
           </div>`;
         }).join('') : ''}
       </div>` : `
-      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;font-size:11px;color:var(--text3);font-family:var(--mono);">
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;font-size:11px;color:var(--muted);font-family:var(--mono);">
         No containers attached
       </div>`;
 
@@ -145,7 +145,7 @@ function renderNetworkLeft() {
           <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">${esc(n.iface)}</span>
           ${n.dockerNetName ? `<span style="font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);color:var(--lavender);">${esc(n.dockerNetName)}</span>` : ''}
         </div>
-        <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${fmtBytes(n.rxBytes)} rx · ${fmtBytes(n.txBytes)} tx</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${fmtBytes(n.rxBytes)} rx · ${fmtBytes(n.txBytes)} tx</span>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start;">
         <!-- Sparkline -->
@@ -158,14 +158,14 @@ function renderNetworkLeft() {
         <!-- Current values -->
         <div style="display:flex;flex-direction:column;gap:8px;min-width:90px;">
           <div>
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↓ IN</div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↓ IN</div>
             <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green);">${rxKBs}</div>
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">KB/s</div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">KB/s</div>
           </div>
           <div>
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↑ OUT</div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.8px;margin-bottom:2px;">↑ OUT</div>
             <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--lavender);">${txKBs}</div>
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);">KB/s</div>
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">KB/s</div>
           </div>
         </div>
       </div>
@@ -173,7 +173,7 @@ function renderNetworkLeft() {
       <div style="margin-top:6px;display:flex;gap:14px;">
         <span style="font-size:10px;color:var(--green);font-family:var(--mono);">── IN</span>
         <span style="font-size:10px;color:var(--lavender);font-family:var(--mono);">── OUT</span>
-        <span style="font-size:10px;color:var(--text3);font-family:var(--mono);">60s window</span>
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);">60s window</span>
       </div>
       ${containerSection}
     </div>`;

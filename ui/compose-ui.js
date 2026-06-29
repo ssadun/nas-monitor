@@ -95,7 +95,7 @@ function renderDockerfileTab(containerId, data) {
 
   if (data.tooLarge) {
     content.innerHTML = header + `
-      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--mono);font-size:12px;">
         File is too large to preview here.
       </div>`;
     return;
@@ -142,7 +142,7 @@ async function saveDockerfile(containerName, editorId, saveId, statusId) {
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Saving…';
   lucide.createIcons({ nodes: [saveBtn] });
-  status.style.color = 'var(--text3)';
+  status.style.color = 'var(--muted)';
   status.textContent = '';
 
   try {
@@ -191,7 +191,7 @@ function renderConfigFolderTab(containerName, containerId, data) {
   const content = document.getElementById(`configfolder-content-${containerId}`);
   if (!content) return;
   if (!data || !data.ok) {
-    content.innerHTML = `<div style="color:var(--text3);font-family:var(--mono);font-size:13px;">No configuration folder configured for this container.</div>`;
+    content.innerHTML = `<div style="color:var(--muted);font-family:var(--mono);font-size:13px;">No configuration folder configured for this container.</div>`;
     return;
   }
   const currentPath = String(data.subpath || '');
@@ -203,7 +203,7 @@ function renderConfigFolderTab(containerName, containerId, data) {
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     breadcrumbBuild = breadcrumbBuild ? `${breadcrumbBuild}/${part}` : part;
-    if (i > 0) breadcrumbItems.push(`<span style="color:var(--text3);">/</span>`);
+    if (i > 0) breadcrumbItems.push(`<span style="color:var(--muted);">/</span>`);
     breadcrumbItems.push(`<a href="#" class="folder-breadcrumb-link" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(breadcrumbBuild)}');return false;">${esc(part)}</a>`);
   }
 
@@ -214,15 +214,15 @@ function renderConfigFolderTab(containerName, containerId, data) {
       <span class="status-dot ${data.exists ? 'running' : 'exited'}"
         style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
       <span style="font-family:var(--mono);font-size:11px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
-      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text2);">
-        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--text3);">/</span>'}
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--slate);">
+        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--muted);">/</span>'}
       </div>
     </div>`;
 
   if (!data.exists) {
     content.innerHTML = pathRow + `
       <div style="text-align:center;padding:16px 0;">
-        <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
+        <div style="color:var(--muted);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
           No configuration folder found. Create it to store compose and container configuration files.
         </div>
         <button class="list-btn blue"
@@ -236,7 +236,7 @@ function renderConfigFolderTab(containerName, containerId, data) {
   if (!data.currentExists) {
     const parentPath = getFolderParentPath(currentPath);
     content.innerHTML = pathRow + `
-      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--mono);font-size:12px;">
         Current folder does not exist anymore.
         <div style="margin-top:8px;">
           <button class="list-btn blue" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
@@ -264,8 +264,8 @@ function renderConfigFolderTab(containerName, containerId, data) {
     const isDir = entry.type === 'dir';
     const targetPath = joinFolderPath(currentPath, entry.name);
     const nameCellHtml = isDir
-      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
-      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
+      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
+      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
     const openBtn = isDir
       ? `<button class="list-btn blue" onclick="openConfigFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="external-link" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Open</button>`
       : '';
@@ -280,19 +280,19 @@ function renderConfigFolderTab(containerName, containerId, data) {
       : '';
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
       <td style="white-space:nowrap;vertical-align:middle;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
     </tr>`;
   }).join('');
 
   const tableHtml = data.entries && data.entries.length
     ? `<table class="cdetail-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Modified</th><th style="text-align:right;">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
-    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
+    : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
 
   content.innerHTML = pathRow
-    + `<div style="color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Configuration folder browser. Create/Rename/Delete operations apply to folders only.</div>`
+    + `<div style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Configuration folder browser. Create/Rename/Delete operations apply to folders only.</div>`
     + controls
     + tableHtml
     + `<div id="configfolder-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
@@ -345,7 +345,7 @@ function renderFoldersTab(containerName, containerId, data) {
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i];
     breadcrumbBuild = breadcrumbBuild ? `${breadcrumbBuild}/${part}` : part;
-    if (i > 0) breadcrumbItems.push(`<span style="color:var(--text3);">/</span>`);
+    if (i > 0) breadcrumbItems.push(`<span style="color:var(--muted);">/</span>`);
     breadcrumbItems.push(`<a href="#" class="folder-breadcrumb-link" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(breadcrumbBuild)}');return false;">${esc(part)}</a>`);
   }
 
@@ -356,15 +356,15 @@ function renderFoldersTab(containerName, containerId, data) {
       <span class="status-dot ${data.exists ? 'running' : 'exited'}"
         style="width:8px;height:8px;margin-left:8px;vertical-align:middle;display:inline-block;"></span>
       <span style="font-family:var(--mono);font-size:11px;color:${data.exists ? 'var(--green)' : 'var(--red)'};">${data.exists ? 'exists' : 'missing'}</span>
-      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text2);">
-        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--text3);">/</span>'}
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--slate);">
+        ${breadcrumbItems.length ? breadcrumbItems.join('') : '<span style="color:var(--muted);">/</span>'}
       </div>
     </div>`;
 
   if (!data.exists) {
     content.innerHTML = pathRow + `
       <div style="text-align:center;padding:16px 0;">
-        <div style="color:var(--text3);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
+        <div style="color:var(--muted);font-family:var(--mono);font-size:12px;margin-bottom:14px;">
           No data folder found. Create it to resolve missing-volume errors during Compose Up.
         </div>
         <button class="list-btn blue"
@@ -378,7 +378,7 @@ function renderFoldersTab(containerName, containerId, data) {
   if (!data.currentExists) {
     const parentPath = getFolderParentPath(currentPath);
     content.innerHTML = pathRow + `
-      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;">
+      <div style="padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--mono);font-size:12px;">
         Current folder does not exist anymore.
         <div style="margin-top:8px;">
           <button class="list-btn blue" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(parentPath)}')"><i data-lucide="arrow-up" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Up</button>
@@ -406,8 +406,8 @@ function renderFoldersTab(containerName, containerId, data) {
     const isDir = entry.type === 'dir';
     const targetPath = joinFolderPath(currentPath, entry.name);
     const nameCellHtml = isDir
-      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
-      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--text3);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
+      ? `<button style="background:none;border:none;padding:0;margin:0;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')" title="Open folder"><i data-lucide="folder" style="width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></button>`
+      : `<span style="display:flex;align-items:center;gap:6px;"><i data-lucide="file" style="width:14px;height:14px;color:var(--muted);flex-shrink:0;"></i><span style="line-height:14px;">${esc(entry.name)}</span></span>`;
     const openBtn = isDir
       ? `<button class="list-btn blue" onclick="openFolderPath('${encodedName}','${containerId}','${encodeURIComponent(targetPath)}')"><i data-lucide="external-link" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"></i>Open</button>`
       : '';
@@ -422,19 +422,19 @@ function renderFoldersTab(containerName, containerId, data) {
       : '';
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;vertical-align:middle;">${nameCellHtml}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text3);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);vertical-align:middle;">${isDir ? 'Folder' : 'File'}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);vertical-align:middle;">${isDir ? '–' : fmtBytes(entry.sizeBytes || 0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);vertical-align:middle;">${entry.modifiedAt ? new Date(entry.modifiedAt).toLocaleString() : '–'}</td>
       <td style="white-space:nowrap;vertical-align:middle;"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">${openBtn}${renameBtn}${deleteBtn}${downloadBtn}</div></td>
     </tr>`;
   }).join('');
 
   const tableHtml = data.entries && data.entries.length
     ? `<table class="cdetail-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Modified</th><th style="text-align:right;">Actions</th></tr></thead><tbody>${rows}</tbody></table>`
-    : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
+    : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:10px 0;">Folder is empty</div>`;
 
   content.innerHTML = pathRow
-    + `<div style="color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Read-only file browser. Create/Rename/Delete operations apply to folders only.</div>`
+    + `<div style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-bottom:6px;">Read-only file browser. Create/Rename/Delete operations apply to folders only.</div>`
     + controls
     + tableHtml
     + `<div id="folders-status-${containerId}" style="font-family:var(--mono);font-size:12px;margin-top:8px;"></div>`;
@@ -446,7 +446,7 @@ async function createDataFolderAt(encodedName, containerId, encodedParentPath, s
   const parentPath = decodeFolderArg(encodedParentPath);
   const subNames = (subfolders || []).map(s => String(s || '').trim()).filter(Boolean);
   const statusEl = document.getElementById(`folders-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Creating…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Creating…'; }
   try {
     const res = await fetch('/api/container/folders', {
       method: 'POST',
@@ -474,7 +474,7 @@ async function renameDataFolder(encodedName, containerId, encodedFolderPath) {
   const nextName = prompt('Rename folder to:', currentName);
   if (!nextName || String(nextName).trim() === currentName) return;
   const statusEl = document.getElementById(`folders-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Renaming…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Renaming…'; }
   try {
     const res = await fetch('/api/container/folders/rename', {
       method: 'POST',
@@ -502,7 +502,7 @@ async function deleteDataFolder(encodedName, containerId, encodedFolderPath) {
   const folderName = folderPath.split('/').filter(Boolean).pop() || folderPath;
   if (!confirm(`Delete folder "${folderName}" and all nested content?`)) return;
   const statusEl = document.getElementById(`folders-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Deleting…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Deleting…'; }
   try {
     const res = await fetch('/api/container/folders/delete', {
       method: 'POST',
@@ -528,7 +528,7 @@ async function createConfigFolderAt(encodedName, containerId, encodedParentPath,
   const parentPath = decodeFolderArg(encodedParentPath);
   const subNames = (subfolders || []).map(s => String(s || '').trim()).filter(Boolean);
   const statusEl = document.getElementById(`configfolder-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Creating…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Creating…'; }
   try {
     const res = await fetch('/api/container/config-folders', {
       method: 'POST',
@@ -556,7 +556,7 @@ async function renameConfigFolder(encodedName, containerId, encodedFolderPath) {
   const nextName = prompt('Rename folder to:', currentName);
   if (!nextName || String(nextName).trim() === currentName) return;
   const statusEl = document.getElementById(`configfolder-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Renaming…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Renaming…'; }
   try {
     const res = await fetch('/api/container/config-folders/rename', {
       method: 'POST',
@@ -584,7 +584,7 @@ async function deleteConfigFolder(encodedName, containerId, encodedFolderPath) {
   const folderName = folderPath.split('/').filter(Boolean).pop() || folderPath;
   if (!confirm(`Delete folder "${folderName}" and all nested content?`)) return;
   const statusEl = document.getElementById(`configfolder-status-${containerId}`);
-  if (statusEl) { statusEl.style.color = 'var(--text3)'; statusEl.textContent = 'Deleting…'; }
+  if (statusEl) { statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Deleting…'; }
   try {
     const res = await fetch('/api/container/config-folders/delete', {
       method: 'POST',
@@ -626,7 +626,7 @@ async function saveRestartPolicy(containerId) {
 
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<span>…</span>';
-  status.style.color = 'var(--text3)';
+  status.style.color = 'var(--muted)';
   status.textContent = 'Applying…';
 
   try {
@@ -671,7 +671,7 @@ async function saveComposeFile(project, composeFile, editorId, saveId, statusId)
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"></i>Saving…';
   lucide.createIcons({ nodes: [saveBtn] });
-  status.style.color = 'var(--text3)';
+  status.style.color = 'var(--muted)';
   status.textContent = '';
 
   try {
@@ -758,11 +758,11 @@ function _renderArchiveList(backups) {
           <div class="archivebrowser-file-list">
             <div class="archivebrowser-section-label">Configuration</div>
             ${files.length
-              ? files.map(f => `<div class="archivebrowser-file-list-item"><span>📄 ${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
+              ? files.map(f => `<div class="archivebrowser-file-list-item"><span>📄 ${esc(f.name)}</span><span style="color:var(--muted);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
               : '<div class="archivebrowser-empty" style="padding:4px 0 8px;text-align:left;">No files</div>'}
             <div class="archivebrowser-section-label" style="margin-top:10px;">Data</div>
             ${dataFiles.length
-              ? dataFiles.map(f => `<div class="archivebrowser-file-list-item"><span>${f.isDir ? '📁 ' : ''}${esc(f.name)}</span><span style="color:var(--text3);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
+              ? dataFiles.map(f => `<div class="archivebrowser-file-list-item"><span>${f.isDir ? '📁 ' : ''}${esc(f.name)}</span><span style="color:var(--muted);font-size:11px;">${f.mtime ? new Date(f.mtime).toLocaleString() : ''}</span></div>`).join('')
               : '<div class="archivebrowser-empty" style="padding:4px 0 8px;text-align:left;">No data folder found</div>'}
           </div>
         </td></tr>`
@@ -845,7 +845,7 @@ function openArchiveDeleteModal(project, dataPath) {
     `<span style="color:var(--red);font-weight:600;">⚠ This cannot be undone.</span><br><br>` +
     `The following will be permanently deleted:<br><br>` +
     `<code style="color:var(--accent);">_backups/${esc(project)}/</code> — archived configuration files<br>` +
-    (dataPath ? `<code style="color:var(--accent);">_data/${esc(project)}/</code> — container data folder` : `<span style="color:var(--text3);">No data folder found</span>`);
+    (dataPath ? `<code style="color:var(--accent);">_data/${esc(project)}/</code> — container data folder` : `<span style="color:var(--muted);">No data folder found</span>`);
   el('archive-delete-confirm-modal').classList.add('open');
 }
 
@@ -1616,7 +1616,7 @@ async function openNewComposeModal() {
   el('newcompose-editor').value = defaultComposeTemplate();
   el('newcompose-path-preview').textContent = '';
   el('newcompose-status').textContent = 'Loading template…';
-  el('newcompose-status').style.color = 'var(--text3)';
+  el('newcompose-status').style.color = 'var(--muted)';
   el('newcompose-save-btn').disabled = false;
   el('newcompose-template-btn').disabled = false;
   modal.classList.add('open');
@@ -1646,7 +1646,7 @@ function updateNewComposePath() {
   const name = el('newcompose-name').value.trim();
   const preview = el('newcompose-path-preview');
   if (name) {
-    preview.style.color = 'var(--text3)';
+    preview.style.color = 'var(--muted)';
     preview.textContent = `/volume1/docker/_config/${name}/compose.yaml`;
   } else {
     preview.textContent = '';
@@ -1665,7 +1665,7 @@ async function saveNewComposeTemplate() {
   }
 
   btn.disabled = true;
-  status.style.color = 'var(--text3)';
+  status.style.color = 'var(--muted)';
   status.textContent = 'Saving template…';
 
   try {
@@ -1714,7 +1714,7 @@ async function saveNewCompose() {
   }
 
   saveBtn.disabled = true;
-  status.style.color = 'var(--text3)';
+  status.style.color = 'var(--muted)';
   status.textContent = 'Creating…';
 
   try {

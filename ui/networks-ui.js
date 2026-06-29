@@ -25,7 +25,7 @@ function closeNetworkMgr(e) {
 function renderNetworkMgrList() {
   const body = document.getElementById('netmgr-body');
   if (!allNetworks.length) {
-    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No custom networks. Create one below.</div>`;
+    body.innerHTML = `<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px;">No custom networks. Create one below.</div>`;
     return;
   }
   body.innerHTML = allNetworks.map((net, i) => `
@@ -33,7 +33,7 @@ function renderNetworkMgrList() {
       <div class="catmgr-row-icon" style="color:var(--coral)"><i data-lucide="cable"></i></div>
       <div class="catmgr-row-label" style="flex:1;">
         <div style="color:var(--text1);font-weight:500;">${esc(net.name)}</div>
-        <div style="color:var(--text3);font-size:11px;margin-top:2px;">${esc(net.driver || 'unknown')} · ${net.containers ? net.containers.length + ' containers' : 'no containers'}</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:2px;">${esc(net.driver || 'unknown')} · ${net.containers ? net.containers.length + ' containers' : 'no containers'}</div>
       </div>
       <div class="catmgr-row-actions">
         <button class="catmgr-btn edit" onclick="openNetworkEditForm(${i})"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>Edit</button>

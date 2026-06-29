@@ -9,7 +9,7 @@ async function openCDetailModal(id, name, stateClass) {
   el('cdetail-name').textContent = name;
   el('cdetail-id').textContent   = id;
   el('cdetail-status-dot').className = `status-dot ${stateClass}`;
-  el('cdetail-body').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading container details…</div>`;
+  el('cdetail-body').innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;">⟳ Loading container details…</div>`;
 
   try {
     const res  = await fetch(`/api/container/detail/${encodeURIComponent(id)}`);
@@ -73,7 +73,7 @@ async function openCDetailModal(id, name, stateClass) {
       return `<div class="cdetail-section"><div class="cdetail-section-title"><i data-lucide="${icon}" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px"></i>${esc(title)}</div>${content}</div>`;
     }
     function table(headers, rows, emptyMsg='No entries') {
-      if (!rows.length) return `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">${esc(emptyMsg)}</div>`;
+      if (!rows.length) return `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;">${esc(emptyMsg)}</div>`;
       return `<table class="cdetail-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
 
@@ -164,13 +164,13 @@ async function openCDetailModal(id, name, stateClass) {
       <div style="margin-top:14px;">
         <div class="cdetail-key" style="margin-bottom:6px;">ENVIRONMENT VARIABLES</div>
         ${table(['Variable','Value'],
-          (d.env||[]).map(e=>`<tr><td style="color:var(--accent);white-space:nowrap;">${esc(e.key)}</td><td style="color:var(--text2);">${esc(e.value)}</td></tr>`),
+          (d.env||[]).map(e=>`<tr><td style="color:var(--accent);white-space:nowrap;">${esc(e.key)}</td><td style="color:var(--slate);">${esc(e.value)}</td></tr>`),
           'No environment variables')}
       </div>
       <div style="margin-top:14px;">
         <div class="cdetail-key" style="margin-bottom:6px;">LABELS</div>
         ${table(['Label','Value'],
-          (d.labels||[]).map(l=>`<tr><td style="color:var(--accent);white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="${esc(l.key)}">${esc(l.key)}</td><td style="color:var(--text2);">${esc(l.value)}</td></tr>`),
+          (d.labels||[]).map(l=>`<tr><td style="color:var(--accent);white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="${esc(l.key)}">${esc(l.key)}</td><td style="color:var(--slate);">${esc(l.value)}</td></tr>`),
           'No labels')}
       </div>`);
 
@@ -178,10 +178,10 @@ async function openCDetailModal(id, name, stateClass) {
     const volumesSection = section('hard-drive', 'Volumes', table(
       ['Type','Source','Container Path','Mode','RW','SIZE'],
       (d.volumes||[]).map(v=>`<tr>
-        <td style="color:var(--text3);">${esc(v.type)}</td>
+        <td style="color:var(--muted);">${esc(v.type)}</td>
         <td style="color:var(--accent);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.source)}">${esc(v.source)}</td>
         <td style="color:var(--text);">${esc(v.destination)}</td>
-        <td style="color:var(--text3);">${esc(v.mode)}</td>
+        <td style="color:var(--muted);">${esc(v.mode)}</td>
         <td style="${v.rw?'color:var(--green)':'color:var(--red)'};">${v.rw?'RW':'RO'}</td>
         <td style="color:var(--accent);white-space:nowrap;">${esc(v.sizeOnDisk||'–')}</td>
       </tr>`),
@@ -193,8 +193,8 @@ async function openCDetailModal(id, name, stateClass) {
       (d.networks||[]).map(n=>`<tr>
         <td style="color:var(--accent);font-weight:600;">${esc(n.name)}</td>
         <td style="color:var(--accent);">${esc(n.ip||'–')}</td>
-        <td style="color:var(--text3);">${esc(n.gateway||'–')}</td>
-        <td style="color:var(--text3);">${esc(n.mac||'–')}</td>
+        <td style="color:var(--muted);">${esc(n.gateway||'–')}</td>
+        <td style="color:var(--muted);">${esc(n.mac||'–')}</td>
       </tr>`),
       'No networks'));
 
@@ -206,7 +206,7 @@ async function openCDetailModal(id, name, stateClass) {
     const saveId   = `compose-save-btn-${d.id}`;
 
     const statusPanelHtml = isComposeOnly
-      ? `<div style="padding:48px 20px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;">No container running — use <strong style="color:var(--accent);font-style:normal;">Compose Up</strong> to start this service.</div>`
+      ? `<div style="padding:48px 20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;">No container running — use <strong style="color:var(--accent);font-style:normal;">Compose Up</strong> to start this service.</div>`
       : statusSection + detailSection + volumesSection + networksSection;
 
     const tabBar = `<div class="cdetail-tabs">
@@ -224,17 +224,17 @@ async function openCDetailModal(id, name, stateClass) {
       + (composeBacked
           ? `<div class="cdetail-tab-panel compose-panel" id="cdetail-panel-compose"${defaultTab !== 'compose' ? ' style="display:none"' : ''}>`
             + `<div id="${editorId}-wrap" style="padding:20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;min-height:0;">`
-            + `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">⟳ Loading compose file…</div>`
+            + `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;">⟳ Loading compose file…</div>`
             + `</div></div>`
           : '')
       + `<div class="cdetail-tab-panel" id="cdetail-panel-datafolder" style="display:none">`
-      + `<div id="folders-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `<div id="folders-content-${cid}" style="padding:16px;color:var(--muted);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`
       + `<div class="cdetail-tab-panel" id="cdetail-panel-configfolder" style="display:none">`
-      + `<div id="configfolder-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `<div id="configfolder-content-${cid}" style="padding:16px;color:var(--muted);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`
       + `<div class="cdetail-tab-panel" id="cdetail-panel-dockerfile" style="display:none">`
-      + `<div id="dockerfile-content-${cid}" style="padding:16px;color:var(--text3);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
+      + `<div id="dockerfile-content-${cid}" style="padding:16px;color:var(--muted);font-family:var(--mono);font-size:13px;">⟳ Loading…</div>`
       + `</div>`;
 
     lucide.createIcons({ nodes: [el('cdetail-body')] });
@@ -264,7 +264,7 @@ async function openCDetailModal(id, name, stateClass) {
           const composeUpInlineBtn = '';
           wrap.innerHTML = `
             <div class="compose-editor-head">
-              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${esc(fd.composeFile)}</div>
+              <div style="font-size:11px;color:var(--muted);font-family:var(--mono);">${esc(fd.composeFile)}</div>
               ${composeUpInlineBtn}
             </div>
             <textarea id="${editorId}"
