@@ -2608,4 +2608,26 @@
     #proc-table td.name-col .proc-name { padding-left: 0 !important; font-size: 14px; font-weight: 600; }
     /* Keep the CPU/Mem bars readable on the right side of the row */
     #proc-table td.cpu-col .cpu-bar, #proc-table td.mem-col .mem-bar { flex: 1; max-width: 60%; }
+
+    /* Toolbar action buttons go icon-only (labels hidden) to save width */
+    .toolbar-btn span { display: none; }
+    .toolbar-btn { padding: 6px 9px; }
+
+    /* Console & pull-progress terminals → full-screen sheet (re-fit on resize) */
+    .console-modal {
+      width: 100vw; max-width: 100vw;
+      height: 100vh; height: 100dvh; max-height: none;
+      border-radius: 0; border-width: 0;
+    }
+  }
+
+  /* ─── Phase 2d — ≤410px tightening ───────────────────────────────────────── */
+  @media (max-width: 410px) {
+    .metric-card { padding: 5px 8px; min-height: 50px; }
+    .metric-value { font-size: 14px; }
+    .metric-label { font-size: 9px; letter-spacing: .8px; }
+    .mobile-bottom-nav-btn { font-size: 9px; }
+    .mobile-bottom-nav-btn svg { width: 18px; height: 18px; }
+    #proc-table tr { margin: 0 6px 6px; padding: 7px 10px; }
+    #proc-table td { font-size: 12px; }
   }
