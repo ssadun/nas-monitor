@@ -509,24 +509,55 @@ if ('serviceWorker' in navigator) {
 <!-- Mobile drawer backdrop (only visible when sidebar is open at mobile widths) -->
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
-<!-- Mobile bottom tab bar (only visible at mobile widths): 4 primary tabs + Menu -->
+<!-- Mobile bottom tab bar (only visible at mobile widths). Parent tabs (Docker,
+     Network, More) reveal their sub-items as a floating popup above the bar. -->
 <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Primary navigation">
-  <button class="mobile-bottom-nav-btn" id="mobnav-containers" data-tab="containers" onclick="switchTab('containers')">
-    <i data-lucide="box"></i><span>Docker</span>
-  </button>
-  <button class="mobile-bottom-nav-btn" id="mobnav-processes" data-tab="processes" onclick="switchTab('processes')">
+  <!-- Docker — parent with popup submenu -->
+  <div class="mobile-nav-parent" id="mobnav-docker-parent">
+    <button class="mobile-bottom-nav-btn" id="mobnav-containers" data-tab="containers" onclick="openMobileNavPopup('docker', event, 'containers')">
+      <i data-lucide="box"></i><span>Docker</span>
+    </button>
+    <div class="mobile-nav-popup" id="mobnav-docker-popup">
+      <button class="mobile-nav-subitem" style="--item-color:#22c55e" onclick="closeMobileNavPopups(); openNewComposeModal()"><i data-lucide="file-plus"></i><span>New Compose</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:#f97316" onclick="closeMobileNavPopups(); openArchiveBrowserModal()"><i data-lucide="archive"></i><span>Archive</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:var(--coral)" onclick="closeMobileNavPopups(); switchTabFromSidebar('categories')"><i data-lucide="folder-open"></i><span>Categories</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:#eab308" onclick="closeMobileNavPopups(); openDockerVolumesModal()"><i data-lucide="hard-drive"></i><span>Volumes</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:#8b5cf6" onclick="closeMobileNavPopups(); openImageUpdatesModal()"><i data-lucide="arrow-up-circle"></i><span>Image Updates</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:#ef4444" onclick="closeMobileNavPopups(); openPruneModal()"><i data-lucide="archive-x"></i><span>Prune</span></button>
+    </div>
+  </div>
+
+  <button class="mobile-bottom-nav-btn" id="mobnav-processes" data-tab="processes" onclick="closeMobileNavPopups(); switchTab('processes')">
     <i data-lucide="cpu"></i><span>Processes</span>
   </button>
-  <button class="mobile-bottom-nav-btn" id="mobnav-disk" data-tab="disk" onclick="switchTab('disk')">
+  <button class="mobile-bottom-nav-btn" id="mobnav-disk" data-tab="disk" onclick="closeMobileNavPopups(); switchTab('disk')">
     <i data-lucide="hard-drive"></i><span>Disk</span>
   </button>
-  <button class="mobile-bottom-nav-btn" id="mobnav-network" data-tab="network" onclick="switchTab('network')">
-    <i data-lucide="network"></i><span>Network</span>
-  </button>
-  <button class="mobile-bottom-nav-btn" id="mobnav-menu" onclick="toggleSidebar()">
-    <i data-lucide="menu"></i><span>Menu</span>
-  </button>
+
+  <!-- Network — parent with popup submenu -->
+  <div class="mobile-nav-parent" id="mobnav-network-parent">
+    <button class="mobile-bottom-nav-btn" id="mobnav-network" data-tab="network" onclick="openMobileNavPopup('network', event, 'network')">
+      <i data-lucide="network"></i><span>Network</span>
+    </button>
+    <div class="mobile-nav-popup" id="mobnav-network-popup">
+      <button class="mobile-nav-subitem" style="--item-color:var(--coral)" onclick="closeMobileNavPopups(); openNetworkMgr()"><i data-lucide="cable"></i><span>Manage Networks</span></button>
+    </div>
+  </div>
+
+  <!-- More — parent with popup submenu (Settings / Credentials / Logout) -->
+  <div class="mobile-nav-parent" id="mobnav-more-parent">
+    <button class="mobile-bottom-nav-btn" id="mobnav-more" onclick="openMobileNavPopup('more', event)">
+      <i data-lucide="menu"></i><span>More</span>
+    </button>
+    <div class="mobile-nav-popup" id="mobnav-more-popup">
+      <button class="mobile-nav-subitem" style="--item-color:var(--white)" onclick="closeMobileNavPopups(); openSettingsModal()"><i data-lucide="settings"></i><span>Settings</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:var(--white)" onclick="closeMobileNavPopups(); openCredentialsModal()"><i data-lucide="key-round"></i><span>Credentials</span></button>
+      <button class="mobile-nav-subitem" style="--item-color:#ef4444" onclick="closeMobileNavPopups(); logout()"><i data-lucide="log-out"></i><span>Logout</span></button>
+    </div>
+  </div>
 </nav>
+<!-- Invisible backdrop behind an open bottom-nav popup — tap to dismiss -->
+<div class="mobile-sub-backdrop" id="mobile-sub-backdrop" onclick="closeMobileNavPopups()"></div>
 
 <main>
   <!--  CONTAINERS TAB  -->

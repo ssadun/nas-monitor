@@ -25,12 +25,9 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
     panel.classList.toggle('active', panel.id === 'tab-' + currentTab);
   });
   // Sync mobile bottom-nav active state on load
-  const initBottomTabs = ['containers', 'processes', 'disk', 'network'];
   document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === currentTab);
   });
-  const initMenuBtn = document.getElementById('mobnav-menu');
-  if (initMenuBtn) initMenuBtn.classList.toggle('active', !initBottomTabs.includes(currentTab));
 
   // Restore containers sub-menu open state (default: open)
   const submenuOpen = sessionStorage.getItem('containers-submenu-open') !== 'false';
@@ -128,13 +125,10 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + name);
   });
-  // Sync the mobile bottom nav: highlight the matching tab, else fall back to Menu
-  const bottomTabs = ['containers', 'processes', 'disk', 'network'];
+  // Sync the mobile bottom nav: highlight the matching parent/tab
   document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === name);
   });
-  const menuBtn = document.getElementById('mobnav-menu');
-  if (menuBtn) menuBtn.classList.toggle('active', !bottomTabs.includes(name));
   // Keep containers parent button highlighted when any sub-item tab is active
   const containersBtn = document.querySelector('#containers-parent > .sidebar-item');
   const subTabs = ['containers', 'categories'];
@@ -193,4 +187,27 @@ function closeSidebar() {
 
 function switchTabFromSidebar(name) {
   switchTab(name);
+}
+
+// ── Mobile bottom-nav popup submenus ─────────────────────────────────────────
+// A parent tab (Docker / Network / More) reveals its sub-items as a floating
+// popup above the bar; an invisible backdrop dismisses it. Only one open at a time.
+function closeMobileNavPopups() {
+  document.querySelectorAll('.mobile-nav-parent.open').forEach(p => p.classList.remove('open'));
+  const backdrop = document.getElementById('mobile-sub-backdrop');
+  if (backdrop) backdrop.classList.remove('show');
+}
+
+function openMobileNavPopup(which, evt, navTab) {
+  if (evt) evt.stopPropagation();
+  const parent = document.getElementById('mobnav-' + which + '-parent');
+  if (!parent) return;
+  const wasOpen = parent.classList.contains('open');
+  closeMobileNavPopups();
+  if (!wasOpen) {
+    parent.classList.add('open');
+    const backdrop = document.getElementById('mobile-sub-backdrop');
+    if (backdrop) backdrop.classList.add('show');
+    if (navTab) switchTab(navTab);
+  }
 }

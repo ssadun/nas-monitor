@@ -2501,6 +2501,8 @@
     z-index: 100;
   }
   .mobile-bottom-nav { display: none; }
+  .mobile-nav-popup { display: none; }
+  .mobile-sub-backdrop { display: none; }
 
   /* ─── Phase 1 — make every view usable at 360px ─────────────────────────── */
   @media (max-width: 660px) {
@@ -2576,6 +2578,45 @@
     .mobile-bottom-nav-btn svg { width: 20px; height: 20px; }
     .mobile-bottom-nav-btn:hover { color: var(--slate); }
     .mobile-bottom-nav-btn.active { color: var(--accent); }
+
+    /* Parent tabs (Docker / Network / More) host a floating popup submenu */
+    .mobile-nav-parent { flex: 1; display: flex; position: relative; min-width: 0; }
+    .mobile-nav-parent > .mobile-bottom-nav-btn { flex: 1; width: 100%; }
+    .mobile-nav-parent.open > .mobile-bottom-nav-btn { color: var(--accent); }
+    .mobile-nav-popup {
+      display: none;
+      position: absolute; bottom: calc(100% + 8px); left: 6px;
+      flex-direction: column; gap: 2px;
+      min-width: 196px; padding: 6px;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 12px; box-shadow: 0 -8px 32px rgba(0,0,0,.5);
+      z-index: 300;
+    }
+    .mobile-nav-parent.open > .mobile-nav-popup { display: flex; animation: modalIn .12s ease both; }
+    /* Right-align popups near the right edge so they don't overflow the screen */
+    #mobnav-more-parent > .mobile-nav-popup,
+    #mobnav-network-parent > .mobile-nav-popup { left: auto; right: 6px; }
+    .mobile-nav-subitem {
+      position: relative; display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px 10px 24px; border-radius: 6px;
+      background: none; border: none; cursor: pointer;
+      color: var(--slate); font-family: var(--sans); font-size: 13px; font-weight: 600;
+      text-align: left; white-space: nowrap; transition: var(--transition);
+    }
+    .mobile-nav-subitem::before {
+      content: ''; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 2px; height: 60%; min-height: 12px; border-radius: 2px;
+      background: var(--item-color, var(--accent)); opacity: .55;
+      transition: opacity .15s, height .15s;
+    }
+    .mobile-nav-subitem:hover, .mobile-nav-subitem:active {
+      background: color-mix(in srgb, var(--item-color, var(--accent)) 14%, transparent);
+      color: var(--white);
+    }
+    .mobile-nav-subitem:hover::before, .mobile-nav-subitem:active::before { opacity: 1; height: 75%; }
+    .mobile-nav-subitem svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--item-color, var(--accent)); }
+    /* Backdrop sits below the bar (90) but above content; popup (300) stays on top */
+    .mobile-sub-backdrop.show { display: block; position: fixed; inset: 0; z-index: 80; background: transparent; }
 
     /* Processes table → stacked cards (one card per process row) */
     #proc-table thead { display: none; }
