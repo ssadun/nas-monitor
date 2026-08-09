@@ -360,6 +360,12 @@ function renderContainers() {
   // dependents, with a visual indent.
   list = buildDependsOnOrder(list);
 
+  // Drop selections for containers that no longer exist (deleted, filtered out of the API response, etc.)
+  const liveIds = new Set(allData.containers.map(c => c.id));
+  for (const id of selectedContainers) {
+    if (!liveIds.has(id)) selectedContainers.delete(id);
+  }
+
   let html = '';
   for (const c of list) {
     const rowId = 'cr-' + c.id;
@@ -374,7 +380,12 @@ function renderContainers() {
     const canArchiveFromList = stateClass === 'configured' && Boolean(c.composeProject);
 
     const depIndent = (c.dependsOnDepth || 0) * 20;
+    const bulkSelectable = !isComposeOnly(c);
     html += `<tr id="${rowId}"${rowClick} ${c.dependsOnDepth ? 'class="depends-on-row"' : ''}>
+      <td class="col-select" style="width:30px" onclick="event.stopPropagation()">
+        <input type="checkbox" ${bulkSelectable ? '' : 'disabled'} ${selectedContainers.has(c.id) ? 'checked' : ''}
+          onchange="toggleContainerSelect('${c.id}', this.checked)" style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);">
+      </td>
       <td class="col-status" style="width:30px">
         <span class="status-dot ${stateClass}"></span>
       </td>
@@ -420,7 +431,7 @@ function renderContainers() {
 
     if (isExpanded) {
       html += `<tr class="expanded-row">
-        <td colspan="13" style="padding:0">
+        <td colspan="14" style="padding:0">
           <div class="sub-proc-wrap">
             ${renderSubProcTable(c.pids)}
           </div>
@@ -429,10 +440,160 @@ function renderContainers() {
     }
   }
 
-  if (!html) html = `<tr><td colspan="13"><div class="empty-state"><div class="emoji"><i data-lucide="box" style="width:40px;height:40px;stroke-width:1.5;"></i></div>No containers found</div></td></tr>`;
+  if (!html) html = `<tr><td colspan="14"><div class="empty-state"><div class="emoji"><i data-lucide="box" style="width:40px;height:40px;stroke-width:1.5;"></i></div>No containers found</div></td></tr>`;
   tbody.innerHTML = html;
   lucide.createIcons({ nodes: [tbody] });
   initTableResize();
+  updateContainerBulkBar();
+}
+
+// ─── Container multi-select + bulk actions ────────────────────────────────────
+const BULK_CONTAINER_ACTION_META = {
+  start:   { label: 'Start',   past: 'Started' },
+  restart: { label: 'Restart', past: 'Restarted' },
+  stop:    { label: 'Stop',    past: 'Stopped' },
+};
+
+function toggleContainerSelect(id, checked) {
+  if (checked) selectedContainers.add(id);
+  else selectedContainers.delete(id);
+  updateContainerBulkBar();
+}
+
+function toggleSelectAllContainers(checked) {
+  const eligibleIds = (allData.containers || []).filter(c => !isComposeOnly(c)).map(c => c.id);
+  if (checked) eligibleIds.forEach(id => selectedContainers.add(id));
+  else eligibleIds.forEach(id => selectedContainers.delete(id));
+  renderContainers();
+}
+
+function clearContainerSelection() {
+  selectedContainers.clear();
+  renderContainers();
+}
+
+function updateContainerBulkBar() {
+  const bar = el('container-bulk-bar');
+  if (!bar) return;
+  const count = selectedContainers.size;
+  bar.style.display = count > 0 ? 'flex' : 'none';
+  const countLabel = el('container-bulk-count');
+  if (countLabel) countLabel.textContent = `${count} Selected`;
+
+  const selectAllCb = el('container-select-all');
+  if (selectAllCb) {
+    const eligible = (allData.containers || []).filter(c => !isComposeOnly(c));
+    selectAllCb.disabled = eligible.length === 0;
+    selectAllCb.checked = eligible.length > 0 && eligible.every(c => selectedContainers.has(c.id));
+  }
+}
+
+function bulkContainerAction(action) {
+  const meta = BULK_CONTAINER_ACTION_META[action];
+  const actionMeta = ACTION_META[action];
+  if (!meta || !actionMeta) return;
+
+  const ids = Array.from(selectedContainers).filter(id =>
+    (allData.containers || []).some(c => c.id === id)
+  );
+  if (!ids.length) return;
+
+  // Confirmation step lives in the shared action modal itself (not a native confirm() dialog).
+  _actionPending = { bulk: true, action, ids };
+  el('action-modal').classList.remove('composeup-large');
+  el('action-modal-icon').innerHTML = `<i data-lucide="${actionMeta.icon}" style="width:16px;height:16px;color:${actionMeta.color};"></i>`;
+  el('action-modal-title').textContent = `Bulk ${meta.label}`;
+  el('action-modal-container').textContent = `${ids.length} container(s) selected`;
+  el('action-modal-desc').innerHTML = `${meta.label} ${ids.length} selected container(s)?`;
+  el('action-progress').innerHTML = '';
+
+  const confirmBtn = el('action-modal-confirm');
+  confirmBtn.style.display = '';
+  confirmBtn.className = `action-modal-btn ${actionMeta.btnClass}`;
+  confirmBtn.innerHTML = `<i data-lucide="${actionMeta.icon}" style="width:12px;height:12px;vertical-align:-2px;margin-right:4px;"></i>${meta.label}`;
+  confirmBtn.disabled = false;
+  confirmBtn.onclick = () => runBulkContainerAction(action, ids);
+
+  el('action-modal-cancel').style.display = '';
+  el('action-modal-cancel').textContent = 'Cancel';
+  el('action-modal-cancel').disabled = false;
+  el('action-modal-cancel').onclick = closeActionModal;
+  el('action-modal-close').style.display = '';
+
+  el('action-modal').classList.add('open');
+  lucide.createIcons({ nodes: [el('action-modal')] });
+}
+
+async function runBulkContainerAction(action, ids) {
+  const meta = BULK_CONTAINER_ACTION_META[action];
+  if (!meta) return;
+
+  const bar = el('container-bulk-bar');
+  const barButtons = bar ? bar.querySelectorAll('button') : [];
+  barButtons.forEach(b => b.disabled = true);
+
+  // Switch the modal from the confirm step into a live per-container progress list.
+  _actionPending = { bulk: true, action, ids };
+  el('action-modal-desc').innerHTML = '';
+  el('action-progress').innerHTML = '';
+  el('action-modal-confirm').style.display = 'none';
+  el('action-modal-close').style.display = 'none';
+  el('action-modal-cancel').textContent = 'Please Wait…';
+  el('action-modal-cancel').disabled = true;
+  el('action-modal-cancel').onclick = null;
+
+  const steps = ids.map(id => {
+    const c = (allData.containers || []).find(x => x.id === id);
+    const name = c ? c.name : id;
+    return { id, name, stepEl: addProgressStep(name, 'pending') };
+  });
+
+  let successCount = 0;
+  const failures = [];
+
+  for (const { id, name, stepEl } of steps) {
+    updateStep(stepEl, 'active', name);
+    try {
+      const res = await fetch(`/api/container/${action}?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.ok) {
+        successCount++;
+        updateStep(stepEl, 'done', name);
+      } else {
+        failures.push(name);
+        updateStep(stepEl, 'error', `${name} — ${data.error || 'Failed'}`);
+      }
+    } catch (e) {
+      failures.push(name);
+      updateStep(stepEl, 'error', `${name} — ${e.message}`);
+    }
+  }
+
+  el('action-modal-cancel').textContent = 'Close';
+  el('action-modal-cancel').disabled = false;
+  el('action-modal-cancel').onclick = closeActionModal;
+  el('action-modal-close').style.display = '';
+  _actionPending = null;
+
+  barButtons.forEach(b => b.disabled = false);
+
+  if (failures.length === 0) {
+    showToast(`${meta.past} ${successCount} container(s)`, 'ok', 3000);
+  } else if (successCount === 0) {
+    showToast(`${meta.label} failed for all ${failures.length} container(s)`, 'err', 4500);
+    console.warn('Bulk container action failures:', failures);
+  } else {
+    showToast(`${meta.past} ${successCount}, failed ${failures.length}`, 'err', 4500);
+    console.warn('Bulk container action failures:', failures);
+  }
+
+  selectedContainers.clear();
+  try {
+    const r = await fetch('/api/data/refresh');
+    const latest = await r.json();
+    if (latest && Array.isArray(latest.containers)) allData = latest;
+  } catch {}
+  render();
 }
 
 function renderPorts(ports) {
