@@ -4,6 +4,7 @@ Thumbs.db
 node_modules/
 *.bak
 *.disabled
+.claude/
 nas-monitor.pid
 logs/*.log
 data/category-assignments.json
