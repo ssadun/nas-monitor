@@ -200,7 +200,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (req.method === 'GET') {
-      auth.sendLoginPage(res);
+      const expired = url.searchParams.get('expired') === '1';
+      auth.sendLoginPage(res, expired ? 'Your session has expired. Please sign in again.' : '');
       return;
     }
     if (req.method === 'POST') {
@@ -363,7 +364,10 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'Authentication required' }));
       return;
     }
-    res.writeHead(302, { Location: '/login' });
+    // A stale/expired session cookie (as opposed to a first-time anonymous
+    // visit with no cookie at all) gets the "session expired" messaging.
+    const hadSessionCookie = !!auth.getSessionId(req);
+    res.writeHead(302, { Location: hadSessionCookie ? '/login?expired=1' : '/login' });
     res.end();
     return;
   }

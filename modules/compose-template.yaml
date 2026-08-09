@@ -1,7 +1,7 @@
 services:
-  my-service:
-    container_name: my-service
-    hostname: my-service
+  dockscope:
+    container_name: dockscope
+    hostname: dockscope
     environment:
       PUID: 1027
       PGID: 100
@@ -9,5 +9,7 @@ services:
     volumes:
       - ../../_data:/data
     network_mode: nas
+    ports:
+      - 4681:4681
     restart: unless-stopped
-    image: my-service:latest
+    image: ghcr.io/manuelr-t/dockscope

@@ -2,36 +2,43 @@
   {
     "id": "media",
     "label": "Media",
-    "icon": "🎬",
+    "icon": "clapperboard",
     "color": "#a78bfa",
     "dot": "#8b5cf6"
   },
   {
     "id": "performance",
     "label": "Performance",
-    "icon": "⚡",
+    "icon": "zap",
     "color": "#f97316",
     "dot": "#f97316"
   },
   {
     "id": "utilities",
     "label": "Utilities",
-    "icon": "🔧",
+    "icon": "wrench",
     "color": "#eab308",
     "dot": "#eab308"
   },
   {
     "id": "system",
     "label": "System",
-    "icon": "🖥",
+    "icon": "monitor",
     "color": "#FFFFFF",
     "dot": "#FFFFFF"
   },
   {
     "id": "networking_mni16j1o",
     "label": "Networking",
-    "icon": "📡",
+    "icon": "radio",
     "color": "#22c55e",
     "dot": "#22c55e"
+  },
+  {
+    "id": "dev_tools_mrzao0l3",
+    "label": "Dev Tools",
+    "icon": "terminal",
+    "color": "#4f8ef7",
+    "dot": "#4f8ef7"
   }
 ]

@@ -1,5 +1,27 @@
 'use strict';
 
+// ─── Session-expiry handling ───────────────────────────────────────────────
+// Any API call can come back 401 once the session cookie expires while the
+// SPA is still open. Intercept it once here instead of at each of the ~60
+// fetch() call sites, and bounce to the login page with a message instead of
+// leaving the raw "Authentication required" JSON on screen.
+let _authRedirecting = false;
+function redirectToExpiredLogin() {
+  if (_authRedirecting) return;
+  _authRedirecting = true;
+  window.location.href = '/login?expired=1';
+}
+
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = async function (...args) {
+  const res = await _nativeFetch(...args);
+  if (res.status === 401) {
+    redirectToExpiredLogin();
+    return new Promise(() => {}); // navigation is imminent; don't let callers handle a 401
+  }
+  return res;
+};
+
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 

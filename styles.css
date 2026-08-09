@@ -2524,10 +2524,17 @@
     body.sidebar-expanded .sidebar, .sidebar.expanded { transform: translateX(0); }
     body.sidebar-expanded .sidebar-backdrop { display: block; }
 
-    /* Header metrics: 2-column grid, shorter cards */
-    .metrics-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; }
-    .metric-card { height: auto; min-height: 56px; padding: 6px 10px; }
-    .metric-value { font-size: 15px; }
+    /* Header metrics: compact 4-column grid so the 7 cards fit in two rows */
+    .metrics-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
+    .metric-card { height: auto; min-height: 0; padding: 5px 8px; flex: none; }
+    .metric-label { font-size: 8px; letter-spacing: .4px; gap: 3px; margin-bottom: 3px; }
+    .metric-label svg { width: 11px; height: 11px; }
+    .metric-value { font-size: 14px; }
+    /* Drop the donut/sparkline canvases and secondary sub-text on value cards
+       so each card collapses to a single label + value line. The Network card
+       has no .metric-value, so its in/out sub is kept as its content. */
+    .metric-card canvas { display: none; }
+    .metric-card:has(.metric-value) .metric-sub { display: none; }
 
     /* Toolbars / filters: wrap instead of overflowing */
     .toolbar, .container-toolbar { flex-wrap: wrap; row-gap: 8px; }

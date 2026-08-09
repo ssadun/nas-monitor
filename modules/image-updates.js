@@ -10,6 +10,7 @@ const execFileAsync = promisify(execFile);
 
 const UPDATE_LOG_FILE    = path.join(__dirname, '..', 'logs', 'image-updates.log');
 const UPDATE_LOG_RETAIN_DAYS = 30;
+const UPDATE_STATE_FILE  = path.join(__dirname, '..', 'data', 'image-update-state.json');
 
 let logError    = () => {};
 let logInfo     = () => {};
@@ -50,6 +51,23 @@ function appendLog(lines) {
     fs.writeFileSync(UPDATE_LOG_FILE, kept.join('\n') + (kept.length ? '\n' : ''), 'utf8');
   } catch (e) {
     logError('Failed to write image-updates log', { error: e.message });
+  }
+}
+
+// ─── Scan state persistence (survives process restarts) ──────────────────────
+
+function readLastRun() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(UPDATE_STATE_FILE, 'utf8'));
+    return typeof raw.lastRun === 'number' ? raw.lastRun : 0;
+  } catch { return 0; }
+}
+
+function writeLastRun(ts) {
+  try {
+    fs.writeFileSync(UPDATE_STATE_FILE, JSON.stringify({ lastRun: ts }, null, 2), 'utf8');
+  } catch (e) {
+    logError('Failed to write image-update state', { error: e.message });
   }
 }
 
@@ -339,10 +357,18 @@ function scheduleImageUpdateCheck() {
   const hours = settings.imageUpdateIntervalHours;
   if (!hours || hours <= 0) return;
 
-  const ms = hours * 60 * 60 * 1000;
+  const intervalMs = hours * 60 * 60 * 1000;
+  // Base the next run on when the scan last actually ran (persisted to disk),
+  // not on process start time — otherwise a daily service restart resets the
+  // countdown every time and the scan never gets far enough to fire.
+  const lastRun = readLastRun();
+  const elapsed = lastRun ? Date.now() - lastRun : intervalMs;
+  const ms = Math.max(0, Math.min(intervalMs, intervalMs - elapsed));
+
   logInfo('Image update check scheduled', { nextRunInMinutes: Math.round(ms / 60000) });
 
   _scheduleTimer = setTimeout(async () => {
+    writeLastRun(Date.now());
     logInfo('Running scheduled image update check');
     appendLog(['─── Scheduled scan started ───']);
     try {

@@ -110,89 +110,89 @@
     "semantic_hash": "04f089ec80e2f529de09eb042876df60"
   },
   "ui/compose-ui.js": {
-    "mtime": 1782730364.5729764,
-    "ast_hash": "bd4aa0328e06f3ec9b5838b969f8b704",
+    "mtime": 1782735546.1717422,
+    "ast_hash": "76ba5287483970145adc50e81dc5ca1c",
     "semantic_hash": ""
   },
   "ui/console-ui.js": {
-    "mtime": 1779901286.9143534,
-    "ast_hash": "054213033a55660f4081f5f8fb6b24ab",
-    "semantic_hash": "054213033a55660f4081f5f8fb6b24ab"
+    "mtime": 1782735546.1927423,
+    "ast_hash": "187a8b4e7b90c499fe1d640ecc145701",
+    "semantic_hash": ""
   },
   "ui/disk-ui.js": {
-    "mtime": 1779655523.3519518,
-    "ast_hash": "12ec58a6c790374356f2a39ebb0b64a3",
-    "semantic_hash": "12ec58a6c790374356f2a39ebb0b64a3"
+    "mtime": 1782735546.2177424,
+    "ast_hash": "c689066313f7e2fac3a39cf15935493c",
+    "semantic_hash": ""
   },
   "ui/docker-ui.js": {
-    "mtime": 1782731207.539141,
-    "ast_hash": "d0aa26bb3fe60a5c2f0423b7da848c6e",
+    "mtime": 1782735546.2197425,
+    "ast_hash": "82899528968d4ce0e82089a6bc42ef3f",
     "semantic_hash": ""
   },
   "ui/image-updates-ui.js": {
-    "mtime": 1782718700.7246542,
-    "ast_hash": "0800e96316933a550fe2e94e083538e9",
+    "mtime": 1782735546.2217426,
+    "ast_hash": "5152a5dd274878621943a95410a07b67",
     "semantic_hash": ""
   },
   "ui/menu-ui.js": {
-    "mtime": 1779654432.8072515,
-    "ast_hash": "749150b11998c848a479a3c0235bea55",
-    "semantic_hash": "749150b11998c848a479a3c0235bea55"
+    "mtime": 1782750792.4749498,
+    "ast_hash": "fbe91aba55a155e786e67edab132200e",
+    "semantic_hash": ""
   },
   "ui/menu.js": {
-    "mtime": 1779488854.0899262,
+    "mtime": 1782735546.2437427,
     "ast_hash": "099c014c9ccbfb5dc6fc6d64f1cd9c18",
     "semantic_hash": "099c014c9ccbfb5dc6fc6d64f1cd9c18"
   },
   "ui/network-ui.js": {
-    "mtime": 1779834923.2566054,
-    "ast_hash": "85f7ca5367927a96bb7d3208df0a092b",
-    "semantic_hash": "85f7ca5367927a96bb7d3208df0a092b"
+    "mtime": 1782735546.2597427,
+    "ast_hash": "9a0f0730a0a90705d5eec1217132e8b3",
+    "semantic_hash": ""
   },
   "ui/networks-ui.js": {
-    "mtime": 1779830996.1056907,
-    "ast_hash": "e64b6c85f67834cc9f529e5721c718bd",
-    "semantic_hash": "e64b6c85f67834cc9f529e5721c718bd"
+    "mtime": 1782735546.260743,
+    "ast_hash": "7494432eda9a9237ee0eafa8ffd4ebf2",
+    "semantic_hash": ""
   },
   "ui/processes-ui.js": {
-    "mtime": 1779834923.2566054,
-    "ast_hash": "b23bd731044c0ffc72124323e4779e5d",
-    "semantic_hash": "b23bd731044c0ffc72124323e4779e5d"
+    "mtime": 1782750731.1715,
+    "ast_hash": "de57fdbae59c1904405ed7bb674c2ccf",
+    "semantic_hash": ""
   },
   "ui/prune-ui.js": {
-    "mtime": 1779836589.774427,
-    "ast_hash": "5ecea1b952245152b2c2c14149e61792",
-    "semantic_hash": "5ecea1b952245152b2c2c14149e61792"
+    "mtime": 1782735546.263743,
+    "ast_hash": "22544cd2f01281db203f30fe4c533de8",
+    "semantic_hash": ""
   },
   "ui/render.js": {
-    "mtime": 1780523081.1864018,
-    "ast_hash": "e51c41d8197264f57047c040d9ffa990",
-    "semantic_hash": "e51c41d8197264f57047c040d9ffa990"
+    "mtime": 1782735546.284743,
+    "ast_hash": "269ac0f2cf2c4deff614a0e5984a6f5e",
+    "semantic_hash": ""
   },
   "ui/setting.js": {
-    "mtime": 1779838071.6249237,
-    "ast_hash": "94081b9e48ceca761f104aa4f665f572",
-    "semantic_hash": "94081b9e48ceca761f104aa4f665f572"
+    "mtime": 1782735546.286743,
+    "ast_hash": "578c4e83ab206514989f472b1fe0374e",
+    "semantic_hash": ""
   },
   "ui/state.js": {
-    "mtime": 1779653555.5162756,
+    "mtime": 1782735546.3097432,
     "ast_hash": "8da5becc8df47e4dc723b464d215223f",
     "semantic_hash": "8da5becc8df47e4dc723b464d215223f"
   },
   "ui/syntax-highlight.js": {
-    "mtime": 1782730328.6407137,
+    "mtime": 1782735546.310743,
     "ast_hash": "098683465f40ff4fa6e2e3a9da3c9408",
     "semantic_hash": ""
   },
   "ui/utils.js": {
-    "mtime": 1779655463.6656811,
+    "mtime": 1782735546.3117433,
     "ast_hash": "814b5547b926a9cb4151273960b5e7d6",
     "semantic_hash": "814b5547b926a9cb4151273960b5e7d6"
   },
   "ui/volumes-ui.js": {
-    "mtime": 1779831542.8824818,
-    "ast_hash": "b11541c809017548d3339465bfd7203f",
-    "semantic_hash": "b11541c809017548d3339465bfd7203f"
+    "mtime": 1782735546.3147433,
+    "ast_hash": "5e71a38f919e33bc5ec6f011c6c8b66c",
+    "semantic_hash": ""
   },
   "CLAUDE.md": {
     "mtime": 1782714779.6527715,
@@ -220,8 +220,8 @@
     "semantic_hash": "bdf948b50b30966115fa7b3a0b2be185"
   },
   "index.html": {
-    "mtime": 1782718726.7808511,
-    "ast_hash": "af158287b98991f88d5d9deffca5116e",
+    "mtime": 1782742972.9651635,
+    "ast_hash": "c3d9e51ba6853821e4e94249daf8f03e",
     "semantic_hash": ""
   },
   "modules/compose-template.yaml": {
@@ -230,19 +230,19 @@
     "semantic_hash": "66e069bea8e18e77ad5afac908ee0355"
   },
   "preview/buttons.html": {
-    "mtime": 1779835519.5390513,
-    "ast_hash": "7245e681c67a188cb8c42ece9a5bd856",
-    "semantic_hash": "7245e681c67a188cb8c42ece9a5bd856"
+    "mtime": 1782738321.6837926,
+    "ast_hash": "b33c1dbd7da54df9c1f0a5b5ba66238c",
+    "semantic_hash": ""
   },
   "preview/colors.html": {
-    "mtime": 1779656714.4333644,
-    "ast_hash": "73b81c5d28ce2fd3c7bc3a22f463da68",
-    "semantic_hash": "73b81c5d28ce2fd3c7bc3a22f463da68"
+    "mtime": 1782737034.0905385,
+    "ast_hash": "1cc97ac2dea227d81573309956cefba2",
+    "semantic_hash": ""
   },
   "preview/menu.html": {
-    "mtime": 1780949388.5079594,
-    "ast_hash": "0c522014430473143116b3bd98e496dc",
-    "semantic_hash": "0c522014430473143116b3bd98e496dc"
+    "mtime": 1782739024.1427836,
+    "ast_hash": "97ab7537943b470dc0792b12d7ce877b",
+    "semantic_hash": ""
   },
   "preview/screenshot-main.png": {
     "mtime": 1779672980.1527133,
@@ -277,6 +277,11 @@
   "vendor/xterm.min.js": {
     "mtime": 1782716160.2084115,
     "ast_hash": "4f650fced89e60e36dcc04e5f48956cf",
+    "semantic_hash": ""
+  },
+  "MOBILE.md": {
+    "mtime": 1782751243.885263,
+    "ast_hash": "fa036ebda1cb8947a4dd254dc0709fe5",
     "semantic_hash": ""
   }
 }

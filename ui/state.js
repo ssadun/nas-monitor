@@ -56,6 +56,11 @@ function startStream() {
   };
   es.onerror = () => {
     if (streamEs !== es) return;
+    // EventSource hides the HTTP status of a failed connection, so a session
+    // that expired while the stream was the only open connection would just
+    // retry forever. Probe with a real fetch — the global 401 handler in
+    // utils.js will bounce to the login page if the session is actually gone.
+    fetch('/api/health', { credentials: 'same-origin' }).catch(() => {});
     if (streamReconnectTimer) clearTimeout(streamReconnectTimer);
     streamReconnectTimer = setTimeout(() => {
       try { es.close(); } catch {}
