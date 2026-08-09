@@ -9,6 +9,7 @@ let containerSort = { key: 'name', dir: 1 };
 let filterText = '';
 let filterMode = null;
 let expandedContainers = new Set();
+let selectedContainers = new Set();
 let collapsedProcs = new Set();
 let allContainersExpanded = false;
 let procByPid = {};

@@ -564,6 +564,13 @@ if ('serviceWorker' in navigator) {
   <div class="tab-panel active" id="tab-containers">
     <div class="container-toolbar">
       <button class="toolbar-btn expand" id="expand-all-btn" onclick="toggleAllContainers()"><i data-lucide="arrow-up-down" style="width:14px;height:14px;stroke-width:2;"></i><span>Expand All</span></button>
+      <div class="container-bulk-bar" id="container-bulk-bar" style="display:none;">
+        <span class="toolbar-label" id="container-bulk-count">0 Selected</span>
+        <button class="toolbar-btn start" onclick="bulkContainerAction('start')" title="Start Selected"><i data-lucide="play" style="width:14px;height:14px;stroke-width:2;"></i><span>Start</span></button>
+        <button class="toolbar-btn restart" onclick="bulkContainerAction('restart')" title="Restart Selected"><i data-lucide="rotate-cw" style="width:14px;height:14px;stroke-width:2;"></i><span>Restart</span></button>
+        <button class="toolbar-btn stop" onclick="bulkContainerAction('stop')" title="Stop Selected"><i data-lucide="square" style="width:14px;height:14px;stroke-width:2;"></i><span>Stop</span></button>
+        <button class="toolbar-btn clear" onclick="clearContainerSelection()" title="Clear Selection"><i data-lucide="x" style="width:14px;height:14px;stroke-width:2;"></i><span>Clear</span></button>
+      </div>
       <div class="toolbar-spacer"></div>
       <div class="toolbar-right">
         <span class="toolbar-label toolbar-info" id="container-count-total">–</span>
@@ -581,6 +588,7 @@ if ('serviceWorker' in navigator) {
       <table id="container-table">
         <thead>
           <tr>
+            <th class="col-select" style="width:30px" onclick="event.stopPropagation()"><input type="checkbox" id="container-select-all" onchange="toggleSelectAllContainers(this.checked)" title="Select All" style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);"></th>
             <th class="col-status" style="width:30px"></th>
             <th class="col-name" style="width:200px" onclick="event.target.closest('.col-resizer') || sortTable('containers','name')">NAME <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="1"></div></th>
             <th class="col-cpu" style="width:110px" onclick="event.target.closest('.col-resizer') || sortTable('containers','cpuNum')">%CPU <span class="sort-arrow">↕</span><div class="col-resizer" data-col-index="2"></div></th>
