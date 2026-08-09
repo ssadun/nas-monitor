@@ -12,9 +12,10 @@
     --border: #2a2f4a;
     --border2: #353b5e;
     --text: #e2e8ff;
-    --text2: #8891b8;
-    --text3: #545b7a;
+    --slate: #8891b8;
+    --muted: #545b7a;
     --accent: #4f8ef7;
+    --blue-dark: #477ed9;
     --lavender: #8b5cf6;
     --white: #f2ffff;
     --green: #22c55e;
@@ -33,15 +34,15 @@
     padding: 32px;
   }
   h1 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-  .subtitle { color: var(--text3); font-size: 12px; font-family: monospace; margin-bottom: 32px; }
+  .subtitle { color: var(--muted); font-size: 12px; font-family: monospace; margin-bottom: 32px; }
   h2 {
     font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--text3); font-family: monospace; margin: 24px 0 14px;
+    color: var(--muted); font-family: monospace; margin: 24px 0 14px;
   }
   h2:first-of-type { margin-top: 0; }
   h3 {
     font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--text3); font-family: monospace; margin: 16px 0 10px;
+    color: var(--muted); font-family: monospace; margin: 16px 0 10px;
     opacity: 0.7;
   }
   .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
@@ -49,58 +50,60 @@
   .size-badge {
     display: inline-block; padding: 2px 8px; border-radius: 4px;
     background: var(--bg2); border: 1px solid var(--border);
-    font-size: 10px; font-family: monospace; color: var(--text2);
+    font-size: 10px; font-family: monospace; color: var(--slate);
     margin-left: 8px; vertical-align: middle;
   }
 
   /* ─── 1. MODAL BUTTONS (bottom of modals) ─── */
-  /* Size: 7px 14px padding, 13px font, 8px radius */
+  /* Size: 8px 15px padding, 13px font, 8px radius · filled-tint (.10 rest → .20 hover) */
 
   .action-modal-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    font-family: var(--mono); cursor: pointer; transition: all .15s;
+    padding: 8px 15px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: var(--mono); cursor: pointer; transition: all .15s; white-space: nowrap;
     border: 1px solid var(--border2); background: none;
   }
   .action-modal-btn.ok {
-    color: var(--green); border-color: rgba(34,197,94,.45);
+    color: var(--green); border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.10);
   }
-  .action-modal-btn.ok:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
+  .action-modal-btn.ok:hover { background: rgba(34,197,94,.20); border-color: var(--green); }
+  /* Cancel / dismiss: neutral slate — red is reserved for delete */
   .action-modal-btn.cancel {
-    color: var(--red); border-color: rgba(239,68,68,.45);
+    color: var(--slate); border-color: var(--border2);
   }
-  .action-modal-btn.cancel:hover { background: rgba(239,68,68,.12); border-color: var(--red); }
+  .action-modal-btn.cancel:hover { background: var(--bg4); color: var(--text); }
   .action-modal-btn.lavender {
-    color: var(--lavender); border-color: rgba(139,92,246,.45);
+    color: var(--lavender); border-color: rgba(139,92,246,.45); background: rgba(139,92,246,.10);
   }
-  .action-modal-btn.lavender:hover { background: rgba(139,92,246,.12); border-color: var(--lavender); }
+  .action-modal-btn.lavender:hover { background: rgba(139,92,246,.20); border-color: var(--lavender); }
   .action-modal-btn.white {
-    color: var(--white); border-color: rgba(242,255,255,.45);
+    color: var(--white); border-color: rgba(242,255,255,.45); background: rgba(242,255,255,.10);
   }
-  .action-modal-btn.white:hover { background: rgba(242,255,255,.12); border-color: var(--white); }
+  .action-modal-btn.white:hover { background: rgba(242,255,255,.20); border-color: var(--white); }
   .action-modal-btn.restart {
-    color: var(--orange); border-color: rgba(249,115,22,.45);
+    color: var(--orange); border-color: rgba(249,115,22,.45); background: rgba(249,115,22,.10);
   }
-  .action-modal-btn.restart:hover { background: rgba(249,115,22,.12); border-color: var(--orange); }
+  .action-modal-btn.restart:hover { background: rgba(249,115,22,.20); border-color: var(--orange); }
   .action-modal-btn.stop {
-    color: var(--yellow); border-color: rgba(234,179,8,.45);
+    color: var(--yellow); border-color: rgba(234,179,8,.45); background: rgba(234,179,8,.10);
   }
-  .action-modal-btn.stop:hover { background: rgba(234,179,8,.12); border-color: var(--yellow); }
+  .action-modal-btn.stop:hover { background: rgba(234,179,8,.20); border-color: var(--yellow); }
 
   .newcompose-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    font-family: var(--mono); cursor: pointer; transition: all .15s;
+    padding: 8px 15px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    font-family: var(--mono); cursor: pointer; transition: all .15s; white-space: nowrap;
     border: 1px solid var(--border2); background: none;
   }
   .newcompose-btn.template {
-    color: var(--lavender); border-color: rgba(139,92,246,.45);
+    color: var(--lavender); border-color: rgba(139,92,246,.45); background: rgba(139,92,246,.10);
   }
-  .newcompose-btn.template:hover { background: rgba(139,92,246,.12); border-color: var(--lavender); }
+  .newcompose-btn.template:hover { background: rgba(139,92,246,.20); border-color: var(--lavender); }
+  /* Cancel / dismiss: neutral slate */
   .newcompose-btn.cancel {
-    color: var(--red); border-color: rgba(239,68,68,.45);
+    color: var(--slate); border-color: var(--border2);
   }
-  .newcompose-btn.cancel:hover { background: rgba(239,68,68,.12); border-color: var(--red); }
+  .newcompose-btn.cancel:hover { background: var(--bg4); color: var(--text); }
 
   /* ─── 2. CONTAINER DETAIL BUTTONS (top of container detail modal) ─── */
   /* Size: 7px 14px padding, 12px font (in span), 8px radius */
@@ -124,16 +127,16 @@
   .cdetail-action-btn.delete:hover { background: rgba(239,68,68,.12); border-color: var(--red); }
 
   /* ─── 3. LIST/TABLE ROW/IN-FORM BUTTONS ─── */
-  /* Unified size: 3px 10px padding, 12px font, 6px radius */
+  /* Unified size: 4px 9px padding, 11px font, 6px radius · outline-at-rest */
 
   .list-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 10px; border-radius: 6px; font-size: 12px;
+    padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600;
     font-family: var(--mono); cursor: pointer; transition: all .15s;
     border: 1px solid var(--border); background: none; white-space: nowrap;
   }
-  .list-btn.blue { color: #477ed9; border-color: rgba(71,126,217,.45); }
-  .list-btn.blue:hover { background: rgba(71,126,217,.12); border-color: #477ed9; }
+  .list-btn.blue { color: var(--blue-dark); border-color: rgba(71,126,217,.45); }
+  .list-btn.blue:hover { background: rgba(71,126,217,.12); border-color: var(--blue-dark); }
   .list-btn.green { color: var(--green); border-color: rgba(34,197,94,.45); }
   .list-btn.green:hover { background: rgba(34,197,94,.12); border-color: var(--green); }
   .list-btn.red { color: var(--red); border-color: rgba(239,68,68,.45); }
@@ -153,7 +156,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="section">
   <h2>1. Modal Buttons <span class="size-badge">7px 14px · 13px font · 8px radius</span></h2>
-  <p style="color:var(--text3);font-size:12px;margin-bottom:16px;">Used at the bottom of modals for primary actions</p>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:16px;">Used at the bottom of modals for primary actions</p>
 
   <h3>Green — Positive Actions</h3>
   <div class="row">
@@ -202,7 +205,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="section">
   <h2>2. Container Detail Buttons <span class="size-badge">7px 14px · 12px font · 8px radius</span></h2>
-  <p style="color:var(--text3);font-size:12px;margin-bottom:16px;">Used at the top of the Container Detail modal for container actions</p>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:16px;">Used at the top of the Container Detail modal for container actions</p>
 
   <div class="row">
     <button class="cdetail-action-btn start"><i data-lucide="play" class="icon-style"></i><span>Start</span></button>
@@ -218,7 +221,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="section">
   <h2>3. List / Table Row / In-Form Buttons <span class="size-badge">3px 10px · 12px font · 6px radius</span></h2>
-  <p style="color:var(--text3);font-size:12px;margin-bottom:16px;">Smaller buttons used inline with table rows, lists, and forms</p>
+  <p style="color:var(--muted);font-size:12px;margin-bottom:16px;">Smaller buttons used inline with table rows, lists, and forms</p>
 
   <h3>Blue — Navigation / Actions</h3>
   <div class="row">

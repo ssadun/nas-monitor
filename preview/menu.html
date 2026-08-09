@@ -14,8 +14,8 @@
     --border:    #2a2f4a;
     --border2:   #353b5e;
     --text:      #e2e8ff;
-    --text2:     #8891b8;
-    --text3:     #545b7a;
+    --slate:     #8891b8;
+    --muted:     #545b7a;
     --accent:    #4f8ef7;
     --lavender:  #8b5cf6;
     --white:     #f2ffff;
@@ -67,7 +67,7 @@
   }
   .info-sub {
     font-size: 12px;
-    color: var(--text3);
+    color: var(--muted);
     font-family: monospace;
     margin-bottom: 8px;
   }
@@ -85,7 +85,7 @@
     font-size: 10px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--text3);
+    color: var(--muted);
     font-family: monospace;
     margin-bottom: 4px;
   }
@@ -120,7 +120,7 @@
   }
   .item-desc {
     font-size: 11px;
-    color: var(--text3);
+    color: var(--muted);
     font-family: monospace;
     line-height: 1.5;
   }
@@ -147,7 +147,7 @@
   .state-badge.collapsed {
     background: rgba(84,91,122,.15);
     border: 1px solid var(--border);
-    color: var(--text3);
+    color: var(--muted);
   }
   .state-badge.expanded {
     background: rgba(79,142,247,.12);
@@ -157,7 +157,7 @@
 
   .tip {
     font-size: 11px;
-    color: var(--text3);
+    color: var(--muted);
     font-family: monospace;
     display: flex;
     align-items: flex-start;
@@ -258,7 +258,7 @@
   .sidebar-toggle-label {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text3);
+    color: var(--muted);
     flex-shrink: 0;
     letter-spacing: 1px;
   }
@@ -291,7 +291,7 @@
     border-radius: 12px;
     cursor: pointer;
     font-size: 11px; font-weight: 700;
-    color: var(--text3);
+    color: var(--muted);
     letter-spacing: 0.5px;
     z-index: 103;
     transition: border-color .15s;
@@ -336,7 +336,7 @@
     border-radius: 8px;
     background: none;
     border: none;
-    color: var(--text2);
+    color: var(--slate);
     font-family: var(--mono);
     font-size: 13px;
     font-weight: 600;
@@ -391,7 +391,7 @@
     flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     width: 16px; height: 16px;
-    color: var(--text3);
+    color: var(--muted);
     transition: transform .25s ease, color .15s;
     margin-left: auto;
   }
@@ -424,7 +424,7 @@
     margin: 2px 6px;
     border-radius: 6px;
     background: none; border: none;
-    color: var(--text3);
+    color: var(--slate);
     font-family: var(--mono); font-size: 12px; font-weight: 500;
     line-height: 1; cursor: pointer; text-align: left;
     transition: background .15s, color .15s;
@@ -585,7 +585,7 @@
       <div class="info-sub">preview/menu.html — click the sidebar to interact</div>
       <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
         <span id="state-badge" class="state-badge collapsed">Collapsed · 69px</span>
-        <span style="font-size:11px;color:var(--text3);font-family:monospace;">Click the top logo area to toggle width</span>
+        <span style="font-size:11px;color:var(--muted);font-family:monospace;">Click the top logo area to toggle width</span>
       </div>
     </div>
 
@@ -718,15 +718,15 @@
     <!-- Dimensions -->
     <div class="section-card">
       <div class="section-label">Dimensions &amp; Behavior</div>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;font-family:monospace;color:var(--text2);">
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Collapsed width</span> <code>69px</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Expanded width</span> <code>201px</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Toggle header height</span> <code>64px</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Nav item height</span> <code>~40px (10px padding)</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Sub-item height</span> <code>~28px (6px padding)</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Width transition</span> <code>0.3s ease</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">Idle icon color</span> <code>#6b7fa3</code></div>
-        <div><span style="color:var(--text3);min-width:200px;display:inline-block;">State persistence</span> <code>sessionStorage</code></div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;font-family:monospace;color:var(--slate);">
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Collapsed width</span> <code>69px</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Expanded width</span> <code>201px</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Toggle header height</span> <code>64px</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Nav item height</span> <code>~40px (10px padding)</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Sub-item height</span> <code>~28px (6px padding)</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Width transition</span> <code>0.3s ease</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">Idle icon color</span> <code>#6b7fa3</code></div>
+        <div><span style="color:var(--muted);min-width:200px;display:inline-block;">State persistence</span> <code>sessionStorage</code></div>
       </div>
     </div>
 

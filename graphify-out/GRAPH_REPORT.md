@@ -1,16 +1,16 @@
 # Graph Report - nas-monitor  (2026-06-29)
 
 ## Corpus Check
-- 45 files · ~74,052 words
+- 46 files · ~75,483 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1514 nodes · 3236 edges · 78 communities (65 shown, 13 thin omitted)
+- 1524 nodes · 3246 edges · 83 communities (68 shown, 15 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 174 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b71061ad`
+- Built from commit: `91e69855`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -91,6 +91,11 @@
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
 - [[_COMMUNITY_Community 76|Community 76]]
+- [[_COMMUNITY_Community 78|Community 78]]
+- [[_COMMUNITY_Community 79|Community 79]]
+- [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
+- [[_COMMUNITY_Community 82|Community 82]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `E` - 109 edges
@@ -107,14 +112,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `Modules Compose Template` --semantically_similar_to--> `Root Compose Template`  [INFERRED] [semantically similar]
   modules/compose-template.yaml → compose-template.yaml
+- `executeAction()` --calls--> `appendLog()`  [INFERRED]
+  ui/render.js → modules/image-updates.js
 - `index.html SPA Shell` --implements--> `Dark Dashboard Design System`  [INFERRED]
   index.html → CLAUDE.md
 - `Sidebar Menu Reference Page` --implements--> `Dark Dashboard Design System`  [INFERRED]
   preview/menu.html → CLAUDE.md
-- `executeAction()` --calls--> `appendLog()`  [INFERRED]
-  ui/render.js → modules/image-updates.js
-- `rpToggleRetries()` --calls--> `el()`  [INFERRED]
-  ui/compose-ui.js → ui/utils.js
+- `openNetworkEditForm()` --calls--> `esc()`  [INFERRED]
+  ui/networks-ui.js → ui/utils.js
 
 ## Import Cycles
 - None detected.
@@ -123,27 +128,27 @@
 - **Live Data Collection & Streaming Pipeline** — readme_proc_collection, readme_docker_cli, readme_sse_streaming, claude_md_data_flow [INFERRED 0.85]
 - **Design System Reference Pages** — claude_md_design_system, preview_buttons_reference, preview_colors_reference, preview_menu_reference [INFERRED 0.85]
 
-## Communities (78 total, 13 thin omitted)
+## Communities (83 total, 15 thin omitted)
 
 ### Community 0 - "Docker Container Engine"
 Cohesion: 0.06
 Nodes (95): applyImageUpdate(), appSettings, auditLog(), buildComposeSyntheticId(), buildVolumeUsageMap(), collectContainers(), collectDockerVolumes(), COMPOSE_BOOT_LOG_SECONDS (+87 more)
 
 ### Community 1 - "Container Detail & Archive UI"
-Cohesion: 0.12
-Nodes (30): closeNewComposeModal(), saveComposeFile(), saveNewCompose(), saveNewComposeTemplate(), saveRestartPolicy(), closeConsoleModal(), openConsoleModal(), _startConsole() (+22 more)
+Cohesion: 0.11
+Nodes (32): closeArchiveBrowserModal(), closeNewComposeModal(), rpToggleRetries(), saveComposeFile(), saveNewCompose(), saveNewComposeTemplate(), saveRestartPolicy(), closeConsoleModal() (+24 more)
 
 ### Community 2 - "Compose Template & Folder UI"
-Cohesion: 0.09
-Nodes (36): applyComposeImportToTemplate(), applyDockerRunSpecToTemplate(), applyDockerRunToTemplate(), _archiveBackups, _archiveVisibleBackups, closeArchiveBrowserModal(), closeArchiveDeleteModal(), closeRestoreConfirmModal() (+28 more)
+Cohesion: 0.08
+Nodes (52): applyComposeImportToTemplate(), applyDockerRunSpecToTemplate(), applyDockerRunToTemplate(), _archiveBackups, _archiveVisibleBackups, closeArchiveDeleteModal(), closeRestoreConfirmModal(), confirmArchiveDelete() (+44 more)
 
 ### Community 3 - "REST API Request Handlers"
 Cohesion: 0.11
 Nodes (49): _appSettings(), _auditLog(), checkDiskSpace(), _diskScanHistory(), { exec, spawn }, execAsync, _formatBytes(), fs (+41 more)
 
 ### Community 4 - "Network UI & Render Pipeline"
-Cohesion: 0.08
-Nodes (28): appendLog(), logError(), ACTION_META, addProgressStep(), buildDependsOnOrder(), clearLogs(), closeActionModal(), closeLogModal() (+20 more)
+Cohesion: 0.09
+Nodes (27): openArchiveDeleteModal(), ACTION_META, appendLogLine(), buildDependsOnOrder(), clearLogs(), closeActionModal(), closeLogModal(), executeAction() (+19 more)
 
 ### Community 5 - "Server Entry & Module Wiring"
 Cohesion: 0.05
@@ -162,8 +167,8 @@ Cohesion: 0.09
 Nodes (19): CAT_ASSIGNMENTS_FILE, CAT_DEFS_FILE, DEFAULT_CAT_DEFS, EMOJI_TO_LUCIDE, fs, loadCatAssignments(), loadCatDefs(), logError() (+11 more)
 
 ### Community 9 - "Image Update Checker"
-Cohesion: 0.13
-Nodes (21): checkImageUpdate(), { execFile, execFileSync }, execFileAsync, fs, getBearerToken(), getDockerHubToken(), getGhcrToken(), getLocalDigest() (+13 more)
+Cohesion: 0.12
+Nodes (23): appendLog(), checkImageUpdate(), { execFile, execFileSync }, execFileAsync, fs, getBearerToken(), getDockerHubToken(), getGhcrToken() (+15 more)
 
 ### Community 10 - "Process UI & Utilities"
 Cohesion: 0.13
@@ -190,12 +195,12 @@ Cohesion: 0.23
 Nodes (16): BOOT_TIME, collectProcesses(), fs, getAllPids(), getBootTime(), getCmdline(), getOwner(), getSystemCpuTotal() (+8 more)
 
 ### Community 16 - "Docker Volumes UI"
-Cohesion: 0.21
-Nodes (13): showToast(), allDockerVolumes, createDockerVolume(), deleteDockerVolumeByName(), openDockerVolumesModal(), refreshDockerVolumesList(), renderDockerVolumesList(), updateVolBulkButtons() (+5 more)
+Cohesion: 0.23
+Nodes (11): allDockerVolumes, createDockerVolume(), openDockerVolumeDetail(), openDockerVolumesModal(), refreshDockerVolumesList(), renderDockerVolumesList(), updateVolBulkButtons(), updateVolSelectAllCheckbox() (+3 more)
 
 ### Community 17 - "Settings Panel UI"
-Cohesion: 0.04
-Nodes (25): _clearLiveRegion(), clearTextureAtlas(), compositionend(), compositionupdate(), _finalizeComposition(), flush(), _fullRefresh(), getStringCellWidth() (+17 more)
+Cohesion: 0.03
+Nodes (40): activeProtocol(), activeVersion(), _announceCharacters(), b(), _clearLiveRegion(), clearTextureAtlas(), compositionupdate(), _createSelectionElement() (+32 more)
 
 ### Community 18 - "Configuration Schema"
 Cohesion: 0.24
@@ -210,8 +215,8 @@ Cohesion: 0.20
 Nodes (9): author, description, keywords, license, main, name, scripts, test (+1 more)
 
 ### Community 21 - "Sidebar Menu UI"
-Cohesion: 0.05
-Nodes (19): addLineToLink(), addMarker(), _cancelCallback(), _createAccessibilityTreeNode(), _getEntryIdKey(), _handleBoundaryFocus(), _handleResize(), L() (+11 more)
+Cohesion: 0.10
+Nodes (6): _createAccessibilityTreeNode(), _handleBoundaryFocus(), _handleResize(), _mergeRanges(), n(), _refreshRowElements()
 
 ### Community 22 - "Service Control Script"
 Cohesion: 0.42
@@ -235,31 +240,27 @@ Nodes (5): PWA Icon 192px PNG, PWA Icon 512px PNG, NAS Monitor PWA App Icon, Dar
 
 ### Community 31 - "Community 31"
 Cohesion: 0.07
-Nodes (4): E, nextStop(), setgCharset(), setgLevel()
+Nodes (5): E, markAllDirty(), nextStop(), setgCharset(), setgLevel()
 
 ### Community 32 - "Community 32"
-Cohesion: 0.06
-Nodes (15): activeProtocol(), activeVersion(), b(), clearAllMarkers(), debug(), _equalEvents(), fire(), _handleScroll() (+7 more)
-
-### Community 33 - "Community 33"
-Cohesion: 0.08
-Nodes (8): _addStyle(), _applyMinimumContrast(), createRow(), getColor(), _getContrastCache(), i(), setColor(), v()
+Cohesion: 0.11
+Nodes (9): clearAllMarkers(), debug(), fillViewportRows(), fire(), _fireOnCanvasResize(), insert(), modifyColors(), resize() (+1 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.13
-Nodes (7): _convertViewportColToCharacterIndex(), getCell(), getJoinedCharacters(), _getWordAt(), h(), _isCharWordSeparator(), _stringRangesToCellRanges()
+Cohesion: 0.12
+Nodes (7): getJoinedCharacters(), h(), _reflow(), _reflowLarger(), _reflowLargerAdjustViewport(), _reflowSmaller(), scroll()
 
 ### Community 36 - "Community 36"
-Cohesion: 0.14
-Nodes (12): getBlankLine(), getNullCell(), markDirty(), markRangeDirty(), _reflow(), _reflowLarger(), _reflowLargerAdjustViewport(), _reflowSmaller() (+4 more)
+Cohesion: 0.17
+Nodes (6): clearMarkers(), getBlankLine(), getCell(), getNullCell(), markDirty(), markRangeDirty()
+
+### Community 37 - "Community 37"
+Cohesion: 0.09
+Nodes (3): P, shouldColumnSelect(), triggerDataEvent()
 
 ### Community 38 - "Community 38"
-Cohesion: 0.12
-Nodes (18): addEncoding(), addProtocol(), constructor(), enable(), _fireOnCanvasResize(), handleCharSizeChanged(), handleDevicePixelRatioChange(), _handleOptionsChanged() (+10 more)
-
-### Community 39 - "Community 39"
-Cohesion: 0.16
-Nodes (22): createConfigFolderAt(), createDataFolderAt(), decodeFolderArg(), deleteConfigFolder(), deleteDataFolder(), downloadConfigFile(), downloadContainerFile(), getFolderBrowserState() (+14 more)
+Cohesion: 0.13
+Nodes (17): addEncoding(), addProtocol(), clear(), constructor(), _getCorrectBufferLength(), handleCharSizeChanged(), handleDevicePixelRatioChange(), _handleOptionsChanged() (+9 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.13
@@ -274,8 +275,8 @@ Cohesion: 0.14
 Nodes (18): closeCDetailModal(), switchCDetailTab(), buildCacheRows(), closeComposeDismissModal(), closePruneLogModal(), closePruneModal(), _composeEditorState, confirmDismissComposeChanges() (+10 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.15
-Nodes (6): addRefreshCallback(), attachToDom(), event(), hasRenderer(), _queueRefresh(), _registerDimensionChangeListeners()
+Cohesion: 0.10
+Nodes (7): addRefreshCallback(), attachToDom(), L(), _queueRefresh(), register(), _registerDecorationListeners(), _registerDimensionChangeListeners()
 
 ### Community 45 - "Community 45"
 Cohesion: 0.13
@@ -286,48 +287,52 @@ Cohesion: 0.22
 Nodes (15): deleteSelectedDiskScan(), diskCollapsed, diskFileSort, diskHistory, expandAllNodes(), loadHistoryScan(), renderDiskFiles(), renderDiskHistory() (+7 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.14
-Nodes (16): _addMouseDownListeners(), _areCoordsInSelection(), _getMouseBufferCoords(), getWrappedRangeForLine(), _handleDoubleClick(), _handleIncrementalClick(), _handleMouseDown(), _handleSingleClick() (+8 more)
+Cohesion: 0.15
+Nodes (15): _addMouseDownListeners(), _areCoordsInSelection(), _getMouseBufferCoords(), getWrappedRangeForLine(), _handleDoubleClick(), _handleIncrementalClick(), _handleMouseDown(), _handleSingleClick() (+7 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.15
 Nodes (17): areSelectionValuesReversed(), _clearCurrentLink(), _createLinkUnderlineEvent(), finalSelectionEnd(), finalSelectionStart(), _fireUnderlineEvent(), getCoords(), _getMouseEventScrollAmount() (+9 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.15
-Nodes (11): _askForLink(), _batchedMemoryCleanup(), _checkLinkProviderResult(), get(), getCss(), getLine(), getLinkData(), getService() (+3 more)
+Cohesion: 0.11
+Nodes (17): addLineToLink(), addMarker(), _askForLink(), _batchedMemoryCleanup(), _checkLinkProviderResult(), getBufferElements(), _getEntryIdKey(), getLinkData() (+9 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.12
-Nodes (13): clearListeners(), clearMarkers(), delete(), dispose(), f(), forEachByKey(), getKeyIterator(), _handleBufferActivate() (+5 more)
+Cohesion: 0.13
+Nodes (12): clearListeners(), delete(), dispose(), f(), forEachByKey(), getKeyIterator(), _handleBufferActivate(), _removeDecoration() (+4 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.16
-Nodes (8): loadDockerfileTab(), renderDockerfileTab(), loadContainerImageUpdate(), openCDetailModal(), triggerContainerImageUpdate(), _dockerfileEditorState, initComposeHighlighting(), initDockerfileHighlighting()
+Cohesion: 0.12
+Nodes (12): loadDockerfileTab(), renderDockerfileTab(), loadContainerImageUpdate(), openCDetailModal(), triggerContainerImageUpdate(), getContainerStateClass(), _dockerfileEditorState, initComposeHighlighting() (+4 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.15
 Nodes (3): addOscHandler(), registerOscHandler(), setHandlerFallback()
 
 ### Community 54 - "Community 54"
-Cohesion: 0.14
-Nodes (13): end(), error(), _evalLazyOptionalParams(), _getJoinedRanges(), info(), _log(), _mergeRanges(), put() (+5 more)
-
-### Community 55 - "Community 55"
-Cohesion: 0.20
-Nodes (3): fillViewportRows(), init(), o()
+Cohesion: 0.33
+Nodes (6): error(), _evalLazyOptionalParams(), _getJoinedRanges(), info(), _log(), trace()
 
 ### Community 56 - "Community 56"
 Cohesion: 0.15
 Nodes (12): 🌐 API Reference, 🔒 Authentication, Changing credentials, 🛠️ Configuration Reference, Docker CLI via execFile, 📄 License, 🐋 NAS Monitor, PBKDF2-SHA512 Authentication (+4 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.25
-Nodes (9): allNetworks, closeNetworkDeleteModal(), confirmDeleteNetwork(), openNetworkDeleteModal(), openNetworkEditForm(), openNetworkMgr(), renderNetworkMgrList(), saveNetwork() (+1 more)
+Cohesion: 0.23
+Nodes (10): allNetworks, closeNetworkDeleteModal(), confirmDeleteNetwork(), openNetworkDeleteModal(), openNetworkEditForm(), openNetworkMgr(), renderNetworkMgrList(), saveNetwork() (+2 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.18
 Nodes (11): addDecoration(), _addLineToZone(), _lineAdjacentToZone(), _lineIntersectsZone(), _refreshCanvasDimensions(), _refreshColorZonePadding(), _refreshDecorations(), _refreshDrawConstants() (+3 more)
+
+### Community 59 - "Community 59"
+Cohesion: 0.19
+Nodes (8): clearRange(), decode(), end(), hook(), put(), reset(), _start(), unhook()
+
+### Community 60 - "Community 60"
+Cohesion: 0.14
+Nodes (5): createInstance(), enable(), event(), hasRenderer(), setService()
 
 ### Community 62 - "Community 62"
 Cohesion: 0.29
@@ -342,16 +347,16 @@ Cohesion: 0.22
 Nodes (3): addEscHandler(), registerEscHandler(), values()
 
 ### Community 65 - "Community 65"
-Cohesion: 0.32
+Cohesion: 0.28
 Nodes (3): a(), compositionstart(), handleFocus()
 
 ### Community 66 - "Community 66"
-Cohesion: 0.25
-Nodes (4): clear(), decode(), _getCorrectBufferLength(), markAllDirty()
+Cohesion: 0.20
+Nodes (4): _cancelCallback(), r(), _requestCallback(), warn()
 
 ### Community 67 - "Community 67"
-Cohesion: 0.25
-Nodes (8): _announceCharacters(), _createSelectionElement(), getBufferElements(), handleSelectionChanged(), _renderRows(), selectionText(), translateBufferLineToString(), translateToString()
+Cohesion: 0.20
+Nodes (9): Context, CSS architecture, Current-state map (what each area needs), Decisions, Mobile View Support — Design & Implementation Plan, Phase 1 — Make it usable (minimal, CSS-mostly), Phase 2 — Full responsive polish (Home-Ledger parity), Risks / flags (+1 more)
 
 ### Community 68 - "Community 68"
 Cohesion: 0.40
@@ -371,31 +376,43 @@ Nodes (5): Data Collection, Frontend Architecture, ⚙️ How It Works, Streamin
 
 ### Community 74 - "Community 74"
 Cohesion: 0.50
-Nodes (5): _createElement(), _doRefreshDecorations(), _refreshStyle(), _refreshXPosition(), _renderDecoration()
+Nodes (4): _createElement(), _doRefreshDecorations(), _refreshXPosition(), _renderDecoration()
 
 ### Community 75 - "Community 75"
 Cohesion: 0.50
 Nodes (4): CDN Dependencies (xterm, Prism, lucide), index.html SPA Shell, PWA Support (manifest + service worker), WebSocket Container Terminal
 
+### Community 78 - "Community 78"
+Cohesion: 0.33
+Nodes (4): _convertViewportColToCharacterIndex(), _getWordAt(), _isCharWordSeparator(), _stringRangesToCellRanges()
+
+### Community 79 - "Community 79"
+Cohesion: 0.40
+Nodes (5): _addStyle(), _applyMinimumContrast(), getColor(), _getContrastCache(), setColor()
+
+### Community 80 - "Community 80"
+Cohesion: 0.50
+Nodes (4): compositionend(), _finalizeComposition(), _handleAnyTextareaChanges(), keydown()
+
 ## Knowledge Gaps
-- **225 isolated node(s):** `init-data.sh script`, `fs`, `path`, `{ exec, spawn }`, `{ promisify }` (+220 more)
+- **233 isolated node(s):** `init-data.sh script`, `fs`, `path`, `{ exec, spawn }`, `{ promisify }` (+228 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `executeAction()` connect `Network UI & Render Pipeline` to `Docker Volumes UI`, `Container Detail & Archive UI`, `Community 43`, `Sidebar Nav & Client State`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
-- **Why does `appendLog()` connect `Network UI & Render Pipeline` to `Image Update Checker`?**
-  _High betweenness centrality (0.102) - this node is a cross-community bridge._
-- **Why does `el()` connect `Container Detail & Archive UI` to `Compose Template & Folder UI`, `Network UI & Render Pipeline`, `Sidebar Nav & Client State`, `Community 39`, `Process UI & Utilities`, `Community 43`, `Community 46`, `Docker Volumes UI`, `Community 52`, `Community 57`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+- **Why does `executeAction()` connect `Network UI & Render Pipeline` to `Container Detail & Archive UI`, `Sidebar Nav & Client State`, `Image Update Checker`, `Community 43`, `Community 52`, `Community 57`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+- **Why does `appendLog()` connect `Image Update Checker` to `Network UI & Render Pipeline`?**
+  _High betweenness centrality (0.097) - this node is a cross-community bridge._
+- **Why does `el()` connect `Container Detail & Archive UI` to `Compose Template & Folder UI`, `Network UI & Render Pipeline`, `Sidebar Nav & Client State`, `Process UI & Utilities`, `Community 43`, `Community 46`, `Community 52`, `Community 57`?**
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `E` (e.g. with `modifyColors()` and `.forEach()`) actually correct?**
   _`E` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 77 inferred relationships involving `el()` (e.g. with `applyComposeImportToTemplate()` and `applyDockerRunToTemplate()`) actually correct?**
   _`el()` has 77 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `init-data.sh script`, `fs`, `path` to the rest of the system?**
-  _226 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _234 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Docker Container Engine` be split into smaller, more focused modules?**
   _Cohesion score 0.06297029702970297 - nodes in this community are weakly interconnected._

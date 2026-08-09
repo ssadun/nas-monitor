@@ -40,7 +40,7 @@ function renderSettingsFolderList(listId, folders, updateCallback) {
   const container = getElement(listId);
   if (!container) return;
   if (!folders.length) {
-    container.innerHTML = `<div style="color:var(--text3);font-size:12px;font-family:var(--mono);font-style:italic;">No folders configured.</div>`;
+    container.innerHTML = `<div style="color:var(--muted);font-size:12px;font-family:var(--mono);font-style:italic;">No folders configured.</div>`;
     return;
   }
   container.innerHTML = folders.map((folder, i) => `

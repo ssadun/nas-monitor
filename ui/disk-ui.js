@@ -29,7 +29,7 @@ async function scanDisk() {
   btn.querySelector('span').textContent = 'Scanning…';
   btn.disabled = true;
   // el('disk-scan-info').textContent ='⟳ Scanning ' + path + '…';
-  el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Scanning ${esc(path)}…<br><span style="font-size:11px;opacity:.6">This may take a moment for large volumes</span></div>`;
+  el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center">Scanning ${esc(path)}…<br><span style="font-size:11px;opacity:.6">This may take a moment for large volumes</span></div>`;
   try {
     const res = await fetch(`/api/disk?path=${encodeURIComponent(path)}&depth=${depth}`);
     const data = await res.json();
@@ -116,7 +116,7 @@ function renderDiskHistory(activeIdx) {
   const selectedIdx = diskActiveHistoryIdx;
   const list = el('disk-history-list');
   if (!diskHistory.length) {
-    list.innerHTML = `<div style="padding:20px 14px;color:var(--text3);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
+    list.innerHTML = `<div style="padding:20px 14px;color:var(--muted);font-size:11px;font-family:var(--mono)">No scans yet</div>`;
     updateDiskDeleteButtonVisibility();
     return;
   }
@@ -139,7 +139,7 @@ function renderDiskHistory(activeIdx) {
       transition:background .1s; border-bottom:1px solid rgba(42,47,74,.3);
     ">
       <div style="font-size:12px;font-family:var(--mono);color:${active ? 'var(--accent)' : 'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(h.path)}">${esc(h.path)}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)">${esc(dateStr)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)">${esc(dateStr)}</div>
       <div style="font-size:11px;color:${sizeColor};margin-top:1px;font-family:var(--mono)">${size}</div>
     </div>`;
   }).join('');
@@ -172,7 +172,7 @@ async function deleteSelectedDiskScan() {
       diskCurrentData = null;
       // el('disk-scan-info').textContent ='Scan deleted';
       el('disk-tree-root').textContent = '';
-      el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>`;
+      el('disk-tree-wrap').innerHTML = `<div style="padding:30px;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center">Click Scan to start</div>`;
       el('disk-file-count').textContent = '';
       el('disk-file-tbody').innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="emoji">📄</div>Click Scan to start</div></td></tr>`;
       const filesPanel = el('disk-files-panel');
@@ -248,9 +248,9 @@ function renderDiskTree() {
   const maxSize = root.sizeBytes || 1;
   let html = '<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">';
   html += `<thead><tr style="background:var(--bg3);position:sticky;top:0;z-index:5">
-    <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">NAME</th>
-    <th style="padding:7px 12px;width:110px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">SIZE</th>
-    <th style="padding:7px 12px;width:180px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2)">BAR</th>
+    <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2)">NAME</th>
+    <th style="padding:7px 12px;width:110px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2)">SIZE</th>
+    <th style="padding:7px 12px;width:180px;text-align:left;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2)">BAR</th>
   </tr></thead><tbody>`;
 
   function renderNode(node, depth) {
@@ -258,7 +258,7 @@ function renderDiskTree() {
     const isCollapsed = diskCollapsed.has(node.path);
     const hasChildren = node.children && node.children.length > 0;
     const pct = Math.min((node.sizeBytes / maxSize) * 100, 100);
-    const barColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : pct > 10 ? 'var(--accent)' : 'var(--text3)';
+    const barColor = pct > 60 ? 'var(--red)' : pct > 30 ? 'var(--orange)' : pct > 10 ? 'var(--accent)' : 'var(--muted)';
     const indent = depth * 18;
     const isRoot = depth === 0;
 
@@ -266,19 +266,19 @@ function renderDiskTree() {
       <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px">
         <div style="display:flex;align-items:center;padding-left:${indent}px;gap:4px">
           ${hasChildren
-            ? `<button onclick="toggleDiskNode(${JSON.stringify(node.path).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0 4px 0 0;flex-shrink:0">${isCollapsed ? '▶' : '▼'}</button>`
+            ? `<button onclick="toggleDiskNode(${JSON.stringify(node.path).replace(/"/g,'&quot;')})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:0 4px 0 0;flex-shrink:0">${isCollapsed ? '▶' : '▼'}</button>`
             : `<span style="display:inline-block;width:16px;flex-shrink:0"></span>`
           }
           <span style="color:${isRoot ? 'var(--accent)' : depth===0 ? 'var(--accent)' : 'var(--text)'}">${esc(node.name)}</span>
         </div>
       </td>
-      <td style="padding:5px 12px;color:var(--text2);white-space:nowrap">${fmtBytes(node.sizeBytes)}</td>
+      <td style="padding:5px 12px;color:var(--slate);white-space:nowrap">${fmtBytes(node.sizeBytes)}</td>
       <td style="padding:5px 12px">
         <div style="display:flex;align-items:center;gap:6px">
           <div style="flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
             <div style="width:${pct.toFixed(1)}%;height:100%;background:${barColor};border-radius:3px"></div>
           </div>
-          <span style="font-size:10px;color:var(--text3);width:32px">${pct.toFixed(0)}%</span>
+          <span style="font-size:10px;color:var(--muted);width:32px">${pct.toFixed(0)}%</span>
         </div>
       </td>
     </tr>`;
@@ -335,7 +335,7 @@ function renderDiskFiles() {
     const mtimeStr = f.mtime ? fmtFileDate(f.mtime) : '–';
     const mtimeAge = f.mtime ? fileDateAge(f.mtime) : '';
     return `<tr style="border-bottom:1px solid rgba(42,47,74,.4)">
-      <td style="padding:5px 12px;font-family:var(--mono);color:var(--text2);white-space:nowrap">
+      <td style="padding:5px 12px;font-family:var(--mono);color:var(--slate);white-space:nowrap">
         <div style="display:flex;align-items:center;gap:6px">
           ${fmtBytes(f.sizeBytes)}
           <div style="width:40px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;flex-shrink:0">
@@ -345,10 +345,10 @@ function renderDiskFiles() {
       </td>
       <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(f.path)}">${esc(f.name)}</td>
       <td style="padding:5px 12px;white-space:nowrap;font-family:var(--mono);font-size:11px;" title="${esc(new Date(f.mtime).toLocaleString())}">
-        <span style="color:var(--text2);">${esc(mtimeStr)}</span>
-        ${mtimeAge ? `<span style="color:var(--text3);margin-left:4px;">${esc(mtimeAge)}</span>` : ''}
+        <span style="color:var(--slate);">${esc(mtimeStr)}</span>
+        ${mtimeAge ? `<span style="color:var(--muted);margin-left:4px;">${esc(mtimeAge)}</span>` : ''}
       </td>
-      <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3);font-size:11px" title="${esc(f.path)}">${esc(dir)}</td>
+      <td style="padding:5px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11px" title="${esc(f.path)}">${esc(dir)}</td>
     </tr>`;
   }).join('');
 }

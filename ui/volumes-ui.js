@@ -16,7 +16,7 @@ function closeDockerVolumesModal(e) {
 
 async function refreshDockerVolumesList() {
   const body = document.getElementById('volmgr-body');
-  body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">Loading docker volumes…</div>`;
+  body.innerHTML = `<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px;">Loading docker volumes…</div>`;
   try {
     const res = await fetch('/api/docker/volumes/list');
     const data = await res.json();
@@ -39,7 +39,7 @@ function renderDockerVolumesList() {
 
   const body = document.getElementById('volmgr-body');
   if (!allDockerVolumes.length) {
-    body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">No docker volumes found. Create one below.</div>`;
+    body.innerHTML = `<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px;">No docker volumes found. Create one below.</div>`;
     updateVolBulkButtons();
     return;
   }
@@ -53,20 +53,20 @@ function renderDockerVolumesList() {
     const checkboxHtml = `<input type="checkbox" data-volume="${esc(v.name)}" onchange="volToggleSelect('${esc(v.name)}', this.checked)" ${_volSelected.has(v.name) ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;accent-color:var(--accent);">`;
     const mountLink = v.mountpoint
       ? `<a href="#" onclick="openDockerVolumeDetail(${i});return false;" style="color:var(--accent);text-decoration:none;font-family:var(--mono);font-size:12px;" title="View details">${esc(v.mountpoint)}</a>`
-      : `<span style="font-family:var(--mono);font-size:12px;color:var(--text3);">-</span>`;
+      : `<span style="font-family:var(--mono);font-size:12px;color:var(--muted);">-</span>`;
     return `<tr>
       <td style="text-align:center;">${checkboxHtml}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.stack || '-')}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.driver || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(v.stack || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(v.driver || '-')}</td>
       <td>${mountLink}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.ownership || '-')}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(v.createdDate || '-')}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(containerCountText)}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(v.ownership || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(v.createdDate || '-')}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(containerCountText)}</td>
     </tr>`;
   }).join('');
 
   body.innerHTML = `
-    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;">${allDockerVolumes.length} volume(s)</div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px;">${allDockerVolumes.length} volume(s)</div>
     <div style="overflow:auto;border:1px solid var(--border);border-radius:10px;">
       <table class="cdetail-table" style="min-width:900px;">
         <thead>
@@ -144,7 +144,7 @@ async function openDockerVolumeDetail(idx) {
   const v = allDockerVolumes[idx];
   if (!v) return;
   const body = document.getElementById('volmgr-body');
-  body.innerHTML = `<div style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:13px;padding:20px;">Loading volume details…</div>`;
+  body.innerHTML = `<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;padding:20px;">Loading volume details…</div>`;
 
   // Hide list buttons, show back button
   document.getElementById('vol-bulk-delete').style.display = 'none';
@@ -159,36 +159,36 @@ async function openDockerVolumeDetail(idx) {
     }
     const d = data.volume;
     const labels = d.labels && Object.keys(d.labels).length
-      ? `<table class="cdetail-table"><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody>${Object.entries(d.labels).map(([k,val]) => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--accent);">${esc(k)}</td><td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(String(val ?? ''))}</td></tr>`).join('')}</tbody></table>`
-      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">No labels</div>`;
+      ? `<table class="cdetail-table"><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody>${Object.entries(d.labels).map(([k,val]) => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--accent);">${esc(k)}</td><td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(String(val ?? ''))}</td></tr>`).join('')}</tbody></table>`
+      : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;">No labels</div>`;
     const containers = Array.isArray(d.containers) && d.containers.length
-      ? `<table class="cdetail-table"><thead><tr><th>Container</th><th>Status</th><th>Mount Path</th></tr></thead><tbody>${d.containers.map(c => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--text);">${esc(c.name || c.id || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:${c.status==='running'?'var(--green)':'var(--text3)'};">${esc(c.status || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(c.destination || '-')}</td></tr>`).join('')}</tbody></table>`
-      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;">No containers using this volume</div>`;
+      ? `<table class="cdetail-table"><thead><tr><th>Container</th><th>Status</th><th>Mount Path</th></tr></thead><tbody>${d.containers.map(c => `<tr><td style="font-family:var(--mono);font-size:12px;color:var(--text);">${esc(c.name || c.id || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:${c.status==='running'?'var(--green)':'var(--muted)'};">${esc(c.status || '-')}</td><td style="font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(c.destination || '-')}</td></tr>`).join('')}</tbody></table>`
+      : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;">No containers using this volume</div>`;
 
     const labelsHtml = d.labels && Object.keys(d.labels).length
-      ? Object.entries(d.labels).map(([k,val]) => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;"><span style="color:var(--text3);margin-right:20px;width:200px;display:inline-block;">${esc(k)}</span><span style="color:var(--text);">${esc(String(val ?? ''))}</span></div>`).join('')
-      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:8px 0;">No labels</div>`;
+      ? Object.entries(d.labels).map(([k,val]) => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;"><span style="color:var(--muted);margin-right:20px;width:200px;display:inline-block;">${esc(k)}</span><span style="color:var(--text);">${esc(String(val ?? ''))}</span></div>`).join('')
+      : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:8px 0;">No labels</div>`;
     
     const containersHtml = Array.isArray(d.containers) && d.containers.length
       ? `<table style="width:100%;border-collapse:collapse;">
            <thead style="border-bottom:1px solid var(--border);">
              <tr>
-               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Container Name</th>
-               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Mounted At</th>
-               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Read-only</th>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Container Name</th>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Mounted At</th>
+               <th style="text-align:left;padding:10px 0;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Read-only</th>
              </tr>
            </thead>
            <tbody>
              ${d.containers.map(c => `
                <tr style="border-bottom:1px solid rgba(42,47,74,.5);">
                  <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--accent);">${esc(c.name || c.id || '-')}</td>
-                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${esc(c.destination || '-')}</td>
-                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--text2);">${c.readonly === true ? 'true' : 'true'}</td>
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--slate);">${esc(c.destination || '-')}</td>
+                 <td style="padding:10px 0;font-family:var(--mono);font-size:12px;color:var(--slate);">${c.readonly === true ? 'true' : 'true'}</td>
                </tr>
              `).join('')}
            </tbody>
          </table>`
-      : `<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:8px 0;">No containers using this volume</div>`;
+      : `<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:8px 0;">No containers using this volume</div>`;
 
     body.innerHTML = `
       <div style="padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
@@ -200,23 +200,23 @@ async function openDockerVolumeDetail(idx) {
 
       <div style="margin-bottom:20px;">
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">ID</span>
+          <span style="color:var(--muted);margin-right:20px;width:100px;display:inline-block;font-weight:600;">ID</span>
           <span style="color:var(--text);">${esc(d.name)}</span>
         </div>
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Created</span>
+          <span style="color:var(--muted);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Created</span>
           <span style="color:var(--text);">${esc(d.createdDate || '-')}</span>
         </div>
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Mount path</span>
+          <span style="color:var(--muted);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Mount path</span>
           <span style="color:var(--text);">${esc(d.mountpoint || '-')}</span>
         </div>
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-          <span style="color:var(--text3);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Driver</span>
+          <span style="color:var(--muted);margin-right:20px;width:100px;display:inline-block;font-weight:600;">Driver</span>
           <span style="color:var(--text);">${esc(d.driver || '-')}</span>
         </div>
         <div style="padding:12px 0;">
-          <div style="color:var(--text3);margin-bottom:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Labels</div>
+          <div style="color:var(--muted);margin-bottom:8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Labels</div>
           <div style="margin-left:0;">${labelsHtml}</div>
         </div>
       </div>
@@ -230,7 +230,7 @@ async function openDockerVolumeDetail(idx) {
 
       <div style="margin-bottom:20px;">
         <div style="padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-          <span style="color:var(--text3);margin-right:20px;width:120px;display:inline-block;font-weight:600;">Ownership</span>
+          <span style="color:var(--muted);margin-right:20px;width:120px;display:inline-block;font-weight:600;">Ownership</span>
           <span style="color:var(--text);">${esc(d.access?.owner || '-')}</span>
           <a href="#" style="cursor:default;color:var(--accent);margin-left:10px;font-size:11px;text-decoration:none;opacity:0.5;">Change ownership</a>
         </div>

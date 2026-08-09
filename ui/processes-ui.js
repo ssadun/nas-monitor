@@ -70,7 +70,7 @@ function procRow(p, depth, hasChildren, isCollapsed) {
   if (procView === 'tree' && hasChildren) {
     expandBtn = `<button class="toggle-btn" onclick="toggleProcCollapse(${p.pid},event)">${isCollapsed ? '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="m9 18 6-6-6-6"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="m6 9 6 6 6-6"/></svg>'}</button>`;
   } else if (procView === 'tree' && depth > 0) {
-    expandBtn = `<span style="color:var(--text3);font-size:13px;margin-right:6px;">⤷</span>`;
+    expandBtn = `<span style="color:var(--muted);font-size:13px;margin-right:6px;">⤷</span>`;
   }
 
   const pj = JSON.stringify(p).replace(/"/g,'&quot;');
@@ -79,7 +79,7 @@ function procRow(p, depth, hasChildren, isCollapsed) {
     <td style="width:24px">
       <span class="status-dot ${p.status}"></span>
     </td>
-    <td class="pid-col muted">${p.pid}</td>
+    <td class="pid-col muted" data-label="PID">${p.pid}</td>
     <td class="name-col">
       <div class="proc-name" style="padding-left:${indent}px">
         ${expandBtn}
@@ -87,42 +87,42 @@ function procRow(p, depth, hasChildren, isCollapsed) {
           data-proc="${pj}">${esc(p.name)}</span>
       </div>
     </td>
-    <td class="owner-col muted">${esc(p.owner)}</td>
-    <td style="width:120px">${
+    <td class="owner-col muted" data-label="Owner">${esc(p.owner)}</td>
+    <td style="width:120px" data-label="Container">${
       p.isSelf
         ? `<span class="self-tag" title="This is the nas-monitor process">nas-monitor</span>`
         : pidContainerMap[p.pid]
           ? `<span class="container-tag" title="${esc(pidContainerMap[p.pid])}">${esc(pidContainerMap[p.pid])}</span>`
           : ''
     }</td>
-    <td class="cpu-col">
+    <td class="cpu-col" data-label="CPU">
       <div class="cpu-bar">
         <div class="bar-track"><div class="bar-fill cpu ${cpuColorClass(p.cpu)}" style="width:${cpuPct}%"></div></div>
         <span class="${cpuColor(p.cpu)}-text">${p.cpu.toFixed(2)}%</span>
       </div>
     </td>
-    <td class="mem-col">
+    <td class="mem-col" data-label="Mem">
       <div class="mem-bar">
         <div class="bar-track"><div class="bar-fill mem" style="width:${memPct}%"></div></div>
         <span class="accent-text">${p.mem.toFixed(2)}%</span>
       </div>
     </td>
-    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;">
+    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;" data-label="Disk Read">
       ${(p.diskReadKBs > 0)
         ? `<span style="color:var(--green);">↓ ${p.diskReadKBs >= 1024 ? (p.diskReadKBs/1024).toFixed(1)+' MB/s' : p.diskReadKBs.toFixed(1)+' KB/s'}</span>`
         : `<span class="muted">–</span>`}
     </td>
-    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;">
+    <td style="width:100px;font-family:var(--mono);font-size:12px;white-space:nowrap;" data-label="Disk Write">
       ${(p.diskWriteKBs > 0)
         ? `<span style="color:var(--orange);">↑ ${p.diskWriteKBs >= 1024 ? (p.diskWriteKBs/1024).toFixed(1)+' MB/s' : p.diskWriteKBs.toFixed(1)+' KB/s'}</span>`
         : `<span class="muted">–</span>`}
     </td>
-    <td class="status-col">
+    <td class="status-col" data-label="Status">
       <span class="state-${p.status}">${stateLabel(p.status)}</span>
     </td>
-    <td class="start-col muted" style="font-size:13px">${fmtDate(p.start)}</td>
+    <td class="start-col muted" style="font-size:13px" data-label="Start">${fmtDate(p.start)}</td>
     <td class="cmd-col muted" style="font-size:13px;max-width:300px;overflow:hidden;text-overflow:ellipsis"
-      title="${esc(p.cmdline)}">${esc((p.cmdline||p.name).slice(0,80))}</td>
+      title="${esc(p.cmdline)}" data-label="Command">${esc((p.cmdline||p.name).slice(0,80))}</td>
   </tr>`;
 }
 

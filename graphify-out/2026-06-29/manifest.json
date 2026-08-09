@@ -15,9 +15,9 @@
     "semantic_hash": "07ea0bff081da1cf71ea230f493110b9"
   },
   "modules/api.js": {
-    "mtime": 1782714026.3266518,
-    "ast_hash": "31d2a3c08e4178d12a3d773f2f44fa48",
-    "semantic_hash": "31d2a3c08e4178d12a3d773f2f44fa48"
+    "mtime": 1782718672.5244412,
+    "ast_hash": "de18ffd813fef8a293676319906644d4",
+    "semantic_hash": ""
   },
   "modules/auth.js": {
     "mtime": 1779973226.5274062,
@@ -40,9 +40,9 @@
     "semantic_hash": "97731b6e6f7bfa6cadde07544088bbd9"
   },
   "modules/docker.js": {
-    "mtime": 1782684531.7428386,
-    "ast_hash": "550ce9d9a41338fe9fafef69b89ed1d3",
-    "semantic_hash": "550ce9d9a41338fe9fafef69b89ed1d3"
+    "mtime": 1782730308.5165665,
+    "ast_hash": "ce205d63dd49734676652eb838f13f60",
+    "semantic_hash": ""
   },
   "modules/header.js": {
     "mtime": 1777984825.214587,
@@ -50,9 +50,9 @@
     "semantic_hash": "352a0ab819a0edd737a0f741fee1b19d"
   },
   "modules/image-updates.js": {
-    "mtime": 1782714002.6144707,
-    "ast_hash": "78d5df537f1111efc14f24fcc2a7e2b6",
-    "semantic_hash": "78d5df537f1111efc14f24fcc2a7e2b6"
+    "mtime": 1782715314.762978,
+    "ast_hash": "c1e6cf354f6b0d8c65027e6ee81642ff",
+    "semantic_hash": ""
   },
   "modules/logger.js": {
     "mtime": 1779493285.82775,
@@ -90,9 +90,9 @@
     "semantic_hash": "90cc830cebcc4174802ef1e3566037dd"
   },
   "server.js": {
-    "mtime": 1780522822.2892177,
-    "ast_hash": "1a1cb6124ce9ee09413d076de35c1d8b",
-    "semantic_hash": "1a1cb6124ce9ee09413d076de35c1d8b"
+    "mtime": 1782722358.23804,
+    "ast_hash": "50a8003a7a975aadf285dbf52292ea74",
+    "semantic_hash": ""
   },
   "service.sh": {
     "mtime": 1779658126.5128303,
@@ -110,9 +110,9 @@
     "semantic_hash": "04f089ec80e2f529de09eb042876df60"
   },
   "ui/compose-ui.js": {
-    "mtime": 1782684583.4740913,
-    "ast_hash": "dc28a6cbfc51c1c1cc2c1d99b2a52ed2",
-    "semantic_hash": "dc28a6cbfc51c1c1cc2c1d99b2a52ed2"
+    "mtime": 1782730364.5729764,
+    "ast_hash": "bd4aa0328e06f3ec9b5838b969f8b704",
+    "semantic_hash": ""
   },
   "ui/console-ui.js": {
     "mtime": 1779901286.9143534,
@@ -125,14 +125,14 @@
     "semantic_hash": "12ec58a6c790374356f2a39ebb0b64a3"
   },
   "ui/docker-ui.js": {
-    "mtime": 1782714107.1453257,
-    "ast_hash": "fc0ebcb0e0ee38d8e7cf1e122d3ecb1f",
-    "semantic_hash": "fc0ebcb0e0ee38d8e7cf1e122d3ecb1f"
+    "mtime": 1782731207.539141,
+    "ast_hash": "d0aa26bb3fe60a5c2f0423b7da848c6e",
+    "semantic_hash": ""
   },
   "ui/image-updates-ui.js": {
-    "mtime": 1782714079.5900958,
-    "ast_hash": "6041e53e412734af69a6922ec27c5e0b",
-    "semantic_hash": "6041e53e412734af69a6922ec27c5e0b"
+    "mtime": 1782718700.7246542,
+    "ast_hash": "0800e96316933a550fe2e94e083538e9",
+    "semantic_hash": ""
   },
   "ui/menu-ui.js": {
     "mtime": 1779654432.8072515,
@@ -180,9 +180,9 @@
     "semantic_hash": "8da5becc8df47e4dc723b464d215223f"
   },
   "ui/syntax-highlight.js": {
-    "mtime": 1779670490.566033,
-    "ast_hash": "ed5051920521d1fa4d53fac54252b05f",
-    "semantic_hash": "ed5051920521d1fa4d53fac54252b05f"
+    "mtime": 1782730328.6407137,
+    "ast_hash": "098683465f40ff4fa6e2e3a9da3c9408",
+    "semantic_hash": ""
   },
   "ui/utils.js": {
     "mtime": 1779655463.6656811,
@@ -195,9 +195,9 @@
     "semantic_hash": "b11541c809017548d3339465bfd7203f"
   },
   "CLAUDE.md": {
-    "mtime": 1779911187.0177553,
-    "ast_hash": "cfac910cec22e436a5b0a6be38f28c9b",
-    "semantic_hash": "cfac910cec22e436a5b0a6be38f28c9b"
+    "mtime": 1782714779.6527715,
+    "ast_hash": "66826bfe2f7237f2f27f5fcf56c28843",
+    "semantic_hash": ""
   },
   "README.md": {
     "mtime": 1779901251.956122,
@@ -220,9 +220,9 @@
     "semantic_hash": "bdf948b50b30966115fa7b3a0b2be185"
   },
   "index.html": {
-    "mtime": 1782684539.795878,
-    "ast_hash": "ba6ee90638e74b067314888dc0da972e",
-    "semantic_hash": "ba6ee90638e74b067314888dc0da972e"
+    "mtime": 1782718726.7808511,
+    "ast_hash": "af158287b98991f88d5d9deffca5116e",
+    "semantic_hash": ""
   },
   "modules/compose-template.yaml": {
     "mtime": 1781965419.0821738,
@@ -263,5 +263,20 @@
     "mtime": 1779974608.7276855,
     "ast_hash": "b7e1e30361bd79390789ab72a9229c52",
     "semantic_hash": "b7e1e30361bd79390789ab72a9229c52"
+  },
+  ".claude/settings.json": {
+    "mtime": 1782714779.720772,
+    "ast_hash": "e51077b6a7f1f67afc748f1a32a1557d",
+    "semantic_hash": ""
+  },
+  "vendor/addon-fit.min.js": {
+    "mtime": 1782716160.5234137,
+    "ast_hash": "789763bc2ea3defed1d48ac912a94a8c",
+    "semantic_hash": ""
+  },
+  "vendor/xterm.min.js": {
+    "mtime": 1782716160.2084115,
+    "ast_hash": "4f650fced89e60e36dcc04e5f48956cf",
+    "semantic_hash": ""
   }
 }

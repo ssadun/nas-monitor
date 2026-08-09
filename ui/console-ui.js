@@ -25,7 +25,7 @@ function switchShell(shell) {
 
 function _updateShellBtns() {
   const active   = 'background:var(--accent);color:white;border-color:var(--accent);';
-  const inactive = 'background:none;color:var(--text3);border-color:var(--border2);';
+  const inactive = 'background:none;color:var(--muted);border-color:var(--border2);';
   el('console-bash-btn').style.cssText += _consoleShell === 'bash' ? active : inactive;
   el('console-sh-btn'  ).style.cssText += _consoleShell === 'sh'   ? active : inactive;
 }

@@ -24,6 +24,10 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + currentTab);
   });
+  // Sync mobile bottom-nav active state on load
+  document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === currentTab);
+  });
 
   // Restore containers sub-menu open state (default: open)
   const submenuOpen = sessionStorage.getItem('containers-submenu-open') !== 'false';
@@ -55,7 +59,10 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
     if (parent) parent.querySelector('.sidebar-item')?.classList.add('active');
   }
 
-  const sidebarExpanded = sessionStorage.getItem('sidebar-expanded') === 'true';
+  // On mobile the sidebar is an off-canvas drawer — always start closed,
+  // ignoring any persisted desktop "expanded" rail state.
+  const isMobileView = window.matchMedia('(max-width: 660px)').matches;
+  const sidebarExpanded = !isMobileView && sessionStorage.getItem('sidebar-expanded') === 'true';
   if (sidebarExpanded) {
     document.body.classList.add('sidebar-expanded');
     const sidebar = document.getElementById('sidebar');
@@ -63,7 +70,11 @@ const SIDEBAR_TAB_NAMES = ['containers', 'processes', 'disk', 'network', 'catego
   }
 
   updateSidebarToggleLabel();
-  if (window.lucide) lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+  if (window.lucide) {
+    lucide.createIcons({ nodes: [document.getElementById('sidebar')] });
+    const bottomNav = document.getElementById('mobile-bottom-nav');
+    if (bottomNav) lucide.createIcons({ nodes: [bottomNav] });
+  }
 })();
 
 function toggleContainersMenu() {
@@ -114,6 +125,10 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', panel.id === 'tab-' + name);
   });
+  // Sync the mobile bottom nav: highlight the matching parent/tab
+  document.querySelectorAll('.mobile-bottom-nav-btn[data-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.tab === name);
+  });
   // Keep containers parent button highlighted when any sub-item tab is active
   const containersBtn = document.querySelector('#containers-parent > .sidebar-item');
   const subTabs = ['containers', 'categories'];
@@ -143,6 +158,8 @@ function switchTab(name) {
   const filterInput = document.getElementById('filter-input');
   if (filterInput) filterInput.value = '';
   filterText = '';
+  // On mobile, the sidebar is an off-canvas drawer — auto-close after navigating
+  if (window.matchMedia('(max-width: 660px)').matches) closeSidebar();
   render();
 }
 
@@ -170,4 +187,27 @@ function closeSidebar() {
 
 function switchTabFromSidebar(name) {
   switchTab(name);
+}
+
+// ── Mobile bottom-nav popup submenus ─────────────────────────────────────────
+// A parent tab (Docker / Network / More) reveals its sub-items as a floating
+// popup above the bar; an invisible backdrop dismisses it. Only one open at a time.
+function closeMobileNavPopups() {
+  document.querySelectorAll('.mobile-nav-parent.open').forEach(p => p.classList.remove('open'));
+  const backdrop = document.getElementById('mobile-sub-backdrop');
+  if (backdrop) backdrop.classList.remove('show');
+}
+
+function openMobileNavPopup(which, evt, navTab) {
+  if (evt) evt.stopPropagation();
+  const parent = document.getElementById('mobnav-' + which + '-parent');
+  if (!parent) return;
+  const wasOpen = parent.classList.contains('open');
+  closeMobileNavPopups();
+  if (!wasOpen) {
+    parent.classList.add('open');
+    const backdrop = document.getElementById('mobile-sub-backdrop');
+    if (backdrop) backdrop.classList.add('show');
+    if (navTab) switchTab(navTab);
+  }
 }
